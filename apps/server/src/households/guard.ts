@@ -20,6 +20,8 @@ import { OWNER_HOUSEHOLD } from "./owner.ts";
  * - `music`: the audio library, not for a household that sees only a part of the library: no
  *   part of it says what music is in it.
  * - `music_profile`: the same, for a viewer (`:profile`) of the device's household.
+ * - `stats_profile`: a viewer (`:id`) of the device's household; for a server admin of any
+ *   household (docs/decisions.md, "Who sees which statistics"). The routes say who else may.
  * - `kids_profile`: a kids viewer (`:id`) of the device's household; for a server admin also of
  *   a guest household, whose children the server owner may answer for too (docs/decisions.md, "Kids control").
  */
@@ -29,6 +31,7 @@ export type HouseholdDecision =
   | "household"
   | "profile"
   | "kids_profile"
+  | "stats_profile"
   | "device"
   | "library"
   | "music"
@@ -279,10 +282,12 @@ export const HOUSEHOLD_ROUTES: Readonly<Record<string, HouseholdDecision>> = {
   "DELETE /v1/music/profiles/:profile/plays": "music_profile",
   "GET /v1/music/profiles/:profile/progress": "music_profile",
   "PUT /v1/music/profiles/:profile/progress/:item": "music_profile",
-  // Statistics: a viewer of the household's own; the server's for the owner's admins.
-  "GET /v1/stats/viewers/:id": "profile",
-  "DELETE /v1/stats/viewers/:id/history/:session": "profile",
-  "DELETE /v1/stats/viewers/:id": "profile",
+  // Statistics: a viewer of the household's own, any for a server admin; a household's overview
+  // for its admins; the server's for the owner's admins. The routes keep a viewer to their own.
+  "GET /v1/stats/viewers/:id": "stats_profile",
+  "DELETE /v1/stats/viewers/:id/history/:session": "stats_profile",
+  "DELETE /v1/stats/viewers/:id": "stats_profile",
+  "GET /v1/stats/household": "household",
   "GET /v1/stats/server": "owner",
 };
 
@@ -526,6 +531,7 @@ export const HOUSEHOLD_LEVELS: Readonly<Record<string, HouseholdLevel>> = {
   "GET /v1/stats/viewers/:id": "anyone",
   "DELETE /v1/stats/viewers/:id/history/:session": "anyone",
   "DELETE /v1/stats/viewers/:id": "householdAdmin",
+  "GET /v1/stats/household": "householdAdmin",
   "GET /v1/stats/server": "admin",
 };
 
@@ -614,6 +620,7 @@ export function householdGuard(deps: GuardDeps): MiddlewareHandler<AppEnv> {
         case "profile":
           return ownProfile(param(pattern, path, "id"), device.householdId);
         case "kids_profile":
+        case "stats_profile":
           return (
             ownProfile(param(pattern, path, "id"), device.householdId) ||
             (device.access === "admin" && device.kidsProfileId === null)

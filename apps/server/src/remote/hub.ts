@@ -237,6 +237,11 @@ export class RemoteHub {
   private readonly pending = new Map<string, Pending>();
   /** Commands that were taken on, by sender, so that a repeated one is not done twice. */
   private readonly taken = new Map<string, Map<string, { asked: string; reply: CommandReply }>>();
+  /**
+   * Per device, the viewer its app last said was in front, kept when its channel closes: who the
+   * device is being now, for what is only that viewer's (docs/decisions.md, "Who sees which statistics").
+   */
+  private readonly fronts = new Map<string, string | null>();
   /** Devices that are part of a handover. */
   private readonly busy = new Set<string>();
   /** Plays that wait for a woken TV, by the TV's device id. */
@@ -312,6 +317,7 @@ export class RemoteHub {
   stop(): void {
     this.stopped = true;
     this.heldPlays.clear();
+    this.fronts.clear();
     for (const one of [...this.sessions.values()]) this.forget(one, false);
   }
 
@@ -447,12 +453,29 @@ export class RemoteHub {
       one.canPlay = said.canPlay;
       one.profileId =
         said.profileId !== null && this.profile(said.profileId) ? said.profileId : null;
+      this.fronts.set(
+        deviceId,
+        one.profileId !== null && this.profile(one.profileId, one.device.householdId)
+          ? one.profileId
+          : null,
+      );
       one.capabilities = said.capabilities;
       if (said.player !== undefined) one.player = said.player;
       if (before !== `${one.foreground} ${one.canPlay} ${one.player !== null}`) one.activeAt = now;
       this.sync();
     }
     return { serverTime: now, epoch: one.epoch, seq: one.seq };
+  }
+
+  /**
+   * The viewer this device's app last said was in front, if it is still one of the device's
+   * household; null when it said nobody, or has not said since the server started.
+   */
+  inFront(deviceId: string): string | null {
+    const id = this.fronts.get(deviceId) ?? null;
+    if (id === null) return null;
+    const device = this.devices.find(deviceId);
+    return device && this.profile(id, device.householdId) ? id : null;
   }
 
   /** Looks again who may be here and see what. */
@@ -464,6 +487,9 @@ export class RemoteHub {
     }
     for (const id of this.taken.keys()) {
       if (![...this.sessions.values()].some((one) => one.device.id === id)) this.taken.delete(id);
+    }
+    for (const id of this.fronts.keys()) {
+      if (!this.row(id, false)) this.fronts.delete(id);
     }
     this.sync();
   }

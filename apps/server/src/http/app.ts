@@ -1622,6 +1622,7 @@ export function createApp(deps: AppDeps, entrance: "home" | "outside" = "home"):
     ...(deps.storage ? { storage: deps.storage } : {}),
     requireManager,
     requireHouseholdAdmin,
+    inFront: (deviceId) => hub?.inFront(deviceId) ?? null,
     now,
   });
 

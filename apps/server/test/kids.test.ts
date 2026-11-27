@@ -432,7 +432,6 @@ describe("a decision for every route", () => {
           `/v1/assets/${asset(mkv)}/subtitles/${pictures}.json`,
         ],
         "GET /v1/profiles/:id/progress": ["GET", `/v1/profiles/${profile}/progress`],
-        "GET /v1/stats/viewers/:id": ["GET", `/v1/stats/viewers/${profile}`],
         "PUT /v1/profiles/:id/avatar": ["PUT", `/v1/profiles/${profile}/avatar`, { avatar: "fox" }],
         "PUT /v1/profiles/:id/subtitles": [
           "PUT",

@@ -283,10 +283,11 @@ export const KIDS_ROUTES: Readonly<Record<string, KidsDecision>> = {
   "DELETE /v1/music/profiles/:profile/plays": "music_viewer",
   "GET /v1/music/profiles/:profile/progress": "music_viewer",
   "PUT /v1/music/profiles/:profile/progress/:item": "music_viewer",
-  // The child's own statistics, simple, and nothing about anyone else.
-  "GET /v1/stats/viewers/:id": "viewer",
+  // No statistics for children, their own included (docs/decisions.md, "Who sees which statistics").
+  "GET /v1/stats/viewers/:id": "none",
   "DELETE /v1/stats/viewers/:id/history/:session": "none",
   "DELETE /v1/stats/viewers/:id": "none",
+  "GET /v1/stats/household": "none",
   "GET /v1/stats/server": "none",
 };
 
@@ -328,8 +329,6 @@ export const KIDS_MODE_ROUTES: Readonly<Record<string, ModeNeed>> = {
   "PUT /v1/profiles/:id/progress/:item": "always",
   "PUT /v1/profiles/:id/avatar": "app",
   "PUT /v1/profiles/:id/subtitles": "app",
-  // Its own statistics, simply: anything but Nothing.
-  "GET /v1/stats/viewers/:id": "app",
   "GET /v1/me/wanted": "browse",
   "GET /v1/library": "browse",
   "GET /v1/library/query": "browse",

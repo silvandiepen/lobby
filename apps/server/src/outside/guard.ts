@@ -261,6 +261,8 @@ export const OUTSIDE_ROUTES: Readonly<Record<string, OutsideDecision>> = {
   "GET /v1/stats/viewers/:id": "progress",
   "DELETE /v1/stats/viewers/:id/history/:session": "closed",
   "DELETE /v1/stats/viewers/:id": "closed",
+  // A guest household's admins live elsewhere: their overview is theirs from there.
+  "GET /v1/stats/household": "household",
   "GET /v1/stats/server": "closed",
 };
 

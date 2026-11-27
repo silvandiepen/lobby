@@ -8,6 +8,7 @@ import { Database } from "../src/db/database.ts";
 import { createApp, type AppEnv } from "../src/http/app.ts";
 import { ItemReader } from "../src/library/items.ts";
 import { ProgressStore } from "../src/progress.ts";
+import { RemoteHub } from "../src/remote/hub.ts";
 import { rangeOf, StatsReader, streaks } from "../src/stats/aggregate.ts";
 import { Statistics } from "../src/stats/recorder.ts";
 import { roadOf } from "../src/stats/routes.ts";
@@ -30,6 +31,7 @@ interface Fixture {
   db: Database;
   app: Hono<AppEnv>;
   stats: Statistics;
+  remote: RemoteHub;
   clock: { now: number };
   keepDays: { value: number };
 }
@@ -41,9 +43,12 @@ function setUp(): Fixture {
   const keepDays = { value: 730 };
   const db = new Database(join(dir, "lobby.db"));
   const stats = new Statistics(db, { now, keepDays: () => keepDays.value });
+  const devices = new Devices(db, SETUP_SECRET, now);
+  const remote = new RemoteHub({ db, devices, now });
   const app = createApp({
     db,
-    devices: new Devices(db, SETUP_SECRET, now),
+    devices,
+    remote,
     items: new ItemReader(db),
     progress: new ProgressStore(db, now),
     stats,
@@ -53,7 +58,7 @@ function setUp(): Fixture {
     isScanning: () => false,
     now,
   });
-  return { dir, db, app, stats, clock, keepDays };
+  return { dir, db, app, stats, remote, clock, keepDays };
 }
 
 async function call<T = Record<string, unknown>>(
@@ -106,6 +111,26 @@ async function pair(
     await ask(`/v1/pairing/requests/${request.id}/collect`, { pollSecret: request.pollSecret })
   ).json()) as { device: { id: string }; token: string };
   return { id: collected.device.id, token: collected.token };
+}
+
+let lives = 0;
+/** The device's app says, on its live channel, who is in front; null for nobody. */
+async function inFront(f: Fixture, token: string, profileId: string | null): Promise<void> {
+  lives += 1;
+  const session = `live-${String(lives)}`;
+  const opened = await f.app.request(`/v1/live?session=${session}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  expect(opened.status).toBe(200);
+  await opened.body?.cancel();
+  const said = await call(f, token, "POST", `/v1/live/${session}`, {
+    order: 1,
+    foreground: true,
+    canPlay: true,
+    profileId,
+    capabilities: [],
+  });
+  expect(said.status).toBe(200);
 }
 
 let revision = 0;
@@ -215,6 +240,7 @@ describe("statistics", () => {
     library(f);
   });
   afterEach(() => {
+    f.remote.stop();
     f.db.close();
     removeDir(f.dir);
   });
@@ -363,7 +389,6 @@ describe("statistics", () => {
       const clock = new Clock(zone);
       return reader.viewer(me, rangeOf("week", clock, NOW, f.stats.oldest), clock, {
         view: null,
-        simple: false,
         oldest: f.stats.oldest,
       });
     };
@@ -434,9 +459,9 @@ describe("statistics", () => {
     f.stats.noteSent("guest", "relay", 5_000_000, NOW - DAY);
     f.stats.noteSent("owner", "home", 7_000_000, NOW - DAY);
 
-    // Not there for the other household, either way.
+    // The owner's viewers are not there for the guest household; the server admin sees theirs.
     expect((await call(f, guest.token, "GET", `/v1/stats/viewers/${me}`)).status).toBe(404);
-    expect((await call(f, manager, "GET", `/v1/stats/viewers/${them}`)).status).toBe(404);
+    expect((await call(f, manager, "GET", `/v1/stats/viewers/${them}`)).status).toBe(200);
     expect((await call(f, guest.token, "GET", "/v1/stats/server")).status).toBe(404);
     const theirs = await call<{ totals: { watchedMs: number } }>(
       f,
@@ -476,51 +501,241 @@ describe("statistics", () => {
     expect((await call(f, manager, "GET", "/v1/stats/server?household=nobody")).status).toBe(404);
   });
 
-  it("gives each role what it may see", async () => {
-    const manager = await claim(f);
-    const me = profile(f, "me", "Me");
-    const kid = profile(f, "kid", "Kid", "owner", true);
-    const viewer = await pair(f, manager, "Living room");
-    const child = await pair(f, manager, "Kid's iPad");
-    expect(
-      (await call(f, manager, "PATCH", `/v1/devices/${child.id}`, { kidsProfileId: kid })).status,
-    ).toBe(200);
-    const mine = session(f, me, "film", "film", NOW - DAY, 60 * MINUTE);
-    const kids = session(f, kid, "film", "film", NOW - 2 * DAY, 30 * MINUTE, { device: child.id });
+  describe("who sees which statistics", () => {
+    interface Roles {
+      manager: string;
+      me: string;
+      partner: string;
+      kid: string;
+      them: string;
+      theirKid: string;
+      viewer: { id: string; token: string };
+      householdAdmin: { id: string; token: string };
+      guestAdmin: { id: string; token: string };
+      child: { id: string; token: string };
+      sittings: { mine: string; partners: string; kids: string };
+    }
 
-    // A viewer's device: the household's viewers, not the server.
-    expect((await call(f, viewer.token, "GET", `/v1/stats/viewers/${kid}`)).status).toBe(200);
-    expect((await call(f, viewer.token, "GET", "/v1/stats/server")).status).toBe(403);
-    expect((await call(f, viewer.token, "DELETE", `/v1/stats/viewers/${me}`)).status).toBe(403);
+    /** Two households: the owner's with two grown-ups and a child, and a guest one. */
+    async function roles(): Promise<Roles> {
+      const manager = await claim(f);
+      f.db.run(
+        "insert into household (id, name, owner, created_at) values ('guest', 'Neighbours', 0, ?)",
+        [NOW],
+      );
+      const me = profile(f, "me", "Me");
+      const partner = profile(f, "partner", "Partner");
+      const kid = profile(f, "kid", "Kid", "owner", true);
+      const them = profile(f, "them", "Them", "guest");
+      const theirKid = profile(f, "their-kid", "Their kid", "guest", true);
+      const viewer = await pair(f, manager, "My iPhone");
+      const householdAdmin = await pair(f, manager, "Living room");
+      f.db.run("update device set access = 'household_admin' where id = ?", [householdAdmin.id]);
+      const guestAdmin = await pair(f, manager, "Their iPad");
+      f.db.run(
+        "update device set household_id = 'guest', access = 'household_admin' where id = ?",
+        [guestAdmin.id],
+      );
+      const child = await pair(f, manager, "Kid's iPad");
+      expect(
+        (await call(f, manager, "PATCH", `/v1/devices/${child.id}`, { kidsProfileId: kid })).status,
+      ).toBe(200);
+      const sittings = {
+        mine: session(f, me, "film", "film", NOW - DAY, 60 * MINUTE, { device: viewer.id }),
+        partners: session(f, partner, "e1", "show", NOW - DAY, 20 * MINUTE),
+        kids: session(f, kid, "film", "film", NOW - 2 * DAY, 30 * MINUTE, { device: child.id }),
+      };
+      session(f, them, "e1", "show", NOW - DAY, 40 * MINUTE, { household: "guest" });
+      session(f, theirKid, "film", "film", NOW - DAY, 10 * MINUTE, { household: "guest" });
+      f.stats.noteSent("guest", "relay", 5_000_000, NOW - DAY);
+      f.stats.noteSent("owner", "home", 7_000_000, NOW - DAY);
+      return {
+        manager,
+        me,
+        partner,
+        kid,
+        them,
+        theirKid,
+        viewer,
+        householdAdmin,
+        guestAdmin,
+        child,
+        sittings,
+      };
+    }
 
-    // A child's device: its own child, simply, and nothing else.
-    const own = await call(f, child.token, "GET", `/v1/stats/viewers/${kid}`);
-    expect(own.status).toBe(200);
-    expect(own.body["simple"]).toBe(true);
-    expect(own.body["history"]).toBeUndefined();
-    expect(own.body["devices"]).toBeUndefined();
-    expect((own.body["totals"] as Record<string, number>)["watchedMs"]).toBe(30 * MINUTE);
-    expect((await call(f, child.token, "GET", `/v1/stats/viewers/${me}`)).status).toBe(404);
-    expect((await call(f, child.token, "GET", "/v1/stats/server")).status).toBe(404);
-    expect(
-      (await call(f, child.token, "DELETE", `/v1/stats/viewers/${kid}/history/${kids}`)).status,
-    ).toBe(404);
+    const status = async (token: string, method: string, path: string): Promise<number> =>
+      (await call(f, token, method, path)).status;
 
-    // A grown-up removes one sitting, and not one of another viewer.
-    expect(
-      (await call(f, viewer.token, "DELETE", `/v1/stats/viewers/${kid}/history/${mine}`)).status,
-    ).toBe(404);
-    expect(
-      (await call(f, viewer.token, "DELETE", `/v1/stats/viewers/${me}/history/${mine}`)).status,
-    ).toBe(204);
-    expect(f.db.get("select 1 as x from watch_session where id = ?", [mine])).toBeUndefined();
+    it("shows a server admin every viewer of every household, children too", async () => {
+      const r = await roles();
+      for (const id of [r.me, r.partner, r.kid, r.them, r.theirKid]) {
+        expect(await status(r.manager, "GET", `/v1/stats/viewers/${id}`)).toBe(200);
+      }
+      const child = await call(f, r.manager, "GET", `/v1/stats/viewers/${r.kid}`);
+      expect(child.body["simple"]).toBe(false);
+      expect(child.body["history"]).toBeDefined();
+      expect(await status(r.manager, "GET", "/v1/stats/server")).toBe(200);
+      const guest = await call<{ totals: { watchedMs: number }; household: { id: string } }>(
+        f,
+        r.manager,
+        "GET",
+        "/v1/stats/household?household=guest&range=month&tz=UTC",
+      );
+      expect(guest.status).toBe(200);
+      expect(guest.body.household.id).toBe("guest");
+      expect(guest.body.totals.watchedMs).toBe(50 * MINUTE);
+      // And deletes from anyone's history, and forgets a guest's.
+      expect(
+        await status(
+          r.manager,
+          "DELETE",
+          `/v1/stats/viewers/${r.partner}/history/${r.sittings.partners}`,
+        ),
+      ).toBe(204);
+      expect(await status(r.manager, "DELETE", `/v1/stats/viewers/${r.them}`)).toBe(204);
+    });
 
-    expect(
-      (await call(f, viewer.token, "GET", `/v1/stats/viewers/${me}?range=decade`)).status,
-    ).toBe(400);
-    expect(
-      (await call(f, viewer.token, "GET", `/v1/stats/viewers/${me}?tz=Mars/Base`)).status,
-    ).toBe(400);
+    it("shows a household admin their household's viewers and its overview, nothing else", async () => {
+      const r = await roles();
+      for (const id of [r.me, r.partner, r.kid]) {
+        expect(await status(r.householdAdmin.token, "GET", `/v1/stats/viewers/${id}`)).toBe(200);
+      }
+      for (const id of [r.them, r.theirKid]) {
+        expect(await status(r.householdAdmin.token, "GET", `/v1/stats/viewers/${id}`)).toBe(404);
+      }
+      for (const id of [r.me, r.kid]) {
+        expect(await status(r.guestAdmin.token, "GET", `/v1/stats/viewers/${id}`)).toBe(404);
+      }
+      expect(await status(r.guestAdmin.token, "GET", `/v1/stats/viewers/${r.theirKid}`)).toBe(200);
+      expect(await status(r.householdAdmin.token, "GET", "/v1/stats/server")).toBe(403);
+      expect(await status(r.guestAdmin.token, "GET", "/v1/stats/server")).toBe(404);
+
+      const overview = await call(
+        f,
+        r.guestAdmin.token,
+        "GET",
+        "/v1/stats/household?range=month&tz=UTC",
+      );
+      expect(overview.status).toBe(200);
+      expect(Object.keys(overview.body).sort()).toEqual(
+        [
+          "keptDays",
+          "range",
+          "household",
+          "totals",
+          "days",
+          "heatmap",
+          "hours",
+          "topTitles",
+          "viewers",
+          "devices",
+          "roads",
+          "deliveries",
+          "traffic",
+          "playOn",
+        ].sort(),
+      );
+      expect((overview.body["totals"] as { watchedMs: number }).watchedMs).toBe(50 * MINUTE);
+      expect((overview.body["viewers"] as { id: string }[]).map((one) => one.id).sort()).toEqual(
+        [r.them, r.theirKid].sort(),
+      );
+      expect(overview.body["traffic"]).toEqual(
+        expect.objectContaining({ homeBytes: 0, awayBytes: 5_000_000 }),
+      );
+      const home = await call<{ totals: { watchedMs: number } }>(
+        f,
+        r.householdAdmin.token,
+        "GET",
+        "/v1/stats/household?range=month&tz=UTC",
+      );
+      expect(home.body.totals.watchedMs).toBe(110 * MINUTE);
+      expect(await status(r.guestAdmin.token, "GET", "/v1/stats/household?household=owner")).toBe(
+        404,
+      );
+      expect(
+        await status(r.householdAdmin.token, "GET", "/v1/stats/household?household=guest"),
+      ).toBe(404);
+      expect(await status(r.householdAdmin.token, "DELETE", `/v1/stats/viewers/${r.kid}`)).toBe(
+        204,
+      );
+      expect(await status(r.guestAdmin.token, "DELETE", `/v1/stats/viewers/${r.me}`)).toBe(404);
+    });
+
+    it("shows a viewer only themselves, as the viewer in front on their device", async () => {
+      const r = await roles();
+      const mine = `/v1/stats/viewers/${r.me}`;
+      // Before the app said who is in front, not even their own.
+      expect(await status(r.viewer.token, "GET", mine)).toBe(403);
+      await inFront(f, r.viewer.token, r.me);
+      const own = await call<{ totals: { watchedMs: number } }>(f, r.viewer.token, "GET", mine);
+      expect(own.status).toBe(200);
+      expect(own.body.totals.watchedMs).toBe(60 * MINUTE);
+      // Not the other grown-up, not the child, not another household's, not the overviews.
+      expect(await status(r.viewer.token, "GET", `/v1/stats/viewers/${r.partner}`)).toBe(403);
+      expect(await status(r.viewer.token, "GET", `/v1/stats/viewers/${r.kid}`)).toBe(403);
+      expect(await status(r.viewer.token, "GET", `/v1/stats/viewers/${r.them}`)).toBe(404);
+      expect(await status(r.viewer.token, "GET", "/v1/stats/household")).toBe(403);
+      expect(await status(r.viewer.token, "GET", "/v1/stats/server")).toBe(403);
+      // Deleting goes as seeing; forgetting is for admins.
+      expect(
+        await status(
+          r.viewer.token,
+          "DELETE",
+          `/v1/stats/viewers/${r.partner}/history/${r.sittings.partners}`,
+        ),
+      ).toBe(403);
+      expect(await status(r.viewer.token, "DELETE", `/v1/stats/viewers/${r.me}`)).toBe(403);
+      expect(await status(r.viewer.token, "DELETE", `${mine}/history/${r.sittings.partners}`)).toBe(
+        404,
+      );
+      expect(await status(r.viewer.token, "DELETE", `${mine}/history/${r.sittings.mine}`)).toBe(
+        204,
+      );
+
+      // The partner takes the device: now theirs, and no longer mine.
+      await inFront(f, r.viewer.token, r.partner);
+      expect(await status(r.viewer.token, "GET", `/v1/stats/viewers/${r.partner}`)).toBe(200);
+      expect(await status(r.viewer.token, "GET", mine)).toBe(403);
+      // Nobody chosen: nobody's.
+      await inFront(f, r.viewer.token, null);
+      expect(await status(r.viewer.token, "GET", `/v1/stats/viewers/${r.partner}`)).toBe(403);
+      // Another household's viewer named in front counts for nothing.
+      await inFront(f, r.viewer.token, r.them);
+      expect(f.remote.inFront(r.viewer.id)).toBeNull();
+
+      await inFront(f, r.viewer.token, r.me);
+      expect(await status(r.viewer.token, "GET", `${mine}?range=decade`)).toBe(400);
+    });
+
+    it("shows a child nothing, and a device in kids mode nothing", async () => {
+      const r = await roles();
+      for (const path of [
+        `/v1/stats/viewers/${r.kid}`,
+        `/v1/stats/viewers/${r.me}`,
+        "/v1/stats/household",
+        "/v1/stats/server",
+      ]) {
+        expect(await status(r.child.token, "GET", path)).toBe(404);
+      }
+      expect(
+        await status(
+          r.child.token,
+          "DELETE",
+          `/v1/stats/viewers/${r.kid}/history/${r.sittings.kids}`,
+        ),
+      ).toBe(404);
+
+      // A grown-up's device in kids mode: the child is in front, admin or not.
+      await inFront(f, r.householdAdmin.token, r.kid);
+      expect(await status(r.householdAdmin.token, "GET", `/v1/stats/viewers/${r.kid}`)).toBe(403);
+      expect(await status(r.householdAdmin.token, "GET", "/v1/stats/household")).toBe(403);
+      await inFront(f, r.viewer.token, r.kid);
+      expect(await status(r.viewer.token, "GET", `/v1/stats/viewers/${r.kid}`)).toBe(403);
+      // Back as a grown-up, the admin sees the child again: they are the parent.
+      await inFront(f, r.householdAdmin.token, r.partner);
+      expect(await status(r.householdAdmin.token, "GET", `/v1/stats/viewers/${r.kid}`)).toBe(200);
+    });
   });
 
   it("forgets a viewer's history, and keeps their places", async () => {
@@ -699,7 +914,6 @@ describe("statistics", () => {
     let started = performance.now();
     const one = reader.viewer("p0", range, clock, {
       view: null,
-      simple: false,
       oldest: f.stats.oldest,
     });
     const viewerMs = performance.now() - started;
