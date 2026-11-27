@@ -22,6 +22,9 @@ public enum LiveEvent: Hashable, Sendable {
     case kidsRequest(KidsRequest)
     /// A question this grown-up was asked was answered, taken back or expired.
     case kidsRequestClosed(KidsRequest)
+    /// The HomePods and speakers this session may play on, and what plays on them. Replaces what
+    /// was known.
+    case speakers([ShownSpeaker], serverTime: Int64)
     /// An event this build does not know. Ignored.
     case unknown(String)
 }
@@ -112,6 +115,9 @@ public struct LiveEventParser: Sendable {
                 }
                 let body = try decoder.decode(Body.self, from: data)
                 return .kidsMode(profileID: body.profileId, now: body.now)
+            case "speakers":
+                struct Body: Decodable { var speakers: [ShownSpeaker] }
+                return .speakers(try decoder.decode(Body.self, from: data).speakers, serverTime: time)
             case "kidsRequest", "kidsRequestClosed":
                 struct Body: Decodable { var request: KidsRequest }
                 let request = try decoder.decode(Body.self, from: data).request
