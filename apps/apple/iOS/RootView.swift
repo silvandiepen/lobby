@@ -41,6 +41,7 @@ struct RootView: View {
             model: app.player, isFinished: app.player?.isFinished ?? false,
             usesOwnTransport: app.player?.preparing != nil, showsEnding: app.player?.ending != nil))
         .musicPlayerSheet()
+        .speakerRemoteSheet()
         .alert(
             "Something went wrong",
             isPresented: Binding(get: { app.problem != nil }, set: { if !$0 { app.problem = nil } })

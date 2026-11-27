@@ -72,6 +72,7 @@ struct MusicAlbumView: View {
                             HStack(spacing: AppTheme.Space.s) {
                                 MusicFavouriteButton(id: album.id, kind: .album)
                                 MusicDownloadButton(collectionID: album.id) { music.download(album) }
+                                SpeakerPlayOnButton(audio: .album(album))
                                 Menu {
                                     MusicTrackMenu(tracks: tracks)
                                     if let artist = album.artistIds.first {
@@ -224,6 +225,7 @@ struct MusicBookView: View {
                             HStack(spacing: AppTheme.Space.s) {
                                 MusicFavouriteButton(id: book.id, kind: .book)
                                 MusicDownloadButton(collectionID: book.id) { music.download(book) }
+                                SpeakerPlayOnButton(audio: .story(book))
                                 SpeedMenu()
                             }
                             .foregroundStyle(.primary)

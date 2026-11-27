@@ -203,6 +203,7 @@ struct NowPlayingView: View {
             SleepTimerMenu()
             Spacer()
             RoutePickerButton()
+            SpeakerPlayOnButton(audio: .nowPlaying)
             Spacer()
             Button {
                 showsQueue.toggle()

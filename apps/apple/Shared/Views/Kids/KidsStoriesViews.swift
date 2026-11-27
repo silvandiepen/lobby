@@ -354,6 +354,8 @@ struct KidsStoryView: View {
                 .accessibilityIdentifier("kids.sayIt")
             }
             .arrives(2)
+            KidsSpeakerButtons(audio: .story(book))
+                .arrives(2)
             if let film = app.film(ofStory: book) {
                 NavigationLink(value: KidsRoute(itemID: film.id)) {
                     KidsLinkLabel(title: "Watch the film", symbol: AppSymbol.movies)
