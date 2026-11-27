@@ -78,6 +78,7 @@ struct TVKidsStories: View {
         .scrollClipDisabled()
         .artworkBackground((begun.prefix(1) + books.prefix(2)).compactMap(\.coverId).map(Artwork.musicCover), kids: true)
         .onPlayPauseCommand { app.music.player.togglePlay() }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(onlyListening ? "kids.listening" : "kids.stories")
     }
 
@@ -286,6 +287,7 @@ struct TVKidsNowPlaying: View {
         .onPlayPauseCommand { player.togglePlay() }
         .onExitCommand { dismiss() }
         .onChange(of: player.isActive) { _, active in if !active { dismiss() } }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("kids.player")
     }
 }

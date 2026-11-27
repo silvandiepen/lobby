@@ -85,6 +85,7 @@ struct KidsStoriesPage: View {
         }
         .artworkBackground(
             (begun.prefix(1) + books.prefix(2)).compactMap(\.coverId).map(Artwork.musicCover), kids: true)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(onlyListening ? "kids.listening" : "kids.stories")
     }
 
@@ -294,33 +295,30 @@ struct KidsStoryView: View {
     }
 
     private func page(_ book: MusicBook, size: CGSize) -> some View {
-        let cover = min(isWide ? 380 : size.width - 2 * KidsTheme.margin - 40, size.height * (isWide ? 0.6 : 0.42), 420)
-        let layout = isWide
-            ? AnyLayout(HStackLayout(alignment: .center, spacing: KidsTheme.gap * 3))
-            : AnyLayout(VStackLayout(alignment: .center, spacing: KidsTheme.gap + 8))
-        return layout {
+        let cover = min(size.width - 2 * KidsTheme.margin - 40, size.height * (isWide ? 0.48 : 0.42), 460)
+        return VStack(alignment: .center, spacing: KidsTheme.gap + 8) {
             MusicCover(coverID: book.coverId, size: max(180, cover), radius: 28, symbol: AppSymbol.audiobooks)
                 .kidsFrame(radius: 28)
                 .scaleEffect(speaker.isSpeaking && motion.moves ? 1.03 : 1)
                 .animation(motion.animation(.change), value: speaker.isSpeaking)
                 .arrives(0)
             details(book)
-                .frame(maxWidth: isWide ? 460 : .infinity, alignment: isWide ? .leading : .center)
+                .frame(maxWidth: 560)
         }
         .padding(.horizontal, KidsTheme.margin)
         .padding(.bottom, AppTheme.Space.xl)
-        .frame(maxWidth: .infinity, minHeight: size.height - 120)
+        .frame(width: size.width)
         .staggersArrival()
     }
 
     private func details(_ book: MusicBook) -> some View {
         let place = app.storyPlace(book)
-        let alignment: HorizontalAlignment = isWide ? .leading : .center
+        let alignment = HorizontalAlignment.center
         return VStack(alignment: alignment, spacing: AppTheme.Space.l) {
             VStack(alignment: alignment, spacing: AppTheme.Space.s) {
                 Text(book.title)
                     .kidsHeading(isWide ? 46 : 36)
-                    .multilineTextAlignment(isWide ? .leading : .center)
+                    .multilineTextAlignment(.center)
                     .lineLimit(3)
                     .minimumScaleFactor(0.6)
                     .kidsWords()
@@ -328,7 +326,7 @@ struct KidsStoryView: View {
                     .accessibilityIdentifier("kids.story.title")
                 Text(([book.readBy, MusicTime.long(book.durationMs)].compactMap { $0 }).joined(separator: " · "))
                     .font(.title3.weight(.semibold))
-                    .multilineTextAlignment(isWide ? .leading : .center)
+                    .multilineTextAlignment(.center)
                     .foregroundStyle(KidsTheme.words.opacity(0.85))
             }
             .arrives(1)
@@ -520,9 +518,12 @@ struct KidsNowPlaying: View {
             KidsSleepChoices()
                 .environment(app)
                 #if os(iOS)
-                .presentationDetents([.medium, .large])
+                // A phone shows half a sheet; an iPad's sheet is as tall as its choices.
+                .presentationDetents(sizeClass == .compact ? [.medium, .large] : [.large])
                 #endif
         }
+        // A place of its own, so that its buttons keep their names.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("kids.player")
     }
 
