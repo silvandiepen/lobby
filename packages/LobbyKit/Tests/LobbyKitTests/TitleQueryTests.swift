@@ -173,11 +173,14 @@ import Testing
 
     @Test func answersThreeThousandTitlesQuickly() {
         let genres = ["Drama", "Comedy", "Action", "Animation", "Horror", "Family"]
-        let items = (0..<3_000).map { index in
-            Self.film(
-                "t\(index)", year: 1950 + index % 75, minutes: 20 + index % 160, width: index % 7 == 0 ? 3840 : 1920,
-                languages: index % 3 == 0 ? ["eng", "fre"] : ["eng"], daysAgo: index % 500, genres: [genres[index % 6]],
-                rating: index % 4 == 0 ? 5 + Double(index % 50) / 10 : nil)
+        // Each value on its own line: as one expression, Xcode 26.6's type checker gave up on it.
+        let items = (0..<3_000).map { (index: Int) -> Item in
+            let width: Int = index % 7 == 0 ? 3840 : 1920
+            let languages: [String] = index % 3 == 0 ? ["eng", "fre"] : ["eng"]
+            let rating: Double? = index % 4 == 0 ? 5 + Double(index % 50) / 10 : nil
+            return Self.film(
+                "t\(index)", year: 1950 + index % 75, minutes: 20 + index % 160, width: width,
+                languages: languages, daysAgo: index % 500, genres: [genres[index % 6]], rating: rating)
         }
         let catalogue = Catalogue(items: items)
         let context = TitleQueryContext(catalogue: catalogue, now: Self.now)

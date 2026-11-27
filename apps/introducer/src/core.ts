@@ -104,7 +104,7 @@ export interface Ground {
   read: (key: string) => Promise<unknown>;
   write: (key: string, value: unknown) => Promise<void>;
   remove: (key: string) => Promise<void>;
-  /** Asks to be woken (`Introducer.woke`). */
+  /** Asks to be woken (`Introducer.woke`) at `at` at the latest: the earliest wish holds. */
   wakeAt: (at: number) => Promise<void>;
   now: () => number;
 }
@@ -337,22 +337,29 @@ export class Introducer {
   woke(): Promise<void> {
     return this.inTurn(async () => {
       const now = this.ground.now();
-      let waiting = false;
+      let next = Infinity;
       for (const line of this.ground.lines()) {
         const state = line.state();
         if (!state || (state.kind === "box" && state.signedIn)) continue;
         if (this.isLate(state, now)) line.close(CLOSED.late, "late");
-        else waiting = true;
+        else next = Math.min(next, this.dueAt(state));
       }
-      if (waiting) await this.ground.wakeAt(now + this.limits.helloMs);
+      // When the first of them is late, not a whole limit from now: that would let a line stay
+      // up to twice as long as it may.
+      if (next !== Infinity) await this.ground.wakeAt(next + 1);
     });
   }
 
-  private isLate(state: LineState, now: number): boolean {
-    if (state.kind === "box" && state.signedIn) return false;
+  /** Until when a line may stay as it is: a box that signed in has no limit. */
+  private dueAt(state: LineState): number {
+    if (state.kind === "box" && state.signedIn) return Infinity;
     const { helloMs, deviceMs, pairingMs } = this.limits;
     const most = !state.signedIn ? helloMs : state.kind === "pairing" ? pairingMs : deviceMs;
-    return now - state.at > most;
+    return state.at + most;
+  }
+
+  private isLate(state: LineState, now: number): boolean {
+    return now > this.dueAt(state);
   }
 
   private states(): LineState[] {

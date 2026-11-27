@@ -13,10 +13,18 @@ import {
   makeMkv,
   slowFfmpeg,
   srt,
+  startMsOf,
   waitFor,
 } from "./playback-support.ts";
 import { makeTempDir, makeVideo, removeDir } from "./support/media.ts";
 import { block, writePgs } from "./support/pgs.ts";
+
+/** A pattern for a WebVTT cue time under an hour, as ffmpeg writes it: `00:01.023`. */
+function cueTime(ms: number): string {
+  const minutes = String(Math.floor(ms / 60_000)).padStart(2, "0");
+  const seconds = String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0");
+  return `${minutes}:${seconds}\\.${String(ms % 1000).padStart(3, "0")}`;
+}
 
 interface ErrorBody {
   error: { code: string; message: string };
@@ -302,8 +310,12 @@ describe("the playback routes", () => {
       const embedded = await app.request("/v1/assets/film/subtitles/e3.vtt");
       expect(embedded.status).toBe(200);
       expect(embedded.headers.get("Content-Type")).toBe("text/vtt; charset=UTF-8");
+      // On the prepared copy's clock, which starts where the file's first packet is.
+      const shift = -startMsOf(asset.path);
       expect(await embedded.text()).toMatch(
-        /^WEBVTT\n\n00:01\.000 --> 00:02\.000\nEmbedded eng 1\n/,
+        new RegExp(
+          `^WEBVTT\n\n${cueTime(1000 + shift)} --> ${cueTime(2000 + shift)}\nEmbedded eng 1\n`,
+        ),
       );
       const sidecar = await (await app.request("/v1/assets/film/subtitles/s7.vtt")).text();
       expect(sidecar).toContain("Café crème 1");

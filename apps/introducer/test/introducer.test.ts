@@ -377,12 +377,21 @@ for (const [name, start] of [
       expect(await enter(two).next()).toMatchObject({ t: "ready" });
     });
 
-    it("sends away who does not sign in", async () => {
+    it("sends away who does not sign in, each ten seconds after it came", async () => {
+      const first = new End(`${at.url}/v1/box/${id}`);
+      ends.push(first);
+      expect(await first.next()).toMatchObject({ t: "challenge" });
+      await new Promise((resolve) => setTimeout(resolve, 4_000));
       const end = new End(`${at.url}/v1/box/${id}`);
       ends.push(end);
       expect(await end.next()).toMatchObject({ t: "challenge" });
+      expect(await first.next(25_000)).toBe(CLOSED.late);
+      const firstGone = Date.now();
       expect(await end.next(25_000)).toBe(CLOSED.late);
-    }, 40_000);
+      // Four seconds after the first, as it came four seconds later; not when the introducer
+      // would look again, a whole ten seconds after it sent the first away.
+      expect(Date.now() - firstGone).toBeLessThan(8_000);
+    }, 60_000);
   });
 }
 
