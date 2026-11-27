@@ -28,9 +28,15 @@ const THEME =
   "0.22*sin(2*PI*t*(220*pow(2,mod(floor(t*4)*5,12)/12)))" +
   "+0.18*sin(2*PI*t*(330*pow(2,mod(floor(t*2)*7,12)/12)))" +
   "+0.12*sin(2*PI*t*(880*pow(2,mod(floor(t*8)*3,7)/12)))*lt(mod(t,0.25),0.12)";
+/**
+ * The credits' music, with a beat of its own. Two held notes alone change too little from one
+ * frame to the next: their fingerprints matched in about half the frames, so where the credits
+ * were found to start moved by up to two seconds with the AAC encoder of the ffmpeg at hand.
+ */
 const CREDITS =
   "0.25*sin(2*PI*t*(262*pow(2,mod(floor(t*3)*4,9)/12)))" +
-  "+0.2*sin(2*PI*t*(392*pow(2,mod(floor(t*1.5)*5,8)/12)))";
+  "+0.2*sin(2*PI*t*(392*pow(2,mod(floor(t*1.5)*5,8)/12)))" +
+  "+0.12*sin(2*PI*t*(660*pow(2,mod(floor(t*6)*5,8)/12)))*lt(mod(t,0.2),0.1)";
 
 const OTHER_THEME =
   "0.22*sin(2*PI*t*(196*pow(2,mod(floor(t*5)*3,10)/12)))" +
@@ -75,7 +81,10 @@ export function makeEpisode(
       "error",
       "-y",
       ...(options.video
-        ? ["-f", "lavfi", "-i", `color=c=black:size=64x36:rate=1:duration=${String(seconds)}`]
+        ? // At a frame rate real episodes have. At one picture a second, ffmpeg 6.1 (Ubuntu
+          // 24.04's) cannot read the picture's format when it seeks into the MKV, and then
+          // shifts the sound's times by half a minute.
+          ["-f", "lavfi", "-i", `color=c=black:size=64x36:rate=24:duration=${String(seconds)}`]
         : []),
       "-filter_complex",
       graph,
