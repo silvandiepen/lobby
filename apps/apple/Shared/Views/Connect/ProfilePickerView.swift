@@ -10,10 +10,54 @@ struct ProfilePickerView: View {
     /// Pressing a viewer changes their picture, until Done.
     @State private var isChoosingPictures = false
     @State private var picking: Profile?
+    @State private var showsSettings = false
     @Environment(\.motion) private var motion
     @ScaledMetric(relativeTo: .title2) private var avatarSize: CGFloat = 96
 
     var body: some View {
+        NavigationStack {
+            page
+                .toolbar { bar }
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+        }
+        #if os(iOS)
+        .sheet(isPresented: $showsSettings) { SettingsView() }
+        #endif
+    }
+
+    /// Back to whoever was watching, when somebody was, and the servers and Settings: the same
+    /// ways out as the viewer menu in the library.
+    @ToolbarContentBuilder
+    private var bar: some ToolbarContent {
+        if let viewer = app.viewerToReturnTo, !isChoosingPictures {
+            ToolbarItem(placement: .navigation) {
+                Button("Back to \(viewer.name)", systemImage: "chevron.backward") { app.returnToLibrary() }
+                    .keyboardShortcut(.cancelAction)
+                    .help("Back to \(viewer.name)")
+                    .accessibilityIdentifier("profile.back")
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Menu {
+                ServerChoices()
+                #if os(macOS)
+                SettingsLink {
+                    Label("Settings…", systemImage: AppSymbol.settings)
+                }
+                #else
+                Button("Settings…", systemImage: AppSymbol.settings) { showsSettings = true }
+                    .accessibilityIdentifier("profile.settings")
+                #endif
+            } label: {
+                Label("Settings", systemImage: AppSymbol.settings)
+            }
+            .accessibilityIdentifier("profile.more")
+        }
+    }
+
+    private var page: some View {
         ScrollView {
             VStack(spacing: AppTheme.Space.xl) {
                 VStack(spacing: AppTheme.Space.s) {
@@ -23,7 +67,7 @@ struct ProfilePickerView: View {
                         .accessibilityAddTraits(.isHeader)
                     ServerSwitcherButton()
                 }
-                .padding(.top, AppTheme.Space.xl * 2)
+                .padding(.top, AppTheme.Space.xl)
 
                 if app.profiles.isEmpty {
                     empty

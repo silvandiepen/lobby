@@ -17,12 +17,12 @@ final class LibraryUITests: LobbyUITestCase {
         XCTAssertFalse(element("shelf.continueWatching").exists, "Nobody watched anything yet.")
         attachScreenshot("library")
 
-        // A film Apple devices cannot decode, and the server converts: it says what happens
-        // before it plays.
+        // A film Apple devices cannot decode, and the server converts: it plays, and a viewer
+        // is not told how (only a server admin's page says so).
         let movies = shelf("movies")
         movies.buttons["Old Format, 2001"].tap()
         waitFor(app.buttons["detail.play"], "Play, of a film the server converts")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Lobby Server converts it")).firstMatch.exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Lobby Server converts it")).firstMatch.exists)
         XCTAssertFalse(element("detail.unavailable").exists)
         app.navigationBars.buttons.firstMatch.tap()
 

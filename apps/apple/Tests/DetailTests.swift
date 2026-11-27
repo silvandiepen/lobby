@@ -38,15 +38,27 @@ import Testing
         #expect(request.startPositionMs == 0)
     }
 
-    @Test func anMKVPlaysThroughTheServerAndSaysSo() {
+    @Test func anMKVPlaysThroughTheServerAndSaysSoToAServerAdmin() {
         let mkv = Make.file(.remux, container: "mkv", reason: "The file is MKV, which has to be repackaged as MP4.")
-        let action = PlayActionBuilder.action(for: Make.movie("brave", files: [mkv]), progress: nil, context: Make.context)
+        var admin = Make.context
+        admin.explainsPreparation = true
+        let action = PlayActionBuilder.action(for: Make.movie("brave", files: [mkv]), progress: nil, context: admin)
         guard case .play(let request, .play, let note?) = action else {
             Issue.record("Expected Play with a note, got \(action)")
             return
         }
         #expect(request.source == .prepared)
         #expect(note.contains("The file is MKV"))
+    }
+
+    @Test func aViewerIsNotToldAboutRepackaging() {
+        let mkv = Make.file(.remux, container: "mkv", reason: "The file is MKV, which has to be repackaged as MP4.")
+        let action = PlayActionBuilder.action(for: Make.movie("brave", files: [mkv]), progress: nil, context: Make.context)
+        guard case .play(let request, .play, nil) = action else {
+            Issue.record("Expected Play without a note, got \(action)")
+            return
+        }
+        #expect(request.source == .prepared)
     }
 
     @Test func anOldAVIShowsTheServersReason() {

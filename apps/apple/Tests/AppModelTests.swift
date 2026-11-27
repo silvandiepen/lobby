@@ -23,6 +23,20 @@ import Testing
         #expect(app.device?.role == .viewer)
     }
 
+    @Test func whoIsWatchingOpenedFromTheLibraryLeadsBackToTheSameViewer() async throws {
+        let first = try await test.launchPaired()
+        #expect(first.viewerToReturnTo == nil, "Nobody was watching yet: there is nobody to go back to.")
+
+        let app = try await test.launchPaired(as: "alex")
+        #expect(app.viewerToReturnTo == nil, "Not on Who is watching?")
+        app.chooseAnotherProfile()
+        #expect(app.phase == .chooseProfile)
+        #expect(app.viewerToReturnTo?.id == "alex")
+        app.returnToLibrary()
+        #expect(app.phase == .library)
+        #expect(app.activeProfile?.id == "alex")
+    }
+
     @Test func theLibraryIsBuiltFromTheCatalogue() async throws {
         let app = try await test.launchPaired(as: "alex")
         #expect(app.phase == .library)

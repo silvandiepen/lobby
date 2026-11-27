@@ -83,6 +83,9 @@ struct PlaybackContext: Hashable, Sendable {
     var serverIsOutOfReach = false
     /// False on the Apple TV, which keeps nothing: words about downloads mean nothing there.
     var keepsDownloads = true
+    /// A server admin's device: the note under Play says why a file is repackaged first. Others
+    /// learn it in the player, where it matters, if the wait is long enough to notice.
+    var explainsPreparation = false
 
     struct LocalCopyInfo: Hashable, Sendable {
         var assetID: String
@@ -150,7 +153,7 @@ enum PlayActionBuilder {
         let request = PlayRequest(
             item: item, show: show, file: file, source: decision == .direct ? .direct : .prepared,
             startPositionMs: start, durationMs: duration)
-        let note = decision == .direct ? nil : preparationNote(file)
+        let note = decision == .direct || !context.explainsPreparation ? nil : preparationNote(file)
         return .play(request, kind: kind(start: start, progress: progress), note: note)
     }
 
@@ -172,10 +175,10 @@ enum PlayActionBuilder {
 
     private static func preparationNote(_ file: MediaFile) -> String {
         if file.convertible == true {
-            return "This is an older format. Lobby Server converts it the first time it is played; starting takes a few seconds."
+            return "An older format: Lobby Server converts it the first time it is played."
         }
         let reason = file.playabilityReason.map { "\($0) " } ?? ""
-        return "\(reason)Lobby Server does that the first time it is played, which takes a moment."
+        return "\(reason)Lobby Server does that once, when it is first played."
     }
 
     private static func unavailable(file: MediaFile, decision: PlaybackDecision) -> PlayAction {
