@@ -1,0 +1,59 @@
+{
+  "order": 7,
+  "foreground": true,
+  "canPlay": true,
+  "profileId": "viewer-1",
+  "capabilities": [
+    "play",
+    "pause",
+    "resume",
+    "seek",
+    "skip",
+    "next",
+    "stop",
+    "setAudio",
+    "setSubtitle",
+    "setVolume",
+    "upNext"
+  ],
+  "player": {
+    "itemId": "film-a",
+    "assetId": "file-a",
+    "profileId": "viewer-1",
+    "status": "playing",
+    "positionMs": 600000,
+    "ageMs": 40,
+    "durationMs": 5400000,
+    "rate": 1,
+    "audioTracks": [
+      {
+        "id": "0",
+        "label": "English 5.1",
+        "language": "eng"
+      },
+      {
+        "id": "1",
+        "label": "Nederlands",
+        "language": "dut"
+      }
+    ],
+    "audioTrackId": "0",
+    "subtitleTracks": [
+      {
+        "id": "s2",
+        "label": "Nederlands",
+        "language": "dut"
+      }
+    ],
+    "subtitleTrackId": null,
+    "volume": 0.5,
+    "nextItemId": null,
+    "queue": [],
+    "upNext": {
+      "kind": "episode",
+      "itemId": "film-b",
+      "countdownMs": 8000,
+      "suggestions": []
+    }
+  }
+}

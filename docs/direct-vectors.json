@@ -1,0 +1,118 @@
+{
+  "about": "Test vectors for docs/api.md, Direct. All binary values are base64url without padding. Ed25519 signatures are deterministic in Node; CryptoKit's are not, so verify them.",
+  "keys": {
+    "boxSeed": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA",
+    "boxKey": "ebVWLo_mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ",
+    "boxId": "ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g",
+    "ringSeed": "ISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0-P0A",
+    "ringKey": "5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA",
+    "boxAgreementPrivate": "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2A",
+    "boxAgreementKey": "ZLEBsdC-WocEvQePmJUAH8A-jp-VIvGI3RKNmEbUhGY",
+    "deviceAgreementPrivate": "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1-f4A",
+    "deviceAgreementKey": "JE_juWPomd0pW6_84kjTUw86mnR5ugYwAmgOv-etrUk",
+    "shared": "aQDHN910v5dQKjBxC0mHatLOGgNlNKk44k-iSBJd1FM"
+  },
+  "enrolment": {
+    "secret": "0LV69w-nJ7ZzbE9KyxfvCHD0gtGdbk1i8_hflDIJmCk"
+  },
+  "introducer": {
+    "nonce": "gYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6A",
+    "device": {
+      "message": "lobby-introducer/1|device|ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g|gYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6A",
+      "signature": "85d4rE4RPvP3qRBcNGMIJNoQ4O71dIO-TWdgW3qztMzRuiM1WVPFFgamFhCLXfqJfKG2plwZPuYrjn-Yo7nNCQ"
+    },
+    "box": {
+      "message": "lobby-introducer/1|box|ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g|gYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6A",
+      "signature": "fNOMPMdTxD1lEnTPDPizNutVnj63uNSCR35MrCmwdlm_i-P0k4oyhDEnnO4y256SFjMIjsTHVhRiuMPUglipAg"
+    }
+  },
+  "introduction": {
+    "session": "oaKjpKWmp6ipqqusra6vsA",
+    "deviceNonce": "sbKztLW2t7i5uru8vb6_wMHCw8TFxsfIycrLzM3Oz9A",
+    "boxNonce": "0dLT1NXW19jZ2tvc3d7f4OHi4-Tl5ufo6err7O3u7_A",
+    "hello": {
+      "key": "BEkAYzgGJddo8ipwJ7G7mwLocCywndrvulgDEi93EDA",
+      "aad": "lobby-direct/1|ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g|5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA|oaKjpKWmp6ipqqusra6vsA|d2b|0",
+      "plain": "{\"t\":\"hello\",\"nonce\":\"sbKztLW2t7i5uru8vb6_wMHCw8TFxsfIycrLzM3Oz9A\"}",
+      "nonce": "AQIDBAUGBwgJCgsM",
+      "sealed": "AQIDBAUGBwgJCgsMbdb1GuhNr6GliSLqFhrHBn0AVqzaVZrbvwZKLt9pmAcfYCnMiGllqXElaniHBQKlS66_8Ba3KkDss1dCSME5unlUyN8hyxhpNsFkHCkm9TWMUAE"
+    },
+    "welcome": {
+      "key": "ilhQq5PtmY6kXgFZGfATpes_hhGQ35mnvpdSgac_EuA",
+      "aad": "lobby-direct/1|ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g|5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA|oaKjpKWmp6ipqqusra6vsA|b2d|0",
+      "plain": "{\"t\":\"welcome\",\"nonce\":\"0dLT1NXW19jZ2tvc3d7f4OHi4-Tl5ufo6err7O3u7_A\",\"fingerprints\":[\"BwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSY\"],\"ice\":{\"stun\":[{\"host\":\"stun.example.com\",\"port\":3478}],\"turn\":null}}",
+      "nonce": "AgMEBQYHCAkKCwwN",
+      "sealed": "AgMEBQYHCAkKCwwN6pCNp3WpH6OKH8I1coZB0YiU6-a51kifj4DXSfCNsv6_R_nCKg-8PQURh7ENeFkMoO3Uph9psQJkC4LwvQEXYViwDaS-c2-CleqGjTYRB04DSKfZ81_bFlrEi96ToBE1FfhHbWY85lf1fTexz68IF_E-gXxjRtEghXG4siJALcnvUMt5JL8r2O9M3FE0XS12Blb80wb_CLRPM-ClEmERACGtaUXm682y96y1QLy-dZ5YxptW_993xuHZoCgGE62vJuClMy_2sMiLQjhu25Upubrb3l0K3EhCpg"
+    },
+    "offer": {
+      "key": "hpMgXDE_lHQhUq7AnEkG64a6_uabKN2GcCVq6055yxA",
+      "aad": "lobby-direct/1|ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g|5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA|oaKjpKWmp6ipqqusra6vsA|d2b|1",
+      "plain": "{\"t\":\"offer\",\"sdp\":\"a=ice-ufrag:abcd\\r\\na=ice-pwd:abcdefghijklmnopqrstuv\\r\\na=candidate:1 1 UDP 2122317823 127.0.0.1 9 typ host\\r\\n\"}",
+      "nonce": "AwQFBgcICQoLDA0O",
+      "sealed": "AwQFBgcICQoLDA0Ojbs2BSD86j50SV3ZuLDuh2PxNPIbc4OQxGT3oOtK9BTQwqOkL5IJ8eJv7aXavSdmfPy0Ry4bI32zejpMWMdrRY6gosARR-zzuEWpOwvU-L3RDBhOktfLUmPorkqXsrNwd0vF0-YmMGN307BDV40_vHjmtm6oFBzbrYVxLVtL0yEwU7jXBiuhv6jECFmBwhqM19V1T_w"
+    },
+    "answer": {
+      "key": "ZlClvTxHIphHPotB3MoADVrnAyMFa8YT4Qx6UgieBY8",
+      "aad": "lobby-direct/1|ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g|5_FioQvsVZr-oZXk3OhLaVaNXSywlj60RsBoXisX8vA|oaKjpKWmp6ipqqusra6vsA|b2d|1",
+      "plain": "{\"t\":\"answer\",\"sdp\":\"a=ice-ufrag:abcd\\r\\na=ice-pwd:abcdefghijklmnopqrstuv\\r\\na=candidate:1 1 UDP 2122317823 127.0.0.1 9 typ host\\r\\n\"}",
+      "nonce": "BAUGBwgJCgsMDQ4P",
+      "sealed": "BAUGBwgJCgsMDQ4Pc67YHSoUN1yoFWq5VTyWavv7xDoZWnFxXOBogiJ8WWKIrapG42I76Al1NlbY-on8ugZ7mfAO3RjCZTJBxit4VHfA_yY73Vf7splbAWH2bV6bIAU5x-MT-3Gh2TcWIfG633cpCv9zSJN5e6TZ15V9hTS0Cx1qx3bBpdKgeDTisijPX14knlbkUnljbw6iD-jCL2JqlPYN"
+    }
+  },
+  "connection": {
+    "alpn": "lobby-direct/1",
+    "exporterLabel": "EXPORTER-lobby-direct-1",
+    "exporter": "BQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQ",
+    "message": "lobby-direct/1|connect|ZbYGc9btiEvwHCwiLYKtoHQPKawzVdapJcgfF_R6J7g|BQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQ",
+    "signature": "_MweOfUFz-JOHS6-_4mVVlHgGA3OFm5liSJydz4DxzYqOkz-xNriBv90DmbTir5nJg68J4T6yOGtn_qwwenHCw",
+    "frame": "TERBMefxYqEL7FWa_qGV5NzoS2lWjV0ssJY-tEbAaF4rF_Lw_MweOfUFz-JOHS6-_4mVVlHgGA3OFm5liSJydz4DxzYqOkz-xNriBv90DmbTir5nJg68J4T6yOGtn_qwwenHCw"
+  },
+  "pairing": {
+    "code": "0123456789ABCDEF",
+    "scrypt": {
+      "salt": "lobby-pair/1|code",
+      "N": 32768,
+      "r": 8,
+      "p": 1,
+      "length": 64
+    },
+    "room": "-YT2-bbZyZ1-mzbGoTCOLg",
+    "codeKey": "1Yd2wFFVOd5msm_-hhnFPtOYrFtg-tPikZ_k0ttLmhQ",
+    "keys": {
+      "d2b": "eerdQIiykHMM4opKpyzIlIjOWBs58gQvnK5JK-jV7sE",
+      "b2d": "ky7OJawygLa1X366O_NEwJ3RmZWwB-PGJAyzztIk0eY"
+    },
+    "session": "oaKjpKWmp6ipqqusra6vsA",
+    "commitment": "cHXBV06EwQcOS_6SqaklYKUUG_a9bv_zE5SybVN-qMs",
+    "start": {
+      "key": "eerdQIiykHMM4opKpyzIlIjOWBs58gQvnK5JK-jV7sE",
+      "aad": "lobby-pair/1|-YT2-bbZyZ1-mzbGoTCOLg|oaKjpKWmp6ipqqusra6vsA|start",
+      "plain": "{\"commitment\":\"cHXBV06EwQcOS_6SqaklYKUUG_a9bv_zE5SybVN-qMs\"}",
+      "nonce": "BQYHCAkKCwwNDg8Q",
+      "sealed": "BQYHCAkKCwwNDg8QpewDU3D0ZhkX29xpAJhzNF_lmlZNdeFaOFn4KFrq1uTfxw7L1-HrdH7Yr9btRY1LqUUUZs1hRLDnK4uYnI5dCJBYpFvVQk44fFQb9A"
+    },
+    "deviceName": "Télé",
+    "platform": "tvos",
+    "transcript": "VzShU7kEHBaWzGVXpqHkPmg3xajxYTczVC_-E0cKEbg",
+    "sessionKeys": {
+      "d2b": "cDH0JPuflx_L6npjaVEr0uy_pxXDTuBLXLO2XK2RsjU",
+      "b2d": "igIYWpg7YbOPF7Ann49MkWSzXS7ARGVoEHe7SxH15eE"
+    },
+    "secret": "nvhppcnI4NuplHlYG6Jjq7TIAiEF8DCV5tVRFCtZbvU",
+    "comparison": "432160",
+    "waiting": {
+      "key": "igIYWpg7YbOPF7Ann49MkWSzXS7ARGVoEHe7SxH15eE",
+      "aad": "lobby-pair/1|-YT2-bbZyZ1-mzbGoTCOLg|oaKjpKWmp6ipqqusra6vsA|waiting",
+      "plain": "{\"status\":\"pending\",\"expiresAt\":1795530600000}",
+      "nonce": "BgcICQoLDA0ODxAR",
+      "sealed": "BgcICQoLDA0ODxARkiFMacqHm72BR_PsfTFjFluobidFzmX-gFq1PXrndo7wfXWO_OpZqCrGOGFJ-4y9wW5fhEvWcFLxZ8KMULc"
+    },
+    "collect": {
+      "key": "cDH0JPuflx_L6npjaVEr0uy_pxXDTuBLXLO2XK2RsjU",
+      "aad": "lobby-pair/1|-YT2-bbZyZ1-mzbGoTCOLg|oaKjpKWmp6ipqqusra6vsA|collect",
+      "plain": "{\"nonce\":\"CQoLDA0ODxAREhMUFRYXGA\"}",
+      "nonce": "BwgJCgsMDQ4PEBES",
+      "sealed": "BwgJCgsMDQ4PEBES5TS6XmEu22GFSn5vd_FFgWdn8KJqG6C0AjRVEI_iP0zmoEuvlNlqzzonLgc6devDEZI"
+    }
+  }
+}

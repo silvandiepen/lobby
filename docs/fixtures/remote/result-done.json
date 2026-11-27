@@ -1,0 +1,40 @@
+{
+  "commandId": "command-1",
+  "status": "done",
+  "code": null,
+  "player": {
+    "itemId": "film-a",
+    "assetId": "file-a",
+    "profileId": "viewer-1",
+    "status": "playing",
+    "positionMs": 600000,
+    "ageMs": 40,
+    "durationMs": 5400000,
+    "rate": 1,
+    "audioTracks": [
+      {
+        "id": "0",
+        "label": "English 5.1",
+        "language": "eng"
+      },
+      {
+        "id": "1",
+        "label": "Nederlands",
+        "language": "dut"
+      }
+    ],
+    "audioTrackId": "0",
+    "subtitleTracks": [
+      {
+        "id": "s2",
+        "label": "Nederlands",
+        "language": "dut"
+      }
+    ],
+    "subtitleTrackId": null,
+    "volume": 0.5,
+    "nextItemId": null,
+    "queue": [],
+    "upNext": null
+  }
+}

@@ -1,0 +1,494 @@
+name: Lobby
+
+# One project for every Apple target: iPhone and iPad, Mac and Apple TV, each in its own folder
+# next to Shared/.
+#
+#   Shared/   platform-neutral SwiftUI: app model, view models, screens, theme
+#   iOS/      what only iPhone and iPad have: the entry point, tab layout, AVPlayerViewController
+#   tvOS/     what only the Apple TV has: its screens, focus, player. tvOS/Logic has no screens and is
+#             also built into the Mac app, so that the Mac unit tests (TVTests) can run it
+#   macOS/    what only the Mac has: the entry point, its window, menus and keys, AVPlayerView
+#
+# Never edit Lobby.xcodeproj: it is generated from this file (`xcodegen generate`) and git-ignored.
+
+options:
+  bundleIdPrefix: mt.sil
+  deploymentTarget:
+    iOS: "18.0"
+    macOS: "15.0"
+    tvOS: "18.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    # Your Apple team id, from the environment when the project is generated:
+    #   LOBBY_TEAM=ABCDE12345 npm run apple:generate
+    # Unset, the apps build for the simulator and the Mac without signing (CONTRIBUTING.md).
+    DEVELOPMENT_TEAM: ${LOBBY_TEAM}
+    CODE_SIGN_STYLE: Automatic
+    # The version people see; CURRENT_PROJECT_VERSION is the build, raised before every upload
+    # (docs/release.md, "Releasing the Apple apps").
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: 1
+    # The Keychain group the iPhone and iPad app shares with its notification service: the keys
+    # servers seal pushes with through the relay (docs/decisions.md, "Push through a relay").
+    LOBBY_PUSH_KEYCHAIN_GROUP: $(AppIdentifierPrefix)mt.sil.lobby.push
+
+packages:
+  LobbyKit:
+    path: ../../packages/LobbyKit
+
+targets:
+  Lobby:
+    type: application
+    platform: iOS
+    sources:
+      - Shared
+      - iOS
+    dependencies:
+      - package: LobbyKit
+      # Opens what servers seal for the lock screen, pushed through the relay.
+      - target: LobbyNotificationService
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby
+        PRODUCT_NAME: Lobby
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Drawn by Scripts/make-icons.py.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # The kids icon, for while a kid is the viewer (Shared/Services/KidsIcon.swift).
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: AppIcon-Kids
+    info:
+      path: iOS/Info.plist
+      properties:
+        CFBundleDisplayName: Lobby
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        # Where the push keys are, for the app and its notification service alike.
+        LobbyPushKeychainGroup: $(LOBBY_PUSH_KEYCHAIN_GROUP)
+        # lobby://pair…, the code a manager shows for pairing from outside.
+        CFBundleURLTypes:
+          - CFBundleURLName: mt.sil.lobby
+            CFBundleURLSchemes: [lobby]
+        NSCameraUsageDescription: Lobby scans the code on another screen when a device is paired from outside.
+        NSFaceIDUsageDescription: Lobby asks for a grown-up before it leaves the kids screens.
+        # Only for a kids viewer's places a grown-up chose (docs/kids-control.md, §7).
+        NSLocationWhenInUseUsageDescription: Lobby checks only whether this device is at a place a grown-up chose, such as school. It never sends where it is.
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # Sound keeps playing when the screen locks or the app is behind another one.
+        UIBackgroundModes:
+          - audio
+        NSLocalNetworkUsageDescription: Lobby looks for your Lobby Server on your home network and connects to it, to browse and play your films and series.
+        # What the app looks for on the network (Bonjour). Without this entry iOS shows nothing
+        # and never asks.
+        NSBonjourServices:
+          - _lobby._tcp
+        NSAppTransportSecurity:
+          # Plain HTTP to a server on the home network (an IP address or a .local name), which is
+          # how devices reach the server at home (docs/decisions.md, "Reaching the server").
+          NSAllowsLocalNetworking: true
+          # Plain HTTP to the server's tailnet name. Tailscale encrypts the traffic underneath;
+          # HTTPS in front of it (`tailscale serve`) would let this exception go.
+          NSExceptionDomains:
+            ts.net:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+    entitlements:
+      path: iOS/Lobby.entitlements
+      properties:
+        # A child's question, and a device that waits to be let in, reach a grown-up's device
+        # when the app does not run (docs/operations.md, Push).
+        aps-environment: development
+        # The app's own items first, so they stay where they always were; then the push keys,
+        # which the notification service reads too.
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)mt.sil.lobby
+          - $(LOBBY_PUSH_KEYCHAIN_GROUP)
+
+  # Opens what a server sealed through the push relay, so the lock screen shows "Robin wants to
+  # watch" with Watch, Listen and No, while the relay and Apple see only "A request is waiting"
+  # (docs/decisions.md, "Push through a relay"). Links only LobbyPush: an extension gets little
+  # memory.
+  LobbyNotificationService:
+    type: app-extension
+    platform: iOS
+    sources:
+      - NotificationService
+    dependencies:
+      - package: LobbyKit
+        product: LobbyPush
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.notifications
+        PRODUCT_NAME: LobbyNotificationService
+        TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: NotificationService/Info.plist
+      properties:
+        CFBundleDisplayName: Lobby
+        # The App Store wants the same version and build as the app's.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LobbyPushKeychainGroup: $(LOBBY_PUSH_KEYCHAIN_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    entitlements:
+      path: NotificationService/LobbyNotificationService.entitlements
+      properties:
+        keychain-access-groups:
+          - $(LOBBY_PUSH_KEYCHAIN_GROUP)
+
+  LobbyTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: Lobby
+      - package: LobbyKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+  LobbyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    dependencies:
+      - target: Lobby
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.uitests
+        GENERATE_INFOPLIST_FILE: YES
+
+  LobbyMac:
+    type: application
+    platform: macOS
+    sources:
+      - Shared
+      - macOS
+      - tvOS/Logic
+      # Colours are the same on every platform.
+      - iOS/Assets.xcassets
+    dependencies:
+      - package: LobbyKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby
+        PRODUCT_NAME: Lobby
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_HARDENED_RUNTIME: YES
+    info:
+      path: macOS/Info.plist
+      properties:
+        CFBundleDisplayName: Lobby
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleURLTypes:
+          - CFBundleURLName: mt.sil.lobby
+            CFBundleURLSchemes: [lobby]
+        LSApplicationCategoryType: public.app-category.entertainment
+        # Only for a kids viewer's places a grown-up chose (docs/kids-control.md, §7).
+        NSLocationUsageDescription: Lobby checks only whether this Mac is at a place a grown-up chose, such as school. It never sends where it is.
+        NSLocationWhenInUseUsageDescription: Lobby checks only whether this device is at a place a grown-up chose, such as school. It never sends where it is.
+        ITSAppUsesNonExemptEncryption: false
+        NSLocalNetworkUsageDescription: Lobby looks for your Lobby Server on your home network and connects to it, to browse and play your films and series.
+        # What the app looks for on the network (Bonjour). Without this entry iOS shows nothing
+        # and never asks.
+        NSBonjourServices:
+          - _lobby._tcp
+        NSAppTransportSecurity:
+          # The same two exceptions as on iPhone and iPad, for the same reasons.
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            ts.net:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+    entitlements:
+      path: macOS/Lobby.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        # Talks to Lobby Server.
+        com.apple.security.network.client: true
+        # The direct connection: UDP to Lobby Server, and the app's own server on this Mac for the
+        # player. Nothing listens for others.
+        com.apple.security.network.server: true
+        # Files and folders a manager picks or drops to upload, read while the app is open.
+        com.apple.security.files.user-selected.read-only: true
+        # The device credential lives in the data protection Keychain, which on the Mac needs
+        # an application identifier: a signed build. See LobbyKit's KeychainCredentialStore.
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)mt.sil.lobby
+        # Push for children's questions and devices waiting to be let in.
+        com.apple.developer.aps-environment: development
+        # A kids viewer's places, in kids mode on this Mac.
+        com.apple.security.personal-information.location: true
+
+  LobbyMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests
+      - MacTests
+      - TVTests
+      # The real server, introducer and lobby-direct, for the app's own end-to-end test.
+      - path: ../../packages/LobbyKit/Tests/LobbyDirectTests/Support.swift
+        group: MacTests
+    dependencies:
+      - target: LobbyMac
+      - package: LobbyKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.mactests
+        GENERATE_INFOPLIST_FILE: YES
+        # The app is called Lobby, not LobbyMac like its target.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Lobby.app/Contents/MacOS/Lobby
+        BUNDLE_LOADER: $(TEST_HOST)
+
+  LobbyMacUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - MacUITests
+      - path: UITests/TestServers.swift
+    dependencies:
+      - target: LobbyMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.macuitests
+        GENERATE_INFOPLIST_FILE: YES
+
+  LobbyTV:
+    type: application
+    platform: tvOS
+    sources:
+      - path: Shared
+        excludes:
+          # The screens of iPhone, iPad and Mac. What both draw is in Components and Player.
+          - Views/Avatars
+          - Views/Connect
+          - Views/Settings
+          - Views/Library
+          - Views/Manage
+          - Views/Kids
+          # Grown-ups answer children's questions on their phone, iPad or Mac.
+          - Views/KidsQuestions
+          - Services/GrownUpGate.swift
+          - State/OutsideModel.swift
+          - State/AppleTVsModel.swift
+          - State/HouseholdsModel.swift
+          - Views/Components/ColorSwatches.swift
+          - Views/Components/ContinueCardView.swift
+          - Views/Components/LobbySheet.swift
+          - Views/Components/PosterTile.swift
+          - Views/Detail/DetailHeader.swift
+          - Views/Detail/DownloadControls.swift
+          - Views/Detail/MovieDetailView.swift
+          - Views/Detail/SendToDevice.swift
+          - Views/Detail/ShowDetailView.swift
+          - Views/Detail/TrailerSheet.swift
+          - Views/Remote
+          # The iPhone, iPad and Mac's music screens; the TV has its own.
+          - Views/Music
+          - Views/Stats
+      - tvOS
+      # Colours are the same on every platform.
+      - iOS/Assets.xcassets
+    dependencies:
+      - package: LobbyKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby
+        PRODUCT_NAME: Lobby
+        TARGETED_DEVICE_FAMILY: "3"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Drawn by Scripts/make-icons.py from the portal artwork, like the others.
+        ASSETCATALOG_COMPILER_APPICON_NAME: App Icon & Top Shelf Image
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: AppIcon-Kids-TV
+    info:
+      path: tvOS/Info.plist
+      properties:
+        CFBundleDisplayName: Lobby
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        UIUserInterfaceStyle: Automatic
+        # Trailer opens the YouTube app, where it is there: tvOS has no web views.
+        LSApplicationQueriesSchemes: [youtube]
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        NSLocalNetworkUsageDescription: Lobby looks for your Lobby Server on your home network and connects to it, to browse and play your films and series.
+        NSBonjourServices:
+          - _lobby._tcp
+        NSAppTransportSecurity:
+          # The same two exceptions as on iPhone and iPad, for the same reasons.
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            ts.net:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+
+  # Walks the Apple TV app with the arrows, against the local Lobby Server (scheme LobbyTVUI).
+  LobbyTVUITests:
+    type: bundle.ui-testing
+    platform: tvOS
+    sources:
+      - TVUITests
+      - path: UITests/TestServers.swift
+    dependencies:
+      - target: LobbyTV
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.tvuitests
+        GENERATE_INFOPLIST_FILE: YES
+
+  # The same unit tests as the Mac's, on tvOS. They need a tvOS simulator to run.
+  LobbyTVTests:
+    type: bundle.unit-test
+    platform: tvOS
+    sources:
+      - path: Tests
+        excludes:
+          # The households and outside pages are screens of the iPhone, iPad and Mac; their
+          # models are not in the TV app. Tests of a single such screen elsewhere are `#if !os(tvOS)`.
+          - HouseholdsTests.swift
+          - OutsideTests.swift
+      - TVTests
+    dependencies:
+      - target: LobbyTV
+      - package: LobbyKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.tvtests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Lobby.app/Lobby
+        BUNDLE_LOADER: $(TEST_HOST)
+
+schemes:
+  LobbyTV:
+    build:
+      targets:
+        LobbyTV: all
+        LobbyTVTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - LobbyTVTests
+      commandLineArguments:
+        "-lobby-namespace unit-tests": true
+  # The focus walk of the Apple TV, against a local Lobby Server like the iPhone's UI tests.
+  LobbyTVUI:
+    build:
+      targets:
+        LobbyTV: all
+        LobbyTVUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - LobbyTVUITests
+      preActions:
+        - name: Start the local Lobby Server for the UI tests
+          settingsTarget: LobbyTV
+          script: |
+            mkdir -p "${PROJECT_DIR}/build"
+            "${PROJECT_DIR}/Scripts/ui-test-server.sh" start > "${PROJECT_DIR}/build/ui-test-server.log" 2>&1 || true
+      postActions:
+        - name: Stop the local Lobby Server
+          settingsTarget: LobbyTV
+          script: |
+            "${PROJECT_DIR}/Scripts/ui-test-server.sh" stop >> "${PROJECT_DIR}/build/ui-test-server.log" 2>&1 || true
+  LobbyMac:
+    build:
+      targets:
+        LobbyMac: all
+        LobbyMacTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - LobbyMacTests
+      commandLineArguments:
+        "-lobby-namespace unit-tests": true
+  # The Mac UI tests click through the real window. macOS asks the person at the Mac to allow
+  # UI testing the first time (a password prompt), so they are a scheme of their own and are
+  # not part of `xcodebuild test -scheme LobbyMac`. They need a signed build (the Keychain).
+  LobbyMacUI:
+    build:
+      targets:
+        LobbyMac: all
+        LobbyMacUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - LobbyMacUITests
+      preActions:
+        - name: Start the local Lobby Server for the UI tests
+          settingsTarget: LobbyMac
+          script: |
+            mkdir -p "${PROJECT_DIR}/build"
+            "${PROJECT_DIR}/Scripts/ui-test-server.sh" start > "${PROJECT_DIR}/build/ui-test-server.log" 2>&1 || true
+      postActions:
+        - name: Stop the local Lobby Server
+          settingsTarget: LobbyMac
+          script: |
+            "${PROJECT_DIR}/Scripts/ui-test-server.sh" stop >> "${PROJECT_DIR}/build/ui-test-server.log" 2>&1 || true
+  Lobby:
+    build:
+      targets:
+        Lobby: all
+        LobbyTests: [test]
+        LobbyUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - LobbyTests
+        - LobbyUITests
+      # The unit tests are hosted by the app. This keeps the hosting app away from the state of
+      # the copy a person uses on the same simulator: its own preferences, Keychain service and
+      # files (see AppEnvironment.live).
+      commandLineArguments:
+        "-lobby-namespace unit-tests": true
+      # The UI tests drive the app against a real Lobby Server on this Mac, started here with a
+      # temporary data folder and a few ffmpeg-made files. See Scripts/ui-test-server.sh.
+      #
+      # The tests that pair need the Keychain, which a simulator build has only when it is
+      # signed. With CODE_SIGNING_ALLOWED=NO they skip themselves and say so; run
+      # `xcodebuild test` without that flag to run them all.
+      preActions:
+        - name: Start the local Lobby Server for the UI tests
+          settingsTarget: Lobby
+          script: |
+            mkdir -p "${PROJECT_DIR}/build"
+            "${PROJECT_DIR}/Scripts/ui-test-server.sh" start > "${PROJECT_DIR}/build/ui-test-server.log" 2>&1 || true
+      postActions:
+        - name: Stop the local Lobby Server
+          settingsTarget: Lobby
+          script: |
+            "${PROJECT_DIR}/Scripts/ui-test-server.sh" stop >> "${PROJECT_DIR}/build/ui-test-server.log" 2>&1 || true

@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copy to wrangler.local.jsonc (git-ignored), fill in, and deploy that one: docs/outside.md,
+// "The push relay". The key itself is a secret, never here: `npx wrangler secret put APNS_KEY`.
+{
+  "name": "lobby-push",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  // Nothing is written down about who came by.
+  "observability": { "enabled": false },
+  "vars": {
+    // The APNs key's ten-character id, and the team's.
+    "APNS_KEY_ID": "<key id>",
+    "APNS_TEAM_ID": "<team id>",
+    // The apps' bundle id.
+    "APNS_TOPIC": "<bundle id>",
+    // Notifications in all, per day (UTC).
+    "DAILY_CAP": "20000",
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "RELAY", "class_name": "PushRelay" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PushRelay"] }],
+}

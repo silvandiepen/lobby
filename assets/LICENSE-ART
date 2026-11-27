@@ -1,0 +1,57 @@
+Lobby artwork: licence
+======================
+
+Copyright (c) 2026 Sil van Diepen. All rights reserved.
+
+The source code in this repository is licensed under the Mozilla Public License 2.0 (see LICENSE
+at the root). That licence does NOT cover the artwork listed below. No licence to the artwork is
+granted, except as stated under "What you may do".
+
+What this covers
+----------------
+
+1. The Lobby name and logo, the portal (open door) icon and the kids icon, in every size and
+   form, including:
+   - apps/apple/Brand/                             (portal.svg, portal-kids.png)
+   - apps/apple/iOS/Assets.xcassets/AppIcon.appiconset/
+   - apps/apple/iOS/Assets.xcassets/AppIcon-Kids.appiconset/
+   - apps/apple/tvOS/Assets.xcassets/App Icon & Top Shelf Image.brandassets/
+   - apps/apple/tvOS/Assets.xcassets/AppIcon-Kids-TV.imagestack/
+   - apps/apple/macOS/KidsIcon.xcassets/
+   - apps/apple/Shared/Brand.xcassets/
+   - the icons drawn from them by apps/apple/Scripts/make-icons.py
+
+2. The viewer avatars and the kids mode art:
+   - apps/apple/Shared/Avatars.xcassets/           (the 32 avatars)
+   - docs/design/avatars/                          (the same 32, as sources)
+   - docs/design/kids/                             (kids mode art, design round)
+
+3. Other pictures in the documentation:
+   - docs/assets/
+
+The pictures in groups 2 and 3 were made with AI image generation (OpenAI, through Codex), from
+briefs that asked for original work with no existing characters, brands or text. Whether, and
+under which terms, they can be licensed to others has not been settled yet. Until it is, they
+are all rights reserved like the rest. This file will say so when that changes.
+
+What you may do
+---------------
+
+- Use the artwork unchanged as part of this repository: clone it, build the apps from source
+  and run them yourself, for your own use or to work on Lobby.
+- Show the artwork unchanged when you write or talk about Lobby (reviews, articles, screenshots).
+
+What you may not do without written permission
+----------------------------------------------
+
+- Use the Lobby name, the portal icon, the kids icon or anything confusingly similar as the name,
+  icon or branding of a fork, a derived app, a package or a service. See TRADEMARKS.md.
+- Publish an app built from this source to an app store or any other distribution channel with
+  this artwork in it.
+- Copy, change or redistribute the artwork outside this repository.
+
+A fork must replace the icons and the avatars with its own (or with ones whose licence allows
+it) before it is distributed. The code that shows avatars works with any set of pictures with
+the same names.
+
+Questions: support@hakobs.com

@@ -1,0 +1,216 @@
+[
+  {
+    "event": "hello",
+    "data": {
+      "session": "session-1",
+      "deviceId": "device-phone",
+      "resumed": false,
+      "heartbeatMs": 5000,
+      "silentMs": 12000,
+      "serverTime": 1795640000000,
+      "pendingPlay": false
+    }
+  },
+  {
+    "event": "snapshot",
+    "data": {
+      "devices": [
+        {
+          "id": "device-tv",
+          "name": "Living room",
+          "platform": "tvos",
+          "isSelf": false,
+          "isKids": false,
+          "online": false,
+          "foreground": false,
+          "canPlay": false,
+          "controllable": false,
+          "capabilities": [],
+          "player": null,
+          "wakeable": true
+        }
+      ],
+      "serverTime": 1795640000000
+    }
+  },
+  {
+    "event": "device",
+    "data": {
+      "device": {
+        "id": "device-tv",
+        "name": "Living room",
+        "platform": "tvos",
+        "isSelf": false,
+        "isKids": false,
+        "online": true,
+        "foreground": true,
+        "canPlay": true,
+        "controllable": true,
+        "capabilities": [
+          "play",
+          "pause",
+          "resume",
+          "seek",
+          "skip",
+          "next",
+          "stop",
+          "setAudio",
+          "setSubtitle",
+          "setVolume",
+          "upNext"
+        ],
+        "player": {
+          "redacted": false,
+          "itemId": "film-a",
+          "assetId": "file-a",
+          "profileId": "viewer-1",
+          "status": "playing",
+          "positionMs": 600000,
+          "at": 1795639999960,
+          "durationMs": 5400000,
+          "rate": 1,
+          "audioTracks": [
+            {
+              "id": "0",
+              "label": "English 5.1",
+              "language": "eng"
+            },
+            {
+              "id": "1",
+              "label": "Nederlands",
+              "language": "dut"
+            }
+          ],
+          "audioTrackId": "0",
+          "subtitleTracks": [
+            {
+              "id": "s2",
+              "label": "Nederlands",
+              "language": "dut"
+            }
+          ],
+          "subtitleTrackId": null,
+          "volume": 0.5,
+          "nextItemId": null,
+          "queue": [],
+          "upNext": null
+        },
+        "wakeable": false
+      },
+      "serverTime": 1795640000000
+    }
+  },
+  {
+    "event": "device",
+    "data": {
+      "device": {
+        "id": "device-tv",
+        "name": "Living room",
+        "platform": "tvos",
+        "isSelf": false,
+        "isKids": false,
+        "online": true,
+        "foreground": true,
+        "canPlay": true,
+        "controllable": false,
+        "capabilities": [
+          "play",
+          "pause",
+          "resume",
+          "seek",
+          "skip",
+          "next",
+          "stop",
+          "setAudio",
+          "setSubtitle",
+          "setVolume",
+          "upNext"
+        ],
+        "player": {
+          "redacted": true,
+          "status": "playing"
+        },
+        "wakeable": false
+      },
+      "serverTime": 1795640000000
+    }
+  },
+  {
+    "event": "gone",
+    "data": {
+      "deviceId": "device-tv",
+      "serverTime": 1795640000000
+    }
+  },
+  {
+    "event": "command",
+    "data": {
+      "commandId": "command-1",
+      "requestId": "request-1",
+      "handoverId": null,
+      "from": {
+        "deviceId": "device-phone",
+        "name": "Phone"
+      },
+      "command": {
+        "type": "play",
+        "itemId": "film-a",
+        "assetId": null,
+        "profileId": "viewer-1",
+        "startMs": null,
+        "paused": false,
+        "rate": 1,
+        "audioTrackId": null,
+        "subtitleTrackId": "off",
+        "queue": []
+      },
+      "expiresAt": 1795640010000,
+      "expiresInMs": 10000,
+      "serverTime": 1795640000000
+    }
+  },
+  {
+    "event": "command",
+    "data": {
+      "commandId": "command-2",
+      "requestId": "request-2",
+      "handoverId": "request-2",
+      "from": {
+        "deviceId": "device-phone",
+        "name": "Phone"
+      },
+      "command": {
+        "type": "yield"
+      },
+      "expiresAt": 1795640010000,
+      "expiresInMs": 10000,
+      "serverTime": 1795640000000
+    }
+  },
+  {
+    "event": "result",
+    "data": {
+      "commandId": "request-1",
+      "deviceId": "device-tv",
+      "status": "done",
+      "code": null,
+      "serverTime": 1795640000000
+    }
+  },
+  {
+    "event": "wake",
+    "data": {
+      "deviceId": "device-tv",
+      "commandId": "9f4c1d2e-play",
+      "step": "profile",
+      "reason": null,
+      "serverTime": 1795640006000
+    }
+  },
+  {
+    "event": "heartbeat",
+    "data": {
+      "serverTime": 1795640000000
+    }
+  }
+]

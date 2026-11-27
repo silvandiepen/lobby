@@ -1,0 +1,86 @@
+{
+  "about": "The demo library for App Review: Blender Foundation open movies only, each under a Creative Commons Attribution licence checked on the project's own site on 2026-11-27. Categories are invented. Summaries are written for this file.",
+  "films": [
+    {
+      "folder": "Kids/Funny Animals/Big Buck Bunny (2008)",
+      "title": "Big Buck Bunny",
+      "year": 2008,
+      "genres": ["Animation", "Comedy", "Family"],
+      "overview": "A large, gentle rabbit enjoys a quiet morning in the meadow until three small rodents start bullying the forest's creatures. He decides to give them a lesson of his own.",
+      "download": {
+        "url": "https://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_720p_h264.mov.zip",
+        "zip": true
+      },
+      "poster": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Big_buck_bunny_poster_big.jpg"
+      },
+      "licence": "Creative Commons Attribution 3.0 (CC BY 3.0)",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "licenceSource": "https://peach.blender.org/about/",
+      "attribution": "Big Buck Bunny (c) copyright 2008, Blender Foundation | www.bigbuckbunny.org"
+    },
+    {
+      "folder": "Adventure/Sintel (2010)",
+      "title": "Sintel",
+      "year": 2010,
+      "genres": ["Animation", "Fantasy", "Adventure"],
+      "overview": "A young woman searches a cold, wide world for the baby dragon she once nursed back to health. The journey takes years, and the answer she finds is not the one she hoped for.",
+      "download": {
+        "url": "https://download.blender.org/durian/movies/Sintel.2010.720p.mkv.zip",
+        "zip": true
+      },
+      "poster": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Sintel_poster.jpg"
+      },
+      "licence": "Creative Commons Attribution 3.0 (CC BY 3.0)",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "licenceSource": "https://durian.blender.org/sharing/",
+      "attribution": "Sintel (c) copyright Blender Foundation | durian.blender.org"
+    },
+    {
+      "folder": "Science Fiction/Tears of Steel (2012)",
+      "title": "Tears of Steel",
+      "year": 2012,
+      "genres": ["Science Fiction", "Action"],
+      "overview": "In a future Amsterdam, a group of scientists and soldiers tries to undo a mistake from the past before an army of robots takes the city.",
+      "download": {
+        "url": "https://download.blender.org/demo/movies/ToS/tears_of_steel_720p.mov",
+        "zip": false
+      },
+      "subtitles": {
+        "url": "https://download.blender.org/demo/movies/ToS/subtitles/TOS-en.srt",
+        "file": "tears_of_steel_720p.en.srt"
+      },
+      "poster": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Tos-poster.png",
+        "source": "https://commons.wikimedia.org/wiki/File:Tos-poster.png"
+      },
+      "licence": "Creative Commons Attribution 3.0 (CC BY 3.0)",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "licenceSource": "https://mango.blender.org/sharing/",
+      "attribution": "(CC) Blender Foundation | mango.blender.org"
+    },
+    {
+      "folder": "Strange Worlds/Elephants Dream (2006)",
+      "title": "Elephants Dream",
+      "year": 2006,
+      "genres": ["Animation", "Science Fiction"],
+      "overview": "Two men walk through an endless machine of wires and platforms. The older one says he knows the place, the younger one starts to see it differently.",
+      "download": {
+        "url": "https://download.blender.org/ED/elephantsdream-720-h264-st-aac.mov",
+        "zip": false
+      },
+      "poster": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Elephants_Dream_s5_both.jpg",
+        "source": "https://commons.wikimedia.org/wiki/File:Elephants_Dream_s5_both.jpg",
+        "cropToPortrait": true
+      },
+      "licence": "Creative Commons Attribution 2.5 (CC BY 2.5)",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5/",
+      "licenceSource": "https://commons.wikimedia.org/wiki/File:Elephants_Dream_(2006).webm",
+      "attribution": "Elephants Dream (c) copyright 2006, Stichting Blender Foundation / Netherlands Media Art Institute | www.elephantsdream.org"
+    }
+  ]
+}

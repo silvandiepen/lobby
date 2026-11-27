@@ -1,0 +1,14 @@
+event: hello
+data: {"session":"session-1","deviceId":"device-phone","resumed":false,"heartbeatMs":5000,"silentMs":12000,"serverTime":1795640000000}
+
+id: 1f0c2d3e.1
+event: snapshot
+data: {"devices":[],"serverTime":1795640000000}
+
+event: heartbeat
+data: {"serverTime":1795640005000}
+
+id: 1f0c2d3e.2
+event: gone
+data: {"deviceId":"device-tv","serverTime":1795640006000}
+

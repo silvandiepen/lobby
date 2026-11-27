@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1248 1248">
+  <!-- Lobby's icon: a door left open onto a lit room. Scripts/make-icons.py draws every app icon
+       from this file and takes its groups apart for the Apple TV's layers, so keep the group ids. -->
+  <defs>
+    <radialGradient id="sky" cx="611.96" cy="636.01" fx="611.96" fy="636.01" r=".75" gradientTransform="translate(-763164 794340) scale(1248 -1248)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#270d46"/>
+      <stop offset="1" stop-color="#14052e"/>
+    </radialGradient>
+    <radialGradient id="sky-glow" cx="611.83" cy="636.31" fx="611.83" fy="636.31" r=".5" gradientTransform="translate(-562518 484542) scale(920 -760)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8f43de" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#8f43de" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="frame" x1="610.57" y1="641.88" x2="610.57" y2="640.88" gradientTransform="translate(-197758 66888) scale(325 -104)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2c123a"/>
+      <stop offset="1" stop-color="#a64b16"/>
+    </linearGradient>
+    <radialGradient id="ceiling-glow" cx="611.01" cy="639.1" fx="611.01" fy="639.1" r=".5" gradientTransform="translate(-337283.194 108883) scale(553.0011 -170)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffae24" stop-opacity=".65"/>
+      <stop offset="1" stop-color="#ff7814" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="doorway" x1="610.22" y1="636.84" x2="610.62" y2="635.84" gradientTransform="translate(-178786 462584) scale(294 -726)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff05a"/>
+      <stop offset=".35" stop-color="#ffce08"/>
+      <stop offset=".8" stop-color="#ffac00"/>
+      <stop offset="1" stop-color="#ffdb24"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="611.5" y1="638.1" x2="611.85" y2="637.1" gradientTransform="translate(-547388 183470) scale(896 -286)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffdc21"/>
+      <stop offset=".25" stop-color="#ffa000"/>
+      <stop offset="1" stop-color="#ee5616"/>
+    </linearGradient>
+    <linearGradient id="shadow" x1="611.87" y1="638.16" x2="610.87" y2="637.16" gradientTransform="translate(-323748 179660) scale(530 -280)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#100321" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#100321" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="door" x1="609.28" y1="636.62" x2="610.08" y2="635.62" gradientTransform="translate(-131879 723135) scale(217 -1136)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c47cf4"/>
+      <stop offset=".42" stop-color="#8943c4"/>
+      <stop offset="1" stop-color="#431477"/>
+    </linearGradient>
+    <linearGradient id="door-edge" x1="511.67" y1="636.54" x2="511.67" y2="635.54" gradientTransform="translate(-2536 723135) scale(6 -1136)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d598ff"/>
+      <stop offset="1" stop-color="#7629b8"/>
+    </linearGradient>
+    <radialGradient id="room-glow" cx="610.97" cy="638.4" fx="610.97" fy="638.4" r=".5" gradientTransform="translate(296379.7177 609050.9843) rotate(-90) scale(995.6654 -463.0618)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffae24" stop-opacity=".65"/>
+      <stop offset="1" stop-color="#ff7814" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g id="background-layer">
+    <rect width="1248" height="1248" fill="url(#sky)"/>
+    <ellipse cx="370" cy="950" rx="460" ry="380" fill="url(#sky-glow)"/>
+  </g>
+  <g id="door-frame">
+    <path d="M824 229.91V236H530V132Z" fill="url(#frame)"/>
+  </g>
+  <g id="light">
+    <ellipse cx="604.5" cy="236" rx="276.5" ry="85" fill="url(#ceiling-glow)"/>
+    <path d="M530 236H824V962H530Z" fill="url(#doorway)"/>
+    <path id="floor-light" d="M530 962H824L1248 1210V1248H352L537 1163Z" fill="url(#floor)"/>
+    <path d="M530 236H824M530 962H824" fill="none" stroke="#fff69a" stroke-width="12"/>
+    <path d="M530 236H824M530 962H824" fill="none" stroke="#fff7b1" stroke-width="2.5"/>
+  </g>
+  <g id="open-door">
+    <path id="floor-shadow" d="M313 968L537 1163L352 1248H0V1080Z" fill="url(#shadow)"/>
+    <path d="M313 220L530 27V1163L313 968Z" fill="url(#door)"/>
+    <path d="M538 27H530V1163H537Z" fill="url(#door-edge)"/>
+  </g>
+  <ellipse id="glow" cx="761.53" cy="733.83" rx="231.53" ry="497.83" fill="url(#room-glow)"/>
+</svg>

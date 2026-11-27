@@ -1,0 +1,111 @@
+# Builds a release of Lobby Server when a version tag (v1.2.3) is pushed: the four archives with
+# their SHA256SUMS and install.sh, and the container image for amd64 and arm64. It publishes
+# nothing: everything is left as this run's artifacts, to be checked and then published by hand
+# (docs/release.md). It needs no secrets.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  installer-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: ffmpeg
+        run: |
+          if [ "$(uname -s)" = Darwin ]; then brew install ffmpeg; else sudo apt-get update && sudo apt-get install -y ffmpeg dash; fi
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -w tools/release
+
+  direct:
+    strategy:
+      matrix:
+        include:
+          - { platform: linux-x64, os: ubuntu-24.04 }
+          - { platform: linux-arm64, os: ubuntu-24.04-arm }
+          - { platform: macos-arm64, os: macos-15 }
+          - { platform: macos-x64, os: macos-15 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust for macOS
+        if: startsWith(matrix.platform, 'macos-')
+        run: |
+          rustup toolchain install 1.90.0 --profile minimal
+          rustup target add --toolchain 1.90.0 aarch64-apple-darwin x86_64-apple-darwin
+      - name: Build lobby-direct
+        run: sh tools/release/build-direct.sh ${{ matrix.platform }} direct/${{ matrix.platform }}/lobby-direct
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: direct-${{ matrix.platform }}
+          path: direct/${{ matrix.platform }}/lobby-direct
+          if-no-files-found: error
+
+  archives:
+    needs: [installer-tests, direct]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: The tag is the server's version
+        run: |
+          version="$(node -p 'require("./apps/server/package.json").version')"
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME, package $version"; exit 1; }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: direct-*
+          path: direct-artifacts
+      - name: Put each lobby-direct where build.ts looks
+        run: |
+          for dir in direct-artifacts/direct-*; do
+            platform="${dir#direct-artifacts/direct-}"
+            mkdir -p "direct/$platform"
+            install -m 0755 "$dir/lobby-direct" "direct/$platform/lobby-direct"
+          done
+      - name: Build the archives
+        run: |
+          node tools/release/build.ts --version "${GITHUB_REF_NAME#v}" --direct-dir direct \
+            --releases "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases" --out dist/release
+          cat dist/release/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lobby-server-${{ github.ref_name }}
+          path: dist/release/
+          if-no-files-found: error
+
+  image:
+    strategy:
+      matrix:
+        include:
+          - { arch: amd64, os: ubuntu-24.04 }
+          - { arch: arm64, os: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Build the image (not pushed)
+        run: |
+          docker buildx build --platform linux/${{ matrix.arch }} \
+            -f tools/release/docker/Dockerfile \
+            --label org.opencontainers.image.version="${GITHUB_REF_NAME#v}" \
+            --label org.opencontainers.image.revision="$GITHUB_SHA" \
+            --output type=oci,dest=lobby-server-image-${{ matrix.arch }}.tar .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lobby-server-image-${{ matrix.arch }}
+          path: lobby-server-image-${{ matrix.arch }}.tar
+          if-no-files-found: error

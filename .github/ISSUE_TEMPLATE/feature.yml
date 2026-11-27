@@ -1,0 +1,37 @@
+name: Feature request
+description: Suggest something Lobby could do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, and what is in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like
+      description: How it could work. Screens, examples or other apps that do it well help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways you considered, and whether docs/decisions.md already covers it.
+  - type: dropdown
+    id: part
+    attributes:
+      label: Part of Lobby
+      multiple: true
+      options:
+        - Server
+        - iPhone and iPad app
+        - Mac app
+        - Apple TV app
+        - Kids
+        - Outside / direct connection
+        - Installer and releases
+        - Documentation

@@ -1,0 +1,57 @@
+name: Bug report
+description: Something in Lobby does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting. Please leave out anything private: names of files in your
+        library, your server's address, tokens or pairing codes. Security problems go to
+        SECURITY.md, not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: input
+    id: server
+    attributes:
+      label: Lobby Server version
+      description: "`lobby status` shows it, or Settings in the app."
+      placeholder: "1.0.0"
+  - type: dropdown
+    id: install
+    attributes:
+      label: How the server is installed
+      options:
+        - Release archive with install.sh
+        - Docker
+        - From source
+        - Not relevant (app only)
+  - type: input
+    id: platform
+    attributes:
+      label: Server platform
+      placeholder: "Raspberry Pi 5, Debian 13 arm64 / macOS 15 on Apple silicon"
+  - type: input
+    id: app
+    attributes:
+      label: App, device and OS version
+      placeholder: "Lobby 1.0 on iPhone, iOS 26.1"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The server's log around the problem (server.log). Remove file names first.
+      render: text

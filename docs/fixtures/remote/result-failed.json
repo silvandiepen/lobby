@@ -1,0 +1,5 @@
+{
+  "commandId": "command-1",
+  "status": "failed",
+  "code": "cannot_play"
+}

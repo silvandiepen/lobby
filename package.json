@@ -1,0 +1,37 @@
+{
+  "name": "lobby-monorepo",
+  "private": true,
+  "license": "MPL-2.0",
+  "type": "module",
+  "description": "Lobby — a private family media library: a server for a computer that stays on, and Apple apps for iPhone, iPad, Mac and Apple TV.",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/introducer",
+    "apps/push-relay",
+    "apps/server",
+    "tools/release"
+  ],
+  "scripts": {
+    "check": "npm run lint && npm run typecheck && npm test",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p tools/demo/tsconfig.json",
+    "test": "npm run test --workspaces --if-present",
+    "server:dev": "npm run dev -w apps/server",
+    "server:start": "npm run start -w apps/server",
+    "apple:generate": "cd apps/apple && xcodegen generate",
+    "release:build": "node tools/release/build.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.15.0",
+    "jiti": "^2.7.0",
+    "prettier": "^3.10.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.74.0",
+    "vitest": "^5.1.1"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "about": "Sealed push notifications (D-064): ChaCha20-Poly1305, aad as below, nonce then ciphertext then tag, base64url. The server seals, the app's notification service opens.",
+  "aad": "lobby-push/1|alert",
+  "key": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "nonce": "oKGio6Slpqeoqaqr",
+  "cases": [
+    {
+      "content": {
+        "title": "Robin",
+        "body": "Robin wants to watch The Film.",
+        "category": "LOBBY_KIDS_QUESTION",
+        "thread": "kids-p1",
+        "data": {
+          "kind": "kidsRequest",
+          "requestId": "q1",
+          "serverId": "s1"
+        }
+      },
+      "sealed": "oKGio6Slpqeoqaqrd4kMNjmKp4-aLaF7npOT2bF8sdAnE0KZloq00xgM43sN7mL5jr2QqrGtgd51cSwuL-QMUWVhRaMLdmghOE_Cp8OCRXQapd2yYKmNwkT0-iFRzEqwSPXZ7lkEaPTmvsXa-GVdguQyCYaCMFFAuOJ_lDyjkW8ucoHMxoiCaZD72VoMf5mP_MKItyeZ_U8fxGJ86qZIjVQSKCDPVavLyuCUcv3IVzZ6px8YnJnxPV4_NJFmEIk_4gX5-F4_c88"
+    },
+    {
+      "content": {
+        "title": "A device wants to join Lobby",
+        "body": "Open Lobby to let it in.",
+        "data": {
+          "kind": "pairing",
+          "serverId": "s1"
+        }
+      },
+      "sealed": "oKGio6Slpqeoqaqrd4kMNjmKp4-aLbI0mJ-Lkv4788giBBTQlKy0kRsNqmJMzHnozLDdpuSumtlkc0JkBbQvVilABONFLSs0IwrJrcXbDjoYgPzeANzw7WzEyFw64i2IddLygkEKOuHnvsnV-2VLgvw-H4PKMikGtvo5hnngziiPR9ieNpqDy-Ou_Aq8w5Cv"
+    }
+  ],
+  "wrongKey": "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc"
+}

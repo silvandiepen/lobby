@@ -1,0 +1,19 @@
+{
+  // Copy to wrangler.local.jsonc (git-ignored), fill in, and deploy that one: docs/outside.md.
+  "name": "lobby-introducer",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  // Nothing is written down about who came by.
+  "observability": { "enabled": false },
+  "vars": {
+    // `lobby direct id` on the server. More than one with commas.
+    "BOXES": "<box id>",
+    "DAILY_CAP": "20000",
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "INTRODUCER", "class_name": "IntroducerRoom" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["IntroducerRoom"] }],
+}

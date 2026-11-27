@@ -1,0 +1,2542 @@
+{
+  "note": "Real answers from TMDB's v3 API, recorded 2026-11-24 in en-US and trimmed (long lists shortened, credits and companies removed). Data from TMDB.",
+  "answers": {
+    "/3/search/movie?query=The Jungle Book&page=1&primary_release_year=1967": {
+      "page": 1,
+      "results": [
+        {
+          "adult": false,
+          "backdrop_path": "/3sbmRuIpYEH5dMvec4z4JxKQHoj.jpg",
+          "genre_ids": [10751, 16, 12],
+          "id": 9325,
+          "title": "The Jungle Book",
+          "original_language": "en",
+          "original_title": "The Jungle Book",
+          "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+          "popularity": 8.7983,
+          "poster_path": "/yN1kuupnPTLUprgfvC5WapgrxG4.jpg",
+          "release_date": "1967-10-18",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.286,
+          "vote_count": 6856
+        }
+      ],
+      "total_pages": 1,
+      "total_results": 1
+    },
+    "/3/movie/9325": {
+      "adult": false,
+      "backdrop_path": "/3sbmRuIpYEH5dMvec4z4JxKQHoj.jpg",
+      "belongs_to_collection": {
+        "id": 97459,
+        "name": "The Jungle Book (Animated) Collection",
+        "poster_path": "/uwtMVtIFZy7dfQrR7brKHoDN5H6.jpg",
+        "backdrop_path": "/ywQavBCNbyz23SCC7E93nvRcapS.jpg"
+      },
+      "budget": 4000000,
+      "genres": [
+        {
+          "id": 10751,
+          "name": "Family"
+        },
+        {
+          "id": 16,
+          "name": "Animation"
+        },
+        {
+          "id": 12,
+          "name": "Adventure"
+        }
+      ],
+      "homepage": "http://movies.disney.com/the-jungle-book-1967",
+      "id": 9325,
+      "imdb_id": "tt0061852",
+      "origin_country": ["US"],
+      "original_language": "en",
+      "original_title": "The Jungle Book",
+      "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+      "popularity": 8.7983,
+      "poster_path": "/yN1kuupnPTLUprgfvC5WapgrxG4.jpg",
+      "release_date": "1967-10-18",
+      "revenue": 378000000,
+      "runtime": 78,
+      "softcore": false,
+      "status": "Released",
+      "tagline": "The Jungle is JUMPIN'!",
+      "title": "The Jungle Book",
+      "video": false,
+      "vote_average": 7.286,
+      "vote_count": 6856,
+      "external_ids": {
+        "imdb_id": "tt0061852",
+        "wikidata_id": "Q199839",
+        "facebook_id": null,
+        "instagram_id": null,
+        "twitter_id": null
+      },
+      "videos": {
+        "results": [
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "The Jungle Book - 2007 Platinum Edition DVD Trailer #1",
+            "key": "qdkU9NmI0jA",
+            "site": "YouTube",
+            "size": 480,
+            "type": "Trailer",
+            "official": false,
+            "id": "633d8fe53344c6007a49781b",
+            "published_at": "2022-05-03T14:29:38.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "The Jungle Book - 1967 Theatrical Trailer",
+            "key": "xFdtyGoVSDE",
+            "site": "YouTube",
+            "size": 480,
+            "type": "Trailer",
+            "official": false,
+            "id": "633d8fa78f26bc0082ec0696",
+            "published_at": "2022-03-23T13:59:18.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "The Jungle Book - 1990 Reissue Trailer (35mm 4K)",
+            "key": "eCOMboHkC3s",
+            "site": "YouTube",
+            "size": 2160,
+            "type": "Trailer",
+            "official": false,
+            "id": "633d8fc08f26bc008fd92856",
+            "published_at": "2022-02-18T20:00:06.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "The Jungle Book Official Diamond Edition Blu-ray Trailer (2013) - Disney Movie HD",
+            "key": "JFsGn_JwzCc",
+            "site": "YouTube",
+            "size": 720,
+            "type": "Trailer",
+            "official": false,
+            "id": "6106ea467719d70072becdd0",
+            "published_at": "2013-08-14T17:32:05.000Z"
+          }
+        ]
+      },
+      "images": {
+        "backdrops": [
+          {
+            "aspect_ratio": 1.778,
+            "height": 1080,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/3sbmRuIpYEH5dMvec4z4JxKQHoj.jpg",
+            "vote_average": 5.25,
+            "vote_count": 10,
+            "width": 1920
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 2160,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/zj8XS0l1cWStpKnuD1LFMB3VoV1.jpg",
+            "vote_average": 4.818,
+            "vote_count": 11,
+            "width": 3840
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 1080,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/kZTfsQyZ1LJmuFp5bIHrXJxi5tl.jpg",
+            "vote_average": 2.066,
+            "vote_count": 5,
+            "width": 1920
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 1080,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/tY0Y8uiPYHx7Nw4VqtNnqHV7aVv.jpg",
+            "vote_average": 0.166,
+            "vote_count": 1,
+            "width": 1920
+          }
+        ],
+        "posters": [
+          {
+            "aspect_ratio": 0.667,
+            "height": 2100,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/yN1kuupnPTLUprgfvC5WapgrxG4.jpg",
+            "vote_average": 5.476,
+            "vote_count": 21,
+            "width": 1400
+          },
+          {
+            "aspect_ratio": 0.701,
+            "height": 1426,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/9BgcTVV43dZ8A1TpuXWkuNTXtfI.jpg",
+            "vote_average": 5.25,
+            "vote_count": 18,
+            "width": 1000
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 3000,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/kJ5DZfPCWX8xtSZZJbnn8YRUoGc.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 2000
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 1500,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/gChklWloawgpupX2jL5ByOxy1bE.jpg",
+            "vote_average": 0.0,
+            "vote_count": 0,
+            "width": 1000
+          }
+        ]
+      },
+      "alternative_titles": {
+        "titles": [
+          {
+            "iso_3166_1": "IS",
+            "title": "Skógarlíf",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "GR",
+            "title": "Το βιβλίο της ζούγκλας",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "FR",
+            "title": "Le Livre de la Jungle",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "DE",
+            "title": "Das Dschungelbuch",
+            "type": ""
+          }
+        ]
+      },
+      "translations": {
+        "translations": [
+          {
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "name": "English",
+            "english_name": "English",
+            "data": {
+              "homepage": "http://movies.disney.com/the-jungle-book-1967",
+              "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+              "runtime": 78,
+              "tagline": "The Jungle is JUMPIN'!",
+              "title": ""
+            }
+          },
+          {
+            "iso_3166_1": "NL",
+            "iso_639_1": "nl",
+            "name": "Nederlands",
+            "english_name": "Dutch",
+            "data": {
+              "homepage": "",
+              "overview": "Mowgli, een mensenkind is in de jungle achtergebleven en wordt opgevoed door wolven. Als Mowgli groter wordt wil panter Bagheera hem terug brengen naar de mensen. Maar Mowgli heeft het prima naar zijn zin en wordt al snel vrienden met dieren uit de jungle.",
+              "runtime": 78,
+              "tagline": "",
+              "title": "Jungle Boek"
+            }
+          },
+          {
+            "iso_3166_1": "JP",
+            "iso_639_1": "ja",
+            "name": "日本語",
+            "english_name": "Japanese",
+            "data": {
+              "homepage": "",
+              "overview": "友情のすばらしさと冒険と、ステキな歌が詰まったウォルト・ディズニーの遺作。モーグリはジャングルを出て人間の村に戻るために、賢いヒョウのバギーラと一緒にスリルに満ちた冒険の旅に出ることに。旅の途中で、陽気なキング・ルーイや催眠術が得意な蛇のカー、そしてのんきなクマのバルーと出会う。バルーはモーグリに、人生において“本当に必要なもの”と友情について教える。",
+              "runtime": 0,
+              "tagline": "",
+              "title": "ジャングル・ブック"
+            }
+          },
+          {
+            "iso_3166_1": "BE",
+            "iso_639_1": "nl",
+            "name": "Nederlands",
+            "english_name": "Dutch",
+            "data": {
+              "homepage": "",
+              "overview": "Mowgli, een mensenkind is in de jungle achtergebleven en wordt opgevoed door wolven. Als Mowgli groter wordt wil panter Bagheera hem terug brengen naar de mensen. Maar Mowgli heeft het prima naar zijn zin en wordt al snel vrienden met dieren uit de jungle.",
+              "runtime": 78,
+              "tagline": "",
+              "title": "Jungle Boek"
+            }
+          }
+        ]
+      }
+    },
+    "/3/movie/278927": {
+      "adult": false,
+      "backdrop_path": "/8oYykF1Qhrb8fC2qZqD71EzRywg.jpg",
+      "belongs_to_collection": null,
+      "budget": 175000000,
+      "genres": [
+        {
+          "id": 12,
+          "name": "Adventure"
+        },
+        {
+          "id": 10751,
+          "name": "Family"
+        },
+        {
+          "id": 14,
+          "name": "Fantasy"
+        }
+      ],
+      "homepage": "http://movies.disney.com/the-jungle-book-2016",
+      "id": 278927,
+      "imdb_id": "tt3040964",
+      "origin_country": ["US", "GB"],
+      "original_language": "en",
+      "original_title": "The Jungle Book",
+      "overview": "After a threat from the tiger Shere Khan, Mowgli, a man-cub fostered by wolves, is forced to flee the jungle, and he embarks on a journey of self-discovery with the help of the panther, Bagheera, and the free-spirited bear, Baloo.",
+      "popularity": 9.7942,
+      "poster_path": "/2Epx7F9X7DrFptn4seqn4mzBVks.jpg",
+      "release_date": "2016-04-07",
+      "revenue": 966550600,
+      "runtime": 106,
+      "softcore": false,
+      "status": "Released",
+      "tagline": "The legend comes to life.",
+      "title": "The Jungle Book",
+      "video": false,
+      "vote_average": 6.879,
+      "vote_count": 8736,
+      "external_ids": {
+        "imdb_id": "tt3040964",
+        "wikidata_id": "Q16857406",
+        "facebook_id": null,
+        "instagram_id": null,
+        "twitter_id": "TheJungleBook"
+      },
+      "videos": {
+        "results": [
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "Academy Conversations: The Jungle Book",
+            "key": "PVvRlrKUq7o",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Featurette",
+            "official": true,
+            "id": "65c35a308c0a480184863137",
+            "published_at": "2016-05-11T22:43:39.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "Jon Favreau On Dolby Atmos and Dolby Vision",
+            "key": "doy3DZDeBEo",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Featurette",
+            "official": false,
+            "id": "65ce3bf113a38801879f3bb7",
+            "published_at": "2016-04-16T00:04:52.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "IMAX® Featurette",
+            "key": "6tVBEZLvDm8",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Featurette",
+            "official": true,
+            "id": "65c3711ee7c097014acf3dc0",
+            "published_at": "2016-04-15T18:28:03.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "Casting Mowgli",
+            "key": "7hYvH0MKePE",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Featurette",
+            "official": true,
+            "id": "65c371792476f20163fe7c2f",
+            "published_at": "2016-04-13T14:59:11.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "IMAX® Exclusive Look (Tease)",
+            "key": "5D_UXthOUYc",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Teaser",
+            "official": true,
+            "id": "65c35e788e2e000183a6356c",
+            "published_at": "2016-03-15T16:27:44.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "Teaser Trailer",
+            "key": "YW97nCUE3ZA",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Trailer",
+            "official": true,
+            "id": "571ce1e4c3a36842aa000ef6",
+            "published_at": "2015-09-15T16:00:24.000Z"
+          }
+        ]
+      },
+      "images": {
+        "backdrops": [
+          {
+            "aspect_ratio": 1.778,
+            "height": 1080,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/xo4rQ0QxbB32JPbF2rVBMirbOzv.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 1920
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 1080,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/8oYykF1Qhrb8fC2qZqD71EzRywg.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 1920
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 2160,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/uWHAG2WbZ76fX6QWWDW3X6QegTh.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 3840
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 2160,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/xguGuu9UYJHMRShNJUa8ZQiG6rK.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 3840
+          }
+        ],
+        "posters": [
+          {
+            "aspect_ratio": 0.667,
+            "height": 3000,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/5AXmbdM9UI0tzftSsPqVnlMICIy.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 2000
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 3000,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/2Epx7F9X7DrFptn4seqn4mzBVks.jpg",
+            "vote_average": 3.334,
+            "vote_count": 2,
+            "width": 2000
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 1500,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/fc7THOunWR5fKOn65cXrLrrv7s9.jpg",
+            "vote_average": 2.278,
+            "vote_count": 3,
+            "width": 1000
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 3000,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/43fdPPxHaUtx3E3fTYxXkAxMOzs.jpg",
+            "vote_average": 0.0,
+            "vote_count": 0,
+            "width": 2000
+          }
+        ]
+      },
+      "alternative_titles": {
+        "titles": [
+          {
+            "iso_3166_1": "BR",
+            "title": "Mogli - O Menino Lobo",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "ES",
+            "title": "El libro de la selva",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "FR",
+            "title": "Le Livre de la Jungle",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "RS",
+            "title": "Knjiga o džungli",
+            "type": ""
+          }
+        ]
+      },
+      "translations": {
+        "translations": [
+          {
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "name": "English",
+            "english_name": "English",
+            "data": {
+              "homepage": "http://movies.disney.com/the-jungle-book-2016",
+              "overview": "After a threat from the tiger Shere Khan, Mowgli, a man-cub fostered by wolves, is forced to flee the jungle, and he embarks on a journey of self-discovery with the help of the panther, Bagheera, and the free-spirited bear, Baloo.",
+              "runtime": 106,
+              "tagline": "The legend comes to life.",
+              "title": ""
+            }
+          },
+          {
+            "iso_3166_1": "NL",
+            "iso_639_1": "nl",
+            "name": "Nederlands",
+            "english_name": "Dutch",
+            "data": {
+              "homepage": "http://www.thejunglebook.nl/",
+              "overview": "The Jungle Book gaat over Mowgli, een mensenjong dat opgroeit bij een wolvenroedel. Mowgli voelt zich niet langer thuis in de jungle wanneer de angstaanjagende Shere Khan, de tijger die zichtbaar getekend is door de mens, bezweert alles te elimineren wat hij als een bedreiging ziet. Als Mowgli de enige plek die hij kent moet verlaten, begint hij aan een fascinerende reis op zoek naar zichzelf. In gezelschap van zijn strenge mentor, panter Bagheera, en de zorgeloze beer Baloo komt hij onderweg junglebewoners tegen die nu niet bepaald het beste met hem voorhebben. Kaa, probeert het mensenjong te hypnotiseren met haar verleidelijke blik en stem, en koning Louie, probeert Mowgli het geheim te laten prijsgeven. Het geheim van de ongrijpbare en dodelijke rode bloem: vuur.",
+              "runtime": 107,
+              "tagline": "",
+              "title": ""
+            }
+          },
+          {
+            "iso_3166_1": "JP",
+            "iso_639_1": "ja",
+            "name": "日本語",
+            "english_name": "Japanese",
+            "data": {
+              "homepage": "",
+              "overview": "モーグリは、生まれて間もなくジャングルに取り残されてしまう。黒ヒョウのバギーラから母オオカミのラクシャに託された彼は、愛情に包まれながら自然の厳しさと生き抜くための知恵と術を学んでいく。やがて少年となって動物たちと幸せな日々を過ごしていたモーグリは、人間に恨みを抱くトラのシア・カーンと出会う。シア・カーンから人間である自分の存在が、ジャングルやそこに住む動物たちの脅威になると言われる。",
+              "runtime": 0,
+              "tagline": "今、あふれ出すー生きる力。",
+              "title": "ジャングル・ブック"
+            }
+          }
+        ]
+      }
+    },
+    "/3/search/movie?query=The Jungle Book&page=1&primary_release_year=2016": {
+      "page": 1,
+      "results": [
+        {
+          "adult": false,
+          "backdrop_path": "/8oYykF1Qhrb8fC2qZqD71EzRywg.jpg",
+          "genre_ids": [12, 10751, 14],
+          "id": 278927,
+          "title": "The Jungle Book",
+          "original_language": "en",
+          "original_title": "The Jungle Book",
+          "overview": "After a threat from the tiger Shere Khan, Mowgli, a man-cub fostered by wolves, is forced to flee the jungle, and he embarks on a journey of self-discovery with the help of the panther, Bagheera, and the free-spirited bear, Baloo.",
+          "popularity": 9.7942,
+          "poster_path": "/2Epx7F9X7DrFptn4seqn4mzBVks.jpg",
+          "release_date": "2016-04-07",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.879,
+          "vote_count": 8736
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [16],
+          "id": 399014,
+          "title": "The Jungle Book: The Legend of the Giant Claw",
+          "original_language": "hi",
+          "original_title": "The Jungle Book: The Legend of the Giant Claw",
+          "overview": "From deep within the jungle comes a mighty roar...a roar that could only come from one creature the Giant Claw! When Mowgli s search of this legendary creature ends with an unexpected discovery, he must race against time to thwart Shere Khans evil plan and rescue a friend!",
+          "popularity": 0.431,
+          "poster_path": "/ddstByI4djsZbpiFINsTofpz3ET.jpg",
+          "release_date": "2016-03-29",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [18, 12],
+          "id": 534412,
+          "title": "The Jungle Book: Make-A-Wish",
+          "original_language": "en",
+          "original_title": "The Jungle Book: Make-A-Wish",
+          "overview": "The Jungle Book: tell the story of Mowgli a young boy who is fighting cancer. Mowgli's mom and Grandfather Tom pray for a miracle as Mowgli's condition starts to deteriorate. When Mowgli's closes his eyes, his mind takes him into the world of his favorite story, The Jungle Book. The Monkey King believes that if he can capture Mowgli, he can become human. The wolves try to keep Mowgli safe from the dangers of the jungle. This heart warming story will keep you entranced from beginning to end.",
+          "popularity": 0.1881,
+          "poster_path": "/fHdw3pMJEDhEDG9NfMgJ5eLhvio.jpg",
+          "release_date": "2016-04-16",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        }
+      ],
+      "total_pages": 1,
+      "total_results": 3
+    },
+    "/3/search/movie?query=Aladdin&page=1": {
+      "page": 1,
+      "results": [
+        {
+          "adult": false,
+          "backdrop_path": "/nenJjvfe2Eq8uBMXFJnWj5mw4bi.jpg",
+          "genre_ids": [16, 10751, 12, 14, 10749],
+          "id": 812,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "In the boorish city of Agrabah, kind-hearted street urchin Aladdin and Princess Jasmine fall in love, although she can only marry a prince. He and power-hungry Grand Vizier Jafar vie for a magic lamp that can fulfill their wishes.",
+          "popularity": 13.8005,
+          "poster_path": "/eLFfl7vS8dkeG1hKp5mwbm37V83.jpg",
+          "release_date": "1992-11-25",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.7,
+          "vote_count": 12425
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/rVqY0Bo4Npf6EIONUROxjYAJfmD.jpg",
+          "genre_ids": [12, 14, 10749, 10751],
+          "id": 420817,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "A kindhearted street urchin named Aladdin embarks on a magical adventure after finding a lamp that releases a wisecracking genie while a power-hungry Grand Vizier vies for the same lamp that has the power to make their deepest wishes come true.",
+          "popularity": 11.0339,
+          "poster_path": "/ykUEbfpkf8d0w49pHh0AD2KrT52.jpg",
+          "release_date": "2019-05-22",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.072,
+          "vote_count": 10935
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/2TiLyU66HpxoU15PWzj1WHReC78.jpg",
+          "genre_ids": [16, 14, 10751, 12],
+          "id": 343693,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "A young man's life is turned around with the help of a genie inside a lamp.",
+          "popularity": 1.1253,
+          "poster_path": "/6NGjDdErVOmnoqLnjh0ouRfxerS.jpg",
+          "release_date": "1992-04-27",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.0,
+          "vote_count": 69
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/bPMAfe7ba6Mwp3dEJyWLWKfmTxb.jpg",
+          "genre_ids": [28, 12, 35, 14],
+          "id": 9807,
+          "title": "Aladdin",
+          "original_language": "it",
+          "original_title": "Superfantagenio",
+          "overview": "A teenager in modern-day Miami finds a magic lantern and out pops a genie, who's been asleep for 200 years and in his gratitude grants the boy several wishes.",
+          "popularity": 1.1441,
+          "poster_path": "/zlnzJd4v8XyW4usXGoKkzRH1n2M.jpg",
+          "release_date": "1986-12-23",
+          "softcore": false,
+          "video": false,
+          "vote_average": 5.599,
+          "vote_count": 238
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/4LKC6a7vVTP7nylsAPW7TBV3VeZ.jpg",
+          "genre_ids": [10770, 10749, 10751, 14, 35],
+          "id": 482063,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "In ancient China, an aimless young man falls in love with the Emperor's beautiful daughter, and goes on a journey with his supposedly long-lost uncle in search of riches.",
+          "popularity": 0.8703,
+          "poster_path": "/dEkcpRPZrO1VipH1L56et3J1Pvr.jpg",
+          "release_date": "1990-01-07",
+          "softcore": false,
+          "video": false,
+          "vote_average": 5.8,
+          "vote_count": 14
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/q8OAbMWMLU9SwgKdGAalhhx5TCQ.jpg",
+          "genre_ids": [16, 10751],
+          "id": 357528,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "A young man's life is turned around with the help of a genie inside a lamp.",
+          "popularity": 0.7252,
+          "poster_path": "/iYSvcS94KrI3I0GxXdPWUaUmQvw.jpg",
+          "release_date": "1992-11-16",
+          "softcore": false,
+          "video": false,
+          "vote_average": 5.6,
+          "vote_count": 15
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/zcYLwS9kRhwXQ6L7qaESMfRZw9l.jpg",
+          "genre_ids": [53],
+          "id": 1578130,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "A group of friends vacation on a lake front cabin and find Aladdin's ancient lamp which grants 3 terrible wishes.",
+          "popularity": 0.534,
+          "poster_path": "/rzNIkbvUBU518aVUZ1vZZsFcVjw.jpg",
+          "release_date": "2026-02-28",
+          "softcore": false,
+          "video": false,
+          "vote_average": 2.0,
+          "vote_count": 4
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/gxW9rEsBMSy5GIcTXt5IfHcO6DA.jpg",
+          "genre_ids": [35, 18, 12, 10749, 10770],
+          "id": 739292,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "In ancient China, an aimless young man falls in love with the Emperor's beautiful daughter, and goes on a journey with his supposedly long-lost uncle in search of riches. (A filmed production of Cole Porter's sole television outing, for the DuPont Show of the Month.)",
+          "popularity": 0.6003,
+          "poster_path": "/cHDnWrdnJJ1bHHxGJdW4hyaa3OX.jpg",
+          "release_date": "1958-02-21",
+          "softcore": false,
+          "video": false,
+          "vote_average": 10.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [10402, 35, 10751, 10770],
+          "id": 1450246,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "In ancient China, an aimless young man falls in love with the Emperor's beautiful daughter, and goes on a journey with his supposedly long-lost uncle in search of riches. CBS presentation of the Prince Street Players' Aladdin adaptation.",
+          "popularity": 0.3486,
+          "poster_path": "/9D8oC83uTuBh1YRvjoP5h48Gpn2.jpg",
+          "release_date": "1967-12-06",
+          "softcore": false,
+          "video": false,
+          "vote_average": 9.3,
+          "vote_count": 3
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/gkzfPl0rjp5COdFXPaxitp9J3X3.jpg",
+          "genre_ids": [12, 16, 10751],
+          "id": 11238,
+          "title": "Aladdin and the King of Thieves",
+          "original_language": "en",
+          "original_title": "Aladdin and the King of Thieves",
+          "overview": "Legendary secrets are revealed as Aladdin and his friends—Jasmine, Abu, Carpet and, of course, the always entertaining Genie—face all sorts of terrifying threats and make some exciting last-minute escapes pursuing the King Of Thieves and his villainous crew.",
+          "popularity": 4.123,
+          "poster_path": "/kTH7qEyvdDYMoQraQZm3LFKCge3.jpg",
+          "release_date": "1996-05-20",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.245,
+          "vote_count": 2041
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [10402, 10751, 35, 10770],
+          "id": 1444739,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "Christmas pantomime presentation of Aladdin, starring the cast of Crackerjack",
+          "popularity": 0.5548,
+          "poster_path": null,
+          "release_date": "1974-12-24",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [35],
+          "id": 972705,
+          "title": "Aladdin",
+          "original_language": "en",
+          "original_title": "Aladdin",
+          "overview": "An evil tailor uses a dog to tear men's clothes to boost his business. When he pulls this stunt on a Moorish Prince, a feud erupts as they both compete for the same girl. The Prince traps the tailor in a dungeon, but the tailor escapes using a magic lamp and endures wild adventures to ultimately win the girl's heart.",
+          "popularity": 0.2117,
+          "poster_path": "/n0MaakDVeqs2caKGZ9u9enAtKnC.jpg",
+          "release_date": "1922-10-16",
+          "softcore": false,
+          "video": false,
+          "vote_average": 8.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [18],
+          "id": 246482,
+          "title": "Aladdin",
+          "original_language": "ms",
+          "original_title": "Aladdin",
+          "overview": "Tells the tale of Aladdin a young naughty boy with brains. One day a sorcerrer came up to him and admitted that he was his father. He brought Aladdin into a cave to accompany him in getting a lamp in the cave. Aladdin just followed his orders. As he got hold of the lamp he was hypnotized by it and couldn't get his eyes off of it.  As the sorcerrer screamed to Aladdin to pass him the light Aladdin resisted and he was buried in the cave as the cave came down on him. To Aladdin's surprise there was a Genie in the lamp and requested his wishes to return home. Aladdin had three wishes to be made. What will his three wishes be?",
+          "popularity": 0.1782,
+          "poster_path": "/khlmZMDojLAeWx91Y1PImLTvlJM.jpg",
+          "release_date": "1952-01-23",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/RA2FjGBj1zMEEblkcXkpTthXzK.jpg",
+          "genre_ids": [12, 14],
+          "id": 602411,
+          "title": "Adventures of Aladdin",
+          "original_language": "en",
+          "original_title": "Adventures of Aladdin",
+          "overview": "With the help of a magical lamp, an impoverished young man transforms himself into a prince in order to win the heart of a beautiful princess. A live-action retelling of the 1992 Disney film of the same name.",
+          "popularity": 0.9248,
+          "poster_path": "/w900HA8MiAEDY3IQl6mz5JY916F.jpg",
+          "release_date": "2019-05-14",
+          "softcore": false,
+          "video": false,
+          "vote_average": 3.8,
+          "vote_count": 48
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [35],
+          "id": 1421281,
+          "title": "Alias Aladdin",
+          "original_language": "en",
+          "original_title": "Alias Aladdin",
+          "overview": "",
+          "popularity": 0.3624,
+          "poster_path": null,
+          "release_date": "1920-10-17",
+          "softcore": false,
+          "video": false,
+          "vote_average": 8.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/pRhv4jdFMtBLFyQmzva8XMDjAxw.jpg",
+          "genre_ids": [53, 27],
+          "id": 1638677,
+          "title": "Aladdin's Revenge",
+          "original_language": "en",
+          "original_title": "Aladdin's Revenge",
+          "overview": "After the events of the first films, Rachel, the lone survivor of Aladdin, finds the lamp once more haunting her as she attends a therapy retreat. She must protect a new set of friends as the lamp's evil plan to grant three deadly wishes begins all over again.",
+          "popularity": 1.2783,
+          "poster_path": "/4odel9KfBrrYHP2A9dDIv7M5tZx.jpg",
+          "release_date": "2026-02-17",
+          "softcore": false,
+          "video": false,
+          "vote_average": 1.667,
+          "vote_count": 3
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [10402, 10770],
+          "id": 778840,
+          "title": "Aladdin on Ice",
+          "original_language": "en",
+          "original_title": "Aladdin on Ice",
+          "overview": "A retelling of the Disney film, Aladdin (1992). This was staged on ice, and featured songs and clips from the animated film.",
+          "popularity": 0.5557,
+          "poster_path": "/f6oi3tNP93Sc4OfflnAfletcKyh.jpg",
+          "release_date": "1995-11-17",
+          "softcore": false,
+          "video": false,
+          "vote_average": 5.4,
+          "vote_count": 8
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [35],
+          "id": 1316808,
+          "title": "Aladdin Jones",
+          "original_language": "xx",
+          "original_title": "Aladdin Jones",
+          "overview": "Jimmy Marshall played a lazy drunkard with an overbearing wife, played by Florence McClain. The film contains a dream sequence where Marshall fantasizes about finding a magic lamp, which he uses to wish for liquor and a shack to sleep in.",
+          "popularity": 0.1105,
+          "poster_path": null,
+          "release_date": "1915-02-06",
+          "softcore": false,
+          "video": false,
+          "vote_average": 10.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [28, 12, 10402, 10749],
+          "id": 794624,
+          "title": "Aladdin and the Wonderful Lamp",
+          "original_language": "hi",
+          "original_title": "Aladdin Aur Jadui Chirag",
+          "overview": "The film follows the adventures of Aladdin and his finding a magical lamp which helps him in attaining the love of Princess Badar.",
+          "popularity": 0.6284,
+          "poster_path": "/xJESi2IJq6kfMs2iUiSc032k117.jpg",
+          "release_date": "1952-06-13",
+          "softcore": false,
+          "video": false,
+          "vote_average": 8.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [35],
+          "id": 765222,
+          "title": "Aladdin: The ITV Pantomime",
+          "original_language": "en",
+          "original_title": "Aladdin: The ITV Pantomime",
+          "overview": "A televised pantomime of Aladdin with characters played by well-known celebrities.",
+          "popularity": 0.713,
+          "poster_path": "/lER6DTMyIWG09o3RnM2KjC1SCtY.jpg",
+          "release_date": "2000-12-25",
+          "softcore": false,
+          "video": false,
+          "vote_average": 9.0,
+          "vote_count": 1
+        }
+      ],
+      "total_pages": 5,
+      "total_results": 87
+    },
+    "/3/search/movie?query=Aladdin&page=2": {
+      "page": 2,
+      "results": [
+        {
+          "adult": false,
+          "backdrop_path": "/qh0SSCM5M3eJbpstlgXyrpGArdk.jpg",
+          "genre_ids": [12, 10751, 14],
+          "id": 576177,
+          "title": "Aladdin and His Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin and His Lamp",
+          "overview": "A poor young man finds a lamp with a genie trapped inside. The genie promises to grant the man three wishes if he frees him from the lamp.",
+          "popularity": 0.7939,
+          "poster_path": "/tKlL4owER20yZf5cNqqwdlPyiMS.jpg",
+          "release_date": "1952-02-24",
+          "softcore": false,
+          "video": false,
+          "vote_average": 9.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/8evrj3SBDnrWxXExle9z6wvsMT6.jpg",
+          "genre_ids": [35, 14, 12],
+          "id": 344268,
+          "title": "The New Adventures of Aladdin",
+          "original_language": "fr",
+          "original_title": "Les Nouvelles Aventures d'Aladin",
+          "overview": "A pair of losers working at department store plan to rob the place after it closes. When a bunch of kids show up begging for a story, the men launch into an improvised version of Aladdin.",
+          "popularity": 1.445,
+          "poster_path": "/el4obM1DT1o4k7xGowuhtrUmW13.jpg",
+          "release_date": "2015-10-14",
+          "softcore": false,
+          "video": false,
+          "vote_average": 4.7,
+          "vote_count": 900
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/gFlNJiucrw9KEzqf7mIkMLaaPtb.jpg",
+          "genre_ids": [12, 14],
+          "id": 325439,
+          "title": "The Wonders of Aladdin",
+          "original_language": "it",
+          "original_title": "Le Meraviglie di Aladino",
+          "overview": "Young Aladdin has a series of wild adventures after he discovers a magic lamp containing a genie.",
+          "popularity": 1.045,
+          "poster_path": "/o8pUVNZUWGGf9sZTSnu2LXeWtN2.jpg",
+          "release_date": "1961-10-31",
+          "softcore": false,
+          "video": false,
+          "vote_average": 5.2,
+          "vote_count": 18
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [16, 10751],
+          "id": 595353,
+          "title": "Aladdin & Friends",
+          "original_language": "en",
+          "original_title": "Aladdin & Friends",
+          "overview": "",
+          "popularity": 0.0142,
+          "poster_path": "/xCcnt1IRBjQzOv44JBzfNnWjSJZ.jpg",
+          "release_date": "1993-06-01",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/ougvvTojZ3WjMGo4PGM3LZqtYZm.jpg",
+          "genre_ids": [10751, 10402, 10770],
+          "id": 587749,
+          "title": "CBeebies Presents: Aladdin",
+          "original_language": "en",
+          "original_title": "CBeebies Presents: Aladdin",
+          "overview": "The show is about a boy named Aladdin who gets granted 3 wishes by a genie after being locked in a cave by her \"long lost uncle\" and her trip back home.",
+          "popularity": 0.3781,
+          "poster_path": "/1EmlLNI1CjqugtWOlO1JJQhgVfE.jpg",
+          "release_date": "2010-12-28",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/uPWJAJJwwFuqzsZBsIiQ4vHJ6Ya.jpg",
+          "genre_ids": [35, 14, 12],
+          "id": 459616,
+          "title": "The Brand New Adventures of Aladdin",
+          "original_language": "fr",
+          "original_title": "Alad'2",
+          "overview": "After freeing Baghdad from its terrible ruler, Aladin delays his marriage to the princess until a new dictator arrives to take over the city.",
+          "popularity": 1.564,
+          "poster_path": "/dolYOzR2SnRRkNeRV6yE1c3bsxF.jpg",
+          "release_date": "2018-10-03",
+          "softcore": false,
+          "video": false,
+          "vote_average": 4.8,
+          "vote_count": 408
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/AnNk1MJTlneSd03xwquz1NLbVnZ.jpg",
+          "genre_ids": [12, 14, 27, 10770],
+          "id": 132894,
+          "title": "Aladdin and the Death Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin and the Death Lamp",
+          "overview": "Aladdin the adventurer and his friend Ali accidentally uncover a lamp that contains a genie. But unlike the story we know, this genie does not grant three wonderful wishes. This genie destroys everything in its way by turning the keeper’s thoughts into living nightmares. After witnessing the death of his fellow adventurers when the genie is released, Aladdin and surviving friend Ali turn to the village elder to uncover the history of the lamp, only to find the evil Shahir has been following them, hoping to take hold of the lamp and fulfill his own diabolical plans to have unlimited power. destroy their friend along with the ring.",
+          "popularity": 0.9229,
+          "poster_path": "/eNBth8F4UTfrN9hFqZtSKGf1nJ8.jpg",
+          "release_date": "2012-09-15",
+          "softcore": false,
+          "video": false,
+          "vote_average": 4.5,
+          "vote_count": 23
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [12],
+          "id": 1570265,
+          "title": "Aladdin from Broadway",
+          "original_language": "en",
+          "original_title": "Aladdin from Broadway",
+          "overview": "Jack Stanton embarks on a Middle Eastern adventure tied to a Broadway wager. After surviving a desert encounter with Amad and a series of misunderstandings in Damascus—including a false jealousy over William Fitzgerald and his long-lost daughter, Faimeh—Stanton recovers with Faimeh's help, returns to Broadway with them, and marries Faimeh.",
+          "popularity": 0.1992,
+          "poster_path": "/m7ArdDmMInRMNGZOSFyDi8hCtHN.jpg",
+          "release_date": "1917-03-19",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [16, 14],
+          "id": 453830,
+          "title": "The New Aladdin",
+          "original_language": "ru",
+          "original_title": "Новый Аладдин",
+          "overview": "",
+          "popularity": 0.3325,
+          "poster_path": "/rZgej9DHRhGlSKRs1QXqzUwkLs5.jpg",
+          "release_date": "1979-04-22",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/8PIht7T949nzeG40FVVOzPhxB1H.jpg",
+          "genre_ids": [12, 16, 14],
+          "id": 310576,
+          "title": "Aladdin and the Wonderful Lamp",
+          "original_language": "ja",
+          "original_title": "アラジンと魔法のランプ",
+          "overview": "This film stays very faithful to the original down to the smallest details, save for the kangaroo-rat that suddenly appears twenty minutes into the movie and subsequently follows Aladdin around, serving no purpose in the story but fulfilling the role of token animal mascot.  The story takes some illogical and confusing jumps at the point where Aladdin begins to court the princess, and the extravagant animation that had characterised Toei films of the 60s, when Toei had the best animators around, had become a thing of the past long before this point; but this is still an above-average film, in large part because of the screenplay that stays so faithful to the original. The character designs are slightly more western-looking than one is accustomed to seeing in anime.",
+          "popularity": 1.4043,
+          "poster_path": "/dC2EDGSuoUvo2za7VXv91iZTuo3.jpg",
+          "release_date": "1982-03-13",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.0,
+          "vote_count": 9
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/c4AlPUutFI92NmpoyuzMAO4m9kM.jpg",
+          "genre_ids": [10770, 10751, 12, 14, 35],
+          "id": 489429,
+          "title": "Aladdin and His Wonderful Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin and His Wonderful Lamp",
+          "overview": "Based on the story \"Aladdin and His Wonderful Lamp\", directed by Tim Burton and starring Robert Carradine.",
+          "popularity": 1.0435,
+          "poster_path": "/8TQgBW4ApnXepW5hWstdRbGIPBf.jpg",
+          "release_date": "1986-07-14",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.0,
+          "vote_count": 5
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [12],
+          "id": 609476,
+          "title": "Adventures of Aladdin",
+          "original_language": "hi",
+          "original_title": "Adventures of Aladdin",
+          "overview": "",
+          "popularity": 0.2351,
+          "poster_path": "/u7ZPVrNAfJPKUbQ7BUZoCYGkTTO.jpg",
+          "release_date": "1978-11-09",
+          "softcore": false,
+          "video": true,
+          "vote_average": 10.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [16],
+          "id": 1257865,
+          "title": "KoKo Lamps Aladdin",
+          "original_language": "en",
+          "original_title": "KoKo Lamps Aladdin",
+          "overview": "Ko-Ko the Clown enters a storybook and uses Aladdin's magic lamp to make his wishes come true.",
+          "popularity": 0.1504,
+          "poster_path": "/yiUio01vVJ1IqkjMBYcSMHubi9t.jpg",
+          "release_date": "1928-05-12",
+          "softcore": false,
+          "video": false,
+          "vote_average": 10.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/akd9t1QqvIep0ieLbfj52GJNIWt.jpg",
+          "genre_ids": [35, 10402, 10749],
+          "id": 692859,
+          "title": "The Magic of Aladdin",
+          "original_language": "en",
+          "original_title": "The Magic of Aladdin",
+          "overview": "A classic British pantomime version of the tale of Aladdin and the Lamp. The evil vizier Abanazar tries to manipulate Aladdin and his mother, Widow Twankey, into helping him acquire the magic lamp. But with the help of the Genie of the Ring, Aladdin wins through and captures the heart and hand of the Princess. Music, singing, dancing, and merriment throughout.",
+          "popularity": 0.4435,
+          "poster_path": "/hHkdlVPySlSpdeRSalWw5I7Y67z.jpg",
+          "release_date": "1989-06-01",
+          "softcore": false,
+          "video": false,
+          "vote_average": 8.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/6LDyZRdU8r8KF4bto9YyUwefLc7.jpg",
+          "genre_ids": [12, 10751, 10749],
+          "id": 20898,
+          "title": "Aladdin and His Magic Lamp",
+          "original_language": "ru",
+          "original_title": "Волшебная лампа Аладдина",
+          "overview": "A young boy finds a magic lantern that contains a genie, and when he frees the genie he's granted three wishes. He uses the wishes to help the princess of Baghdad and her father fight off an evil sorcerer who's trying to take over the kingdom.",
+          "popularity": 0.9566,
+          "poster_path": "/nVX01lxgz6WnD4f9FGfURC0Hc1Q.jpg",
+          "release_date": "1968-01-01",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.7,
+          "vote_count": 23
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [14],
+          "id": 1202348,
+          "title": "Aladdin Ka Beta",
+          "original_language": "ur",
+          "original_title": "علاء کا بیٹا",
+          "overview": "Film starring Neelo and Rattan Kumar.",
+          "popularity": 0.1773,
+          "poster_path": "/dXyb5bsfI0vjEZH6vsieoXmPuTG.jpg",
+          "release_date": "1960-06-06",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/nzH3kHiS4moGaTP64hkKvtN5qNX.jpg",
+          "genre_ids": [18, 35, 16],
+          "id": 145756,
+          "title": "Aladdin and His Wonderful Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin and His Wonderful Lamp",
+          "overview": "Olive Oyl's screenplay for an Aladdin movie comes to life and Popeye battles for control of a genie in this, the last of the three Popeye color films.",
+          "popularity": 0.7313,
+          "poster_path": "/nV1HnmMhQnuHvRGnrXTHsfdgPXQ.jpg",
+          "release_date": "1939-04-07",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.111,
+          "vote_count": 36
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/jiT4kaJpyKcGMKUNa07YyJjhY3m.jpg",
+          "genre_ids": [12, 14],
+          "id": 337182,
+          "title": "Sinbad, Alibaba and Aladdin",
+          "original_language": "hi",
+          "original_title": "सिंदबाद, अलीबाबा और अलादीन",
+          "overview": "A Bollywood Sinbad film with effects work by Tsuburaya Productions.",
+          "popularity": 0.4141,
+          "poster_path": "/yPb2HGuYrBaePgCqx06xQTOKtLc.jpg",
+          "release_date": "1965-04-15",
+          "softcore": false,
+          "video": false,
+          "vote_average": 9.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [10402, 10770, 35, 14, 10751],
+          "id": 1363040,
+          "title": "The New Adventures of Aladdin",
+          "original_language": "ru",
+          "original_title": "Новые приключения Аладдина",
+          "overview": "A new adaptation of the beloved Arabian fairy tale about Aladdin. In this version of the story, Aladdin is a Russian guard Alyosha, who by chance ends up in a distant country, where he receives this name and, of course, finds his princess - the magnificent Budur. Genie is a woman in this story, and the flying carpet is the cabin of the plane.",
+          "popularity": 0.7855,
+          "poster_path": "/ehMlOOZFPySgXHFowhkuaUWu3uJ.jpg",
+          "release_date": "2011-12-31",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.3,
+          "vote_count": 3
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/hhHAZ8NEgpmpD8u8vR2tbWzqwhw.jpg",
+          "genre_ids": [16, 10751, 12, 14],
+          "id": 125645,
+          "title": "Aladdin and His Magic Lamp",
+          "original_language": "fr",
+          "original_title": "Aladin et la lampe merveilleuse",
+          "overview": "He travels to Aladdin's village, identified as being near the border with China, where he enlists Aladdin's help by pretending to be his long-lost uncle and offering to leave his wealth to Aladdin. At one point, the Magician character tells the story of his travels to China, India and Persia and we see a montage of these adventures and it's kind of interesting because of the way it invokes other cultures of the era. There is some unnecessary padding throughout as characters break into songs that do nothing but tell parts of Once upon a time, somewhere in Africa, a local magician dreamed of owning the Magic Lamp. Thanks to a Magic Ball he learned that the Lamp could be found in an Asian village and that only the innocent hand of a young person could snatch it. He traveled to the place, a village called Three Hill City, close to the Chinese border. There lived Aladdin",
+          "popularity": 0.8493,
+          "poster_path": "/qz0dLPL6THLfNhR9wEr6wXCJ7fO.jpg",
+          "release_date": "1970-01-28",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.5,
+          "vote_count": 13
+        }
+      ],
+      "total_pages": 5,
+      "total_results": 87
+    },
+    "/3/search/movie?query=Aladdin&page=3": {
+      "page": 3,
+      "results": [
+        {
+          "adult": false,
+          "backdrop_path": "/ogC1yPAnnabNSxyYaHjELEsWANZ.jpg",
+          "genre_ids": [10751, 16],
+          "id": 174295,
+          "title": "Aladdin and the Wonderful Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin and the Wonderful Lamp",
+          "overview": "Aladdin is a child laborer who works for a guy that exchanges \"new lamps for old\". This guy swaps a \"new\" lamp for 2-3 replacement old lamps, then brings back the old lamps for Aladdin to polish and make look like new. One day Aladdin sees a princess riding by as he looks out the window, and he falls for her. But then he must return to his lamp polishing...",
+          "popularity": 0.5386,
+          "poster_path": "/axZQ2evnbAjNxXQxSheNAdBht18.jpg",
+          "release_date": "1934-08-10",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.3,
+          "vote_count": 9
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [35, 10751],
+          "id": 714573,
+          "title": "Aladdin: The Magical Family Musical",
+          "original_language": "en",
+          "original_title": "Aladdin: The Magical Family Musical",
+          "overview": "A musical adaption of Aladdin",
+          "popularity": 0.4735,
+          "poster_path": null,
+          "release_date": "2006-01-01",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [14, 35],
+          "id": 270578,
+          "title": "Aladdin and the Wonderful Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin and the Wonderful Lamp",
+          "overview": "In Bagdad, Princess Badr al-Budur, the daughter of the Sultan, falls in love with Aladdin, the son of a poor tailor, and rejects the suit of evil alchemist al-Talib, her father's choice. Al-Talib consults his Evil Spirit, who advises him to find the magic lamp hidden in an underground cave. Unable to get it himself, al-Talib hires Aladdin, who secures the lamp but keeps it when he realizes al-Talib's wickedness. With wealth obtained through wishes, Aladdin courts the princess. After the lamp changes hands between al-Talib and Aladdin, al-Talib steals it and abducts the princess to the desert. Aladdin follows with only a gourd of water. Suffering from thirst and exhaustion, Aladdin nearly succumbs, but the horsemen of the Sultan, who learned of his daughter's abduction, ride up and rescue Aladdin.",
+          "popularity": 0.5827,
+          "poster_path": "/sR2axaZxCERetwSt8p0z2pXyLDj.jpg",
+          "release_date": "1917-10-11",
+          "softcore": false,
+          "video": false,
+          "vote_average": 4.821,
+          "vote_count": 14
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [10402, 10751],
+          "id": 1302000,
+          "title": "Aladdin the Musical",
+          "original_language": "he",
+          "original_title": "אלאדין המחזמר",
+          "overview": "Israeli musical adaptation of Aladdin",
+          "popularity": 0.0804,
+          "poster_path": "/oMALbyL4Z0YocX3Hkdl94Mkh7pX.jpg",
+          "release_date": "2009-01-01",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/ogiREZBV70UXDaAIwBUyEns3acD.jpg",
+          "genre_ids": [35, 14, 18],
+          "id": 392961,
+          "title": "Adam Green's Aladdin",
+          "original_language": "en",
+          "original_title": "Adam Green's Aladdin",
+          "overview": "In this retelling of the classic tale, Aladdin is an out of work indie-rock singer living in a video-game-world ruled by a perverted technology-obsessed Sultan.",
+          "popularity": 0.8799,
+          "poster_path": "/n1EGXVfluPKrRbq65wbAAkAnfyN.jpg",
+          "release_date": "2016-04-15",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.8,
+          "vote_count": 9
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/xHy6hLICJEQ4NkorMwiAGDkp2vR.jpg",
+          "genre_ids": [],
+          "id": 565524,
+          "title": "Aladdin - Jaanbaz Ek Jalwe Anek",
+          "original_language": "pt",
+          "original_title": "Aladdin - Jaanbaz Ek Jalwe Anek",
+          "overview": "Aladdin, a 15-year-old boy, has to face many problems after he is left orphaned with relatives who do not want him. However, everything changes after he meets Princess Jasmine and the evil Jaffer.",
+          "popularity": 0.3499,
+          "poster_path": "/cCmKfEf2jmZVKRi4TVB39I5r5Bt.jpg",
+          "release_date": "2007-11-16",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [],
+          "id": 1716030,
+          "title": "Aladdin, la prophétie",
+          "original_language": "fr",
+          "original_title": "Aladdin, la prophétie",
+          "overview": "",
+          "popularity": 0.0701,
+          "poster_path": null,
+          "release_date": "",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/nWWB1DgYTAC4e0MWnfotksjNVsw.jpg",
+          "genre_ids": [35],
+          "id": 457247,
+          "title": "Aladdin's Lantern",
+          "original_language": "en",
+          "original_title": "Aladdin's Lantern",
+          "overview": "Spanky and Alfalfa want to do a show based on the \"Aladdin's Lamp\" story with Darla in the cast, but Darla doesn't want to participate.",
+          "popularity": 0.1974,
+          "poster_path": null,
+          "release_date": "1938-09-17",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.2,
+          "vote_count": 5
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [14],
+          "id": 185223,
+          "title": "Aladdin and His Wonder Lamp",
+          "original_language": "fr",
+          "original_title": "Aladin ou la lampe merveilleuse",
+          "overview": "The legend of Aladdin and his magic lamp: Aladdin finds a magic lamp which brings him wealth, luxury, and marriage to a princess. But his rival, an evil magician, steals the lamp for himself. Aladdin must regain the lamp or lose everything.",
+          "popularity": 0.4607,
+          "poster_path": "/9LVzYzt5Ko9zYmPfUrvHyPJCKyD.jpg",
+          "release_date": "1906-10-10",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.25,
+          "vote_count": 20
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/nXSHLitXhQfoWPHBE09H7bgCQpN.jpg",
+          "genre_ids": [14, 35],
+          "id": 678041,
+          "title": "Aladdin and the Marvelous Lamp",
+          "original_language": "es",
+          "original_title": "Aladino y la lámpara maravillosa",
+          "overview": "Mexican feature film",
+          "popularity": 0.4281,
+          "poster_path": "/gq7k5NYNnY59LRS4UsVzYwQoep2.jpg",
+          "release_date": "1958-02-22",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.5,
+          "vote_count": 10
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [35, 14],
+          "id": 1570283,
+          "title": "Aladdin's Other Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin's Other Lamp",
+          "overview": "As a baby, Patsy Smith is kidnapped by her father following a bitter quarrel with her mother. After her father dies at sea, a seafarer named Captain Barnaby places Patsy at Mrs. Duff's boardinghouse. She grows up working as a domestic drudge, deeply unhappy with her life. Inspired by Captain Barnaby's storytelling about Aladdin, Patsy sets out to find an old Oriental lamp that once belonged to her father. She learns that Mrs. Duff sold it to a junk peddler and goes to buy it back. Patsy rubs the lamp, unleashing a Genie. The Genie helps Patsy by providing her with fine clothing, exposing her abusive boardinghouse mistress, and eventually reuniting Patsy with her long-lost mother. With her life transformed, Patsy also finds romance with Harry, a young man who resides at the boardinghouse.",
+          "popularity": 0.5693,
+          "poster_path": "/g4zGiAwY0SaiTrjVCaw4LV0456F.jpg",
+          "release_date": "1917-06-25",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/hwZNEPIDinCin5NFWEbFwc7HApH.jpg",
+          "genre_ids": [10751, 12, 14],
+          "id": 22162,
+          "title": "A Kid in Aladdin's Palace",
+          "original_language": "en",
+          "original_title": "A Kid in Aladdin's Palace",
+          "overview": "Calvin, a young pizza delivery boy, is mistaken for the \"Great Deliverer\" by Aladdin, an eighth century genie imprisoned in a lamp. Thinking that the boy is his only hope for deliverance, the genie lures him back to the eigth century where he must join forces with Ali Baba in order to save Aladdin from the evil hands of Luxor.",
+          "popularity": 1.0292,
+          "poster_path": "/fnN7BprzPEqbxTBVoe1lKolES5a.jpg",
+          "release_date": "1997-11-12",
+          "softcore": false,
+          "video": false,
+          "vote_average": 5.2,
+          "vote_count": 32
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [16, 14],
+          "id": 88172,
+          "title": "Aladdin and the Magic Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin and the Magic Lamp",
+          "overview": "Aladdin, a poor tailor in Baghdad, discovers a magic lamp with a genie inside. After he uses it to gain wealth and the hand of the caliph's daughter, he must fend off an evil sorcerer who wants the lamp for himself.",
+          "popularity": 0.3035,
+          "poster_path": "/h8MAecMI8KjET17B02e21ZONiBK.jpg",
+          "release_date": "1954-01-01",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.0,
+          "vote_count": 7
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/pC6NWgQutfqUMCEgLbRakuKetRc.jpg",
+          "genre_ids": [14, 10402, 10751],
+          "id": 19330,
+          "title": "Aladdin: A Musical Spectacular",
+          "original_language": "en",
+          "original_title": "Aladdin: A Musical Spectacular",
+          "overview": "Disney's Aladdin: A Musical Spectacular is a musical show that plays at Disney's California Adventure. Based on the Disney film by the same name, the show plays inside Hyperion Theater Hollywood Pictures Backlot. The show is located right next to the Twilight Zone Tower of Terror.",
+          "popularity": 0.0518,
+          "poster_path": "/5hsKrXIO5Vpp4ZxhVGXR1vL4EcQ.jpg",
+          "release_date": "1992-11-11",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.0,
+          "vote_count": 42
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [16, 35],
+          "id": 237170,
+          "title": "Aladdin's Lamp",
+          "original_language": "en",
+          "original_title": "Aladdin's Lamp",
+          "overview": "In Arabia, a feline bandit kidnaps Aladdin's beautiful daughter. Mighty Mouse saves the day in this operetta parody.",
+          "popularity": 0.2174,
+          "poster_path": "/2TCrYMJy21L6NLjPEZQX19jBlfD.jpg",
+          "release_date": "1947-03-27",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.3,
+          "vote_count": 3
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [10402, 10749, 14, 35],
+          "id": 1225737,
+          "title": "Aladdin: Live from the West End",
+          "original_language": "en",
+          "original_title": "Aladdin: Live from the West End",
+          "overview": "In the boorish city of Agrabah, kind-hearted street urchin Aladdin and Princess Jasmine fall in love, although she can only marry a prince. He and power-hungry Grand Vizier Jafar vie for a magic lamp that can fulfill their wishes. Filmed at the Prince Edward Theatre in London's West End.",
+          "popularity": 0.4237,
+          "poster_path": "/mmaUYylGILHoiyJPgxl81peeYKR.jpg",
+          "release_date": "2019-08-24",
+          "softcore": false,
+          "video": false,
+          "vote_average": 1.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [],
+          "id": 1466836,
+          "title": "The Lamp of Aladdin",
+          "original_language": "en",
+          "original_title": "فانوس علاء الدين",
+          "overview": "The adventurous boy, **Aladdin**, lives in a big city with his monkey friend. When he falls in love with **Jasmine**, he finds himself in all sorts of trouble and embarks on a journey to find a mysterious magic lamp for an evil man named **Jafar**.",
+          "popularity": 0.0775,
+          "poster_path": "/l5XkfpZZw3bGjJLVE1dmMwNshg6.jpg",
+          "release_date": "1975-01-01",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [16, 14],
+          "id": 253762,
+          "title": "Aladdin and the Magic Lamp",
+          "original_language": "nl",
+          "original_title": "Aladdin and the Magic Lamp",
+          "overview": "George Pal animation short of the fable of Aladdin and the Magic Lamp.",
+          "popularity": 0.2125,
+          "poster_path": "/ruxAcHaxbBfZax47KFcePsPQgUs.jpg",
+          "release_date": "1936-02-02",
+          "softcore": false,
+          "video": false,
+          "vote_average": 6.3,
+          "vote_count": 3
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [99],
+          "id": 443417,
+          "title": "Neil Gaiman Live at the Aladdin",
+          "original_language": "en",
+          "original_title": "Neil Gaiman Live at the Aladdin",
+          "overview": "At the Aladdin Theatre in Portland, Oregon, author Neil Gaiman reads several of his short stories during a stop on his 2000 Last Angel Tour.",
+          "popularity": 0.4313,
+          "poster_path": "/h69j2D2V9eEjpyfmfXuUQY3bUm8.jpg",
+          "release_date": "2001-02-23",
+          "softcore": false,
+          "video": false,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/6Q70TSZ5F4M1zN0b2bLrGyUBFsN.jpg",
+          "genre_ids": [878, 12, 14],
+          "id": 1238476,
+          "title": "Aladdin 3477: The Jinn of Wisdom",
+          "original_language": "en",
+          "original_title": "Aladdin 3477: The Jinn of Wisdom",
+          "overview": "In the year 3477, a resourceful Hong Kong thief's obsession with the Princess of India propels him on a globe-trotting odyssey, where he crosses paths with an enigmatic ancient sage.",
+          "popularity": 0.5014,
+          "poster_path": "/bZSKchxzEwkW5Jt3TnMRxKqkXVa.jpg",
+          "release_date": "2025-01-03",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.0,
+          "vote_count": 1
+        }
+      ],
+      "total_pages": 5,
+      "total_results": 87
+    },
+    "/3/search/movie?query=Zxqv Family Puppet Show&page=1": {
+      "page": 1,
+      "results": [],
+      "total_pages": 1,
+      "total_results": 0
+    },
+    "/3/search/movie?query=Zxqv Family Puppet Show&page=1&primary_release_year=2011": {
+      "page": 1,
+      "results": [],
+      "total_pages": 1,
+      "total_results": 0
+    },
+    "/3/search/tv?query=Bluey&page=1": {
+      "page": 1,
+      "results": [
+        {
+          "adult": false,
+          "backdrop_path": "/tWdNZ3xuFBhJ2ZoQ9vShNGHTb85.jpg",
+          "genre_ids": [16, 35, 10751, 10762],
+          "id": 82728,
+          "origin_country": ["AU"],
+          "original_language": "en",
+          "original_name": "Bluey",
+          "overview": "Bluey is an inexhaustible six year-old Blue Heeler dog, who loves to play and turns everyday family life into extraordinary adventures, developing her imagination as well as her mental, physical and emotional resilience.",
+          "popularity": 54.6412,
+          "poster_path": "/9p4pNoGcuyCfHcGWKNrTopqMWtq.jpg",
+          "first_air_date": "2018-10-01",
+          "softcore": false,
+          "name": "Bluey",
+          "vote_average": 8.579,
+          "vote_count": 764
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/kTtNvqMal2GlK2YGsdvyyf8OZQf.jpg",
+          "genre_ids": [18, 80],
+          "id": 13869,
+          "origin_country": ["AU"],
+          "original_language": "en",
+          "original_name": "Bluey",
+          "overview": "At Melbourne's Russell Street Police Headquarters, Sgt. \"Bluey\" Hills, unable to work within the existing police squads, oversees Department B. They're assigned cases other departments could not readily solve by conventional means, with Hills applying his unconventional methods to bring about their resolution. Bluey's investigations are supported by newly assigned Gary Dawson, long-time cohort Monica Rourke, and undercover officer Reg Truscott, who spends his time ostensibly working as a small-time burglar, and supplying Bluey with information on the activities of local criminals.",
+          "popularity": 5.3293,
+          "poster_path": "/oAuJijwBiqzIUeLA06zRMPfdiqz.jpg",
+          "first_air_date": "1976-08-02",
+          "softcore": false,
+          "name": "Bluey",
+          "vote_average": 6.4,
+          "vote_count": 5
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/t6bAceQqyEFmEigfjjb9gaqm169.jpg",
+          "genre_ids": [16, 10751, 10762],
+          "id": 256953,
+          "origin_country": ["AU"],
+          "original_language": "en",
+          "original_name": "Bluey Minisodes",
+          "overview": "A collection of funny and sweet episodes featuring Bluey and her family and friends. This collection of every day moments introduces some new characters and games they have been playing together.",
+          "popularity": 6.5148,
+          "poster_path": "/xqHt3vc3iKnnp2yuMP2Y4RAZF1Q.jpg",
+          "first_air_date": "2024-06-16",
+          "softcore": false,
+          "name": "Bluey Minisodes",
+          "vote_average": 8.18,
+          "vote_count": 50
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/znyGmKo8oDwODCmP6ZoD6z2Y3Ho.jpg",
+          "genre_ids": [10762],
+          "id": 257018,
+          "origin_country": ["US"],
+          "original_language": "en",
+          "original_name": "Bluey Book Reads",
+          "overview": "Bluey Book Reads offers fans a new way to experience their favourite Bluey storybooks, combining off-screen narration from global talent with visuals from Bluey storybooks and live action shots.",
+          "popularity": 4.3741,
+          "poster_path": "/qPr1v0YnRMzL4IL6S5ehRiWK4PF.jpg",
+          "first_air_date": "2024-02-13",
+          "softcore": false,
+          "name": "Bluey Book Reads",
+          "vote_average": 10.0,
+          "vote_count": 1
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/9odRU37ksPlXjRzVpQUAbgvSob5.jpg",
+          "genre_ids": [16, 35, 10751, 10762],
+          "id": 328337,
+          "origin_country": ["GB"],
+          "original_language": "en",
+          "original_name": "Bluey Compilations",
+          "overview": "In this series of compilations, Bluey uses her limitless energy to play games that unfold in hilarious ways, bringing her family and the whole neighborhood into her world of fun.",
+          "popularity": 1.1204,
+          "poster_path": "/gt5MDinPvpqLcMf6EjYLyUxyXfI.jpg",
+          "first_air_date": "2026-07-02",
+          "softcore": false,
+          "name": "Bluey Compilations",
+          "vote_average": 8.6,
+          "vote_count": 14
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/9zE13q77p04vsEms53yULZnSnZt.jpg",
+          "genre_ids": [10751, 10762],
+          "id": 314883,
+          "origin_country": ["AU"],
+          "original_language": "en",
+          "original_name": "Bluey Fancy Restaurant",
+          "overview": "Inspired by Bluey's \"Fancy Restaurant\" kids transform their homes into themed restaurants to give their parents a romantic night, complete with creative menus, decorations, and sweet surprises.",
+          "popularity": 0.8299,
+          "poster_path": "/u2A2BFt9lJxA5g0fNgBlu5835jW.jpg",
+          "first_air_date": "2025-09-01",
+          "softcore": false,
+          "name": "Bluey Fancy Restaurant",
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/sTJzikC9XtZkOydO44sAmyeBWLo.jpg",
+          "genre_ids": [10762, 10751],
+          "id": 304633,
+          "origin_country": ["AU"],
+          "original_language": "en",
+          "original_name": "Bluey Cookalongs",
+          "overview": "Australian families in their kitchens, creating delicious memories with kid-safe knives, family recipes, and giggles. These cooking adventures celebrate the joy of making, sharing, and failing together.",
+          "popularity": 0.0548,
+          "poster_path": "/t3eirRLUSijWulibNUSnR7I1s9T.jpg",
+          "first_air_date": "2025-10-03",
+          "softcore": false,
+          "name": "Bluey Cookalongs",
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/fPZgb0hMZ679eXd3DYuNPyN2U5w.jpg",
+          "genre_ids": [35, 10762],
+          "id": 331634,
+          "origin_country": ["AU"],
+          "original_language": "en",
+          "original_name": "Bluey Tunes",
+          "overview": "Get ready to dance, sing and groove because Bluey Tunes is here! Join Bluey, Bingo, Mum, Dad and friends in a musical adventure filled with fun and dance-worthy beats.  Bluey Tunes is the perfect way to enjoy your favourite Bluey songs like never before. So, turn up the volume, get your body moving and get ready for Bluey Tunes!",
+          "popularity": 0.0194,
+          "poster_path": "/iACtKMMP8ZZidn4XfycTd3OcEM4.jpg",
+          "first_air_date": "2025-08-05",
+          "softcore": false,
+          "name": "Bluey Tunes",
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": null,
+          "genre_ids": [],
+          "id": 328341,
+          "origin_country": ["US"],
+          "original_language": "en",
+          "original_name": "Bluey Cake Off",
+          "overview": "Join two famous friends as they go head to head in a playful baking adventure, each will have to follow instructions by baker Tigga Mac and try to recreate a delicious bake inspired by Bluey.\n\nFrom a longdog yule log to the recreation of the Heelers’ House, watch as the duo mix, decorate and mould their creations while sharing plenty of laughs along the way. Once all finished, Tigga will choose an honorary winner… but the real winner is having fun in the kitchen.",
+          "popularity": 0.3396,
+          "poster_path": "/uCIS7Q6jBdhjGHF43SJypUspom9.jpg",
+          "first_air_date": "2026-06-24",
+          "softcore": false,
+          "name": "Bluey Cake Off",
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/5haiHUdIb7NFmKQC2P2JqGhLBkI.jpg",
+          "genre_ids": [],
+          "id": 327146,
+          "origin_country": ["AU"],
+          "original_language": "en",
+          "original_name": "LEGO Bluey Shorts",
+          "overview": "Bluey’s fans worldwide can enjoy their favorite blue canine in a new way today as BBC Studios and LEGO Entertainment introduce a short-form series online. LEGO Bluey Shorts, a 10 x 2-minute series is now available to view on the official Bluey channel, the LEGO channel and the LEGO Little One Channel on Youtube as well as Bluey.TV. New episodes, which are available in 12 languages.",
+          "popularity": 0.1221,
+          "poster_path": "/5WtDmhlohW9PiTYBNf26scRztjz.jpg",
+          "first_air_date": "2026-07-02",
+          "softcore": false,
+          "name": "LEGO Bluey Shorts",
+          "vote_average": 0.0,
+          "vote_count": 0
+        }
+      ],
+      "total_pages": 1,
+      "total_results": 10
+    },
+    "/3/tv/82728": {
+      "adult": false,
+      "backdrop_path": "/tWdNZ3xuFBhJ2ZoQ9vShNGHTb85.jpg",
+      "episode_run_time": [7],
+      "first_air_date": "2018-10-01",
+      "genres": [
+        {
+          "id": 16,
+          "name": "Animation"
+        },
+        {
+          "id": 35,
+          "name": "Comedy"
+        },
+        {
+          "id": 10751,
+          "name": "Family"
+        },
+        {
+          "id": 10762,
+          "name": "Kids"
+        }
+      ],
+      "homepage": "http://www.abc.net.au/tv/programs/bluey/",
+      "id": 82728,
+      "in_production": true,
+      "languages": ["en"],
+      "last_air_date": "2024-04-21",
+      "name": "Bluey",
+      "number_of_episodes": 154,
+      "number_of_seasons": 4,
+      "origin_country": ["AU"],
+      "original_language": "en",
+      "original_name": "Bluey",
+      "overview": "Bluey is an inexhaustible six year-old Blue Heeler dog, who loves to play and turns everyday family life into extraordinary adventures, developing her imagination as well as her mental, physical and emotional resilience.",
+      "popularity": 54.6412,
+      "poster_path": "/9p4pNoGcuyCfHcGWKNrTopqMWtq.jpg",
+      "seasons": [
+        {
+          "air_date": "2019-12-14",
+          "episode_count": 31,
+          "id": 138212,
+          "name": "Specials",
+          "overview": "",
+          "poster_path": "/oXcJ7MlUvJWEEkS9BSlmez58ZP0.jpg",
+          "season_number": 0,
+          "vote_average": 0.0
+        },
+        {
+          "air_date": "2018-10-01",
+          "episode_count": 52,
+          "id": 110147,
+          "name": "Series 1",
+          "overview": "",
+          "poster_path": "/eVzZUBfHxCrlATbMokkBN8jMJkm.jpg",
+          "season_number": 1,
+          "vote_average": 7.3
+        },
+        {
+          "air_date": "2020-03-17",
+          "episode_count": 52,
+          "id": 143749,
+          "name": "Series 2",
+          "overview": "",
+          "poster_path": "/yWOni1fTBx43j6VQsJuSTKkSCIL.jpg",
+          "season_number": 2,
+          "vote_average": 6.7
+        },
+        {
+          "air_date": "2021-09-05",
+          "episode_count": 49,
+          "id": 209453,
+          "name": "Series 3",
+          "overview": "",
+          "poster_path": "/gfqtdkCGTOA1G1S0AZnnVPhNx8c.jpg",
+          "season_number": 3,
+          "vote_average": 6.8
+        },
+        {
+          "air_date": null,
+          "episode_count": 0,
+          "id": 545280,
+          "name": "Season 4",
+          "overview": "",
+          "poster_path": null,
+          "season_number": 4,
+          "vote_average": 0.0
+        }
+      ],
+      "softcore": false,
+      "status": "Returning Series",
+      "tagline": "For real life?!",
+      "type": "Scripted",
+      "vote_average": 8.579,
+      "vote_count": 764,
+      "external_ids": {
+        "imdb_id": "tt7678620",
+        "freebase_mid": null,
+        "freebase_id": null,
+        "tvdb_id": 353546,
+        "tvrage_id": null,
+        "wikidata_id": "Q39071378",
+        "facebook_id": "OfficialBlueyTV",
+        "instagram_id": "officialblueytv",
+        "twitter_id": "OfficialBlueyTV"
+      },
+      "videos": {
+        "results": [
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "Bluey Theme Song",
+            "key": "VS5jsksGIM4",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Opening Credits",
+            "official": true,
+            "id": "6903b15103bc64c3c334ce62",
+            "published_at": "2019-09-04T16:45:01.000Z"
+          },
+          {
+            "iso_639_1": "en",
+            "iso_3166_1": "US",
+            "name": "Official Trailer",
+            "key": "2ZtG5Ba6iT0",
+            "site": "YouTube",
+            "size": 1080,
+            "type": "Trailer",
+            "official": true,
+            "id": "6417402b5690b50084e067c1",
+            "published_at": "2019-09-03T16:45:00.000Z"
+          }
+        ]
+      },
+      "images": {
+        "backdrops": [
+          {
+            "aspect_ratio": 1.778,
+            "height": 1080,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/6kVosC1wgVXJghUrPYBMoo9MA5D.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 1920
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 2160,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/tWdNZ3xuFBhJ2ZoQ9vShNGHTb85.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 3840
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 2160,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/3VEHwl4gOXFmxGdIlfGk5It0l0y.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 3840
+          },
+          {
+            "aspect_ratio": 1.778,
+            "height": 2160,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/cJjFoJ0rv6W8T1FALjsi0rPgMUJ.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 3840
+          }
+        ],
+        "posters": [
+          {
+            "aspect_ratio": 0.667,
+            "height": 3000,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/9p4pNoGcuyCfHcGWKNrTopqMWtq.jpg",
+            "vote_average": 6.608,
+            "vote_count": 14,
+            "width": 2000
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 3000,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/b9mY0X5T20ZM073hoa5n0dgmbfN.jpg",
+            "vote_average": 6.546,
+            "vote_count": 11,
+            "width": 2000
+          },
+          {
+            "aspect_ratio": 0.668,
+            "height": 1264,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/56P38Dkq7HNe1ULkposDhGkCMlT.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 844
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 3000,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/yPO25cH9hn19XUlZE7q7Pa83IdM.jpg",
+            "vote_average": 1.75,
+            "vote_count": 2,
+            "width": 2000
+          }
+        ]
+      },
+      "alternative_titles": {
+        "results": [
+          {
+            "iso_3166_1": "AU",
+            "title": "Bluey (2018)",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "AU",
+            "title": "Bluey: The Sign",
+            "type": "special episode title"
+          },
+          {
+            "iso_3166_1": "BG",
+            "title": "Блуи",
+            "type": ""
+          },
+          {
+            "iso_3166_1": "CN",
+            "title": "妙妙犬保怡",
+            "type": ""
+          }
+        ]
+      },
+      "translations": {
+        "translations": [
+          {
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "name": "English",
+            "english_name": "English",
+            "data": {
+              "name": "",
+              "overview": "Bluey is an inexhaustible six year-old Blue Heeler dog, who loves to play and turns everyday family life into extraordinary adventures, developing her imagination as well as her mental, physical and emotional resilience.",
+              "homepage": "",
+              "tagline": "For real life?!"
+            }
+          },
+          {
+            "iso_3166_1": "JP",
+            "iso_639_1": "ja",
+            "name": "日本語",
+            "english_name": "Japanese",
+            "data": {
+              "name": "ブルーイ",
+              "overview": "6歳と4歳の子犬の姉妹ブルーイとビンゴは遊ぶことが大好き。 いつも元気で好奇心旺盛なブルーイは毎日の日常を最高のアドベンチャーに変える天才! 想像力豊かに、身近なものから夢中になれる楽しい遊びを発見し、遊びを通して相手を思いやる気持ちやコミュニケーションの大切さを学んでいく。",
+              "homepage": "",
+              "tagline": ""
+            }
+          },
+          {
+            "iso_3166_1": "NL",
+            "iso_639_1": "nl",
+            "name": "Nederlands",
+            "english_name": "Dutch",
+            "data": {
+              "name": "",
+              "overview": "Bluey is een onvermoeibare, zes jaar oude Australian cattle dog, die dol is op spelen en het dagelijkse familieleven verandert in buitengewone avonturen. Ze ontwikkelt haar fantasie, maar ook haar fysieke en emotionele veerkracht.",
+              "homepage": "",
+              "tagline": ""
+            }
+          }
+        ]
+      }
+    },
+    "/3/tv/82728/season/1": {
+      "id": 110147,
+      "_id": "5bb2a4be925141427f000538",
+      "air_date": "2018-10-01",
+      "episodes": [
+        {
+          "air_date": "2018-10-01",
+          "episode_number": 1,
+          "episode_type": "standard",
+          "id": 1583478,
+          "name": "The Magic Xylophone",
+          "overview": "As Bluey and Bingo squabble over their magic xylophone (that has the power to freeze Dad in space and time) Dad seizes control and freezes Bluey, leaving Bingo as her only hope.",
+          "production_code": "",
+          "runtime": 7,
+          "season_number": 1,
+          "show_id": 82728,
+          "still_path": "/4vrYTRSUjQ6i9BuyBwAyFHBWfO6.jpg",
+          "vote_average": 7.2,
+          "vote_count": 21
+        },
+        {
+          "air_date": "2018-10-02",
+          "episode_number": 2,
+          "episode_type": "standard",
+          "id": 1583479,
+          "name": "Hospital",
+          "overview": "Doctor Bluey is needed when Dad gets a very curious x-ray from Nurse Bingo. It seems he has a cat in his tummy, leaving Bluey no choice but to operate immediately!",
+          "production_code": "",
+          "runtime": 7,
+          "season_number": 1,
+          "show_id": 82728,
+          "still_path": "/8YoNM0dgSw6gqUtOoijsw1VyQi8.jpg",
+          "vote_average": 7.3,
+          "vote_count": 13
+        },
+        {
+          "air_date": "2018-10-03",
+          "episode_number": 3,
+          "episode_type": "standard",
+          "id": 1583481,
+          "name": "Keepy Uppy",
+          "overview": "Bluey, Bingo and Mum are enjoying playing Keepy-Uppy around the house with their last balloon, when Dad joins in and the game becomes the ultimate test of skill.",
+          "production_code": "",
+          "runtime": 7,
+          "season_number": 1,
+          "show_id": 82728,
+          "still_path": "/rju1CL5ae40DmHSawZAr7GvVHKs.jpg",
+          "vote_average": 7.1,
+          "vote_count": 13
+        },
+        {
+          "air_date": "2018-10-04",
+          "episode_number": 4,
+          "episode_type": "standard",
+          "id": 1583484,
+          "name": "Daddy Robot",
+          "overview": "Bluey and Bingo don't want to tidy the playroom, so they get Daddy Robot to do it for them. But when Bluey takes things too far, Daddy Robot malfunctions with disastrous results.",
+          "production_code": "",
+          "runtime": 7,
+          "season_number": 1,
+          "show_id": 82728,
+          "still_path": "/NytBQymaDFBK1NYFHeW7iThJ9w.jpg",
+          "vote_average": 7.9,
+          "vote_count": 9
+        },
+        {
+          "air_date": "2018-10-05",
+          "episode_number": 5,
+          "episode_type": "standard",
+          "id": 1583486,
+          "name": "Shadowlands",
+          "overview": "On a picnic in the park, Bluey and her friends play Shadowlands. But when Coco keeps taking shortcuts, Bluey has to show her that following the rules can make the game more fun.",
+          "production_code": "",
+          "runtime": 7,
+          "season_number": 1,
+          "show_id": 82728,
+          "still_path": "/dJhXDWIufAgpx5I7mzZ38dY3hQU.jpg",
+          "vote_average": 7.6,
+          "vote_count": 9
+        }
+      ],
+      "name": "Series 1",
+      "overview": "",
+      "poster_path": "/eVzZUBfHxCrlATbMokkBN8jMJkm.jpg",
+      "season_number": 1,
+      "vote_average": 7.3,
+      "images": {
+        "posters": [
+          {
+            "aspect_ratio": 0.667,
+            "height": 1500,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/eVzZUBfHxCrlATbMokkBN8jMJkm.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 1000
+          },
+          {
+            "aspect_ratio": 0.667,
+            "height": 2483,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/qbWKwJwmsOP1k5fbQyhxoMabaPa.jpg",
+            "vote_average": 2.278,
+            "vote_count": 3,
+            "width": 1655
+          },
+          {
+            "aspect_ratio": 0.743,
+            "height": 1810,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/noGYzd5TsSq56MAemVh9f2VZlzM.jpg",
+            "vote_average": 0.0,
+            "vote_count": 0,
+            "width": 1344
+          },
+          {
+            "aspect_ratio": 0.668,
+            "height": 1102,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/7GJ34AgmFX9mtPd1Mb0CIlrjfpU.jpg",
+            "vote_average": 0.0,
+            "vote_count": 0,
+            "width": 736
+          }
+        ]
+      }
+    },
+    "/3/tv/13869": {
+      "adult": false,
+      "backdrop_path": "/kTtNvqMal2GlK2YGsdvyyf8OZQf.jpg",
+      "episode_run_time": [60],
+      "first_air_date": "1976-08-02",
+      "genres": [
+        {
+          "id": 18,
+          "name": "Drama"
+        },
+        {
+          "id": 80,
+          "name": "Crime"
+        }
+      ],
+      "homepage": "",
+      "id": 13869,
+      "in_production": false,
+      "languages": ["en"],
+      "last_air_date": "1977-04-25",
+      "name": "Bluey",
+      "number_of_episodes": 39,
+      "number_of_seasons": 1,
+      "origin_country": ["AU"],
+      "original_language": "en",
+      "original_name": "Bluey",
+      "overview": "At Melbourne's Russell Street Police Headquarters, Sgt. \"Bluey\" Hills, unable to work within the existing police squads, oversees Department B. They're assigned cases other departments could not readily solve by conventional means, with Hills applying his unconventional methods to bring about their resolution. Bluey's investigations are supported by newly assigned Gary Dawson, long-time cohort Monica Rourke, and undercover officer Reg Truscott, who spends his time ostensibly working as a small-time burglar, and supplying Bluey with information on the activities of local criminals.",
+      "popularity": 5.3293,
+      "poster_path": "/oAuJijwBiqzIUeLA06zRMPfdiqz.jpg",
+      "seasons": [
+        {
+          "air_date": "1976-08-02",
+          "episode_count": 39,
+          "id": 25076,
+          "name": "Season 1",
+          "overview": "",
+          "poster_path": null,
+          "season_number": 1,
+          "vote_average": 0.0
+        }
+      ],
+      "softcore": false,
+      "status": "Ended",
+      "tagline": "",
+      "type": "Scripted",
+      "vote_average": 6.4,
+      "vote_count": 5,
+      "external_ids": {
+        "imdb_id": "tt0073966",
+        "freebase_mid": "/m/07qxfy",
+        "freebase_id": "/en/bluey",
+        "tvdb_id": 303603,
+        "tvrage_id": 1689,
+        "wikidata_id": "Q3819508",
+        "facebook_id": null,
+        "instagram_id": null,
+        "twitter_id": null
+      },
+      "videos": {
+        "results": []
+      },
+      "images": {
+        "backdrops": [
+          {
+            "aspect_ratio": 1.778,
+            "height": 720,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/kTtNvqMal2GlK2YGsdvyyf8OZQf.jpg",
+            "vote_average": 0.0,
+            "vote_count": 0,
+            "width": 1280
+          }
+        ],
+        "posters": [
+          {
+            "aspect_ratio": 0.668,
+            "height": 1617,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/oAuJijwBiqzIUeLA06zRMPfdiqz.jpg",
+            "vote_average": 3.334,
+            "vote_count": 1,
+            "width": 1080
+          },
+          {
+            "aspect_ratio": 0.68,
+            "height": 1000,
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "file_path": "/oNZIXberufESNBSCvNOefByqC1g.jpg",
+            "vote_average": 0.166,
+            "vote_count": 1,
+            "width": 680
+          },
+          {
+            "aspect_ratio": 0.668,
+            "height": 1264,
+            "iso_3166_1": null,
+            "iso_639_1": null,
+            "file_path": "/6nbPXsEFmV3ZotVzfG8mK94tCNO.jpg",
+            "vote_average": 0.0,
+            "vote_count": 0,
+            "width": 844
+          }
+        ]
+      },
+      "alternative_titles": {
+        "results": []
+      },
+      "translations": {
+        "translations": [
+          {
+            "iso_3166_1": "US",
+            "iso_639_1": "en",
+            "name": "English",
+            "english_name": "English",
+            "data": {
+              "name": "",
+              "overview": "At Melbourne's Russell Street Police Headquarters, Sgt. \"Bluey\" Hills, unable to work within the existing police squads, oversees Department B. They're assigned cases other departments could not readily solve by conventional means, with Hills applying his unconventional methods to bring about their resolution. Bluey's investigations are supported by newly assigned Gary Dawson, long-time cohort Monica Rourke, and undercover officer Reg Truscott, who spends his time ostensibly working as a small-time burglar, and supplying Bluey with information on the activities of local criminals.",
+              "homepage": "",
+              "tagline": ""
+            }
+          },
+          {
+            "iso_3166_1": "NL",
+            "iso_639_1": "nl",
+            "name": "Nederlands",
+            "english_name": "Dutch",
+            "data": {
+              "name": "",
+              "overview": "Op het hoofdkwartier van de politie in Russell Street in Melbourne, Sgt. 'Bluey' Hills, die niet binnen de bestaande politie-eenheden kan werken, houdt toezicht op afdeling B. Ze krijgen zaken toegewezen die andere afdelingen niet gemakkelijk met conventionele middelen kunnen oplossen, waarbij Hills zijn onconventionele methoden toepast om de oplossing tot stand te brengen. Bluey's onderzoeken worden ondersteund door de nieuw aangestelde Gary Dawson, oude cohort Monica Rourke, en undercoveragent Reg Truscott, die zijn tijd ogenschijnlijk doorbrengt als een kleine inbreker en Bluey voorziet van informatie over de activiteiten van lokale criminelen.",
+              "homepage": "",
+              "tagline": ""
+            }
+          }
+        ]
+      }
+    },
+    "/3/tv/13869/season/1": {
+      "id": 25076,
+      "_id": "52582bc8760ee36aaa88226c",
+      "air_date": "1976-08-02",
+      "episodes": [
+        {
+          "air_date": "1976-08-02",
+          "episode_number": 1,
+          "episode_type": "standard",
+          "id": 507599,
+          "name": "The First Bloody Day",
+          "overview": "Maverick cop Sgt. Bluey Hills is set up in the newly formed 'Department B', which has been created especially for him, largely because no-one else wants to work with him. His first day brings the tragic case of a young policeman who has been killed by a car bomb blast. Bluey is hindered by the boy's father, a retired policeman, who thinks the police aren't doing enough and decides to take on the investigation himself.",
+          "production_code": "",
+          "runtime": 60,
+          "season_number": 1,
+          "show_id": 13869,
+          "still_path": null,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "air_date": "1976-08-09",
+          "episode_number": 2,
+          "episode_type": "standard",
+          "id": 507600,
+          "name": "Unplaced Favourite",
+          "overview": "Bluey is out to get small time crim Tony Benson - and Benson is very much aware of it. Benson makes several attempts to discredit Bluey, including planting a fake bomb in his car and appearing to commit a 'robbery' which never occurred. Bluey is subsequently suspended from duty, and is only brought back into favour by the efforts of Det. Gary Dawson.",
+          "production_code": "",
+          "runtime": 60,
+          "season_number": 1,
+          "show_id": 13869,
+          "still_path": null,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "air_date": "1976-08-16",
+          "episode_number": 3,
+          "episode_type": "standard",
+          "id": 507601,
+          "name": "The Final Dividend",
+          "overview": "A paroled criminal’s daughter is kidnapped by two men intent on obtaining the money - proceeds from past robberies - that he has hidden away. Bluey is reluctant to get involved, especially when it appears the kidnappers know his every move even before he does.",
+          "production_code": "",
+          "runtime": 60,
+          "season_number": 1,
+          "show_id": 13869,
+          "still_path": null,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "air_date": "1976-08-23",
+          "episode_number": 4,
+          "episode_type": "standard",
+          "id": 507602,
+          "name": "May",
+          "overview": "Walter Curran is a petty criminal who always gets caught. Bluey's attempts to reform Curran fail, and Curran’s son follows his father’s footsteps into crime, bringing a tragic consequence for the whole family.",
+          "production_code": "",
+          "runtime": 60,
+          "season_number": 1,
+          "show_id": 13869,
+          "still_path": null,
+          "vote_average": 0.0,
+          "vote_count": 0
+        },
+        {
+          "air_date": "1976-08-30",
+          "episode_number": 5,
+          "episode_type": "standard",
+          "id": 507603,
+          "name": "One Man Band",
+          "overview": "Eric Yates, a brilliant criminal, escapes custody while attending a funeral. Bluey is baffled by Yates' disappearance, and questions whether the escape was actually Yates' idea. The only clue seems to lie with Yates' wife.",
+          "production_code": "",
+          "runtime": 60,
+          "season_number": 1,
+          "show_id": 13869,
+          "still_path": null,
+          "vote_average": 0.0,
+          "vote_count": 0
+        }
+      ],
+      "name": "Season 1",
+      "overview": "",
+      "poster_path": null,
+      "season_number": 1,
+      "vote_average": 0.0,
+      "images": {
+        "posters": []
+      }
+    },
+    "/3/tv/82728/season/1/episode/1/external_ids": {
+      "id": 1583478,
+      "imdb_id": "tt8865002",
+      "freebase_mid": null,
+      "freebase_id": null,
+      "tvdb_id": 6846432,
+      "tvrage_id": null,
+      "wikidata_id": "Q110249409"
+    },
+    "/3/tv/82728/season/1/episode/2/external_ids": {
+      "id": 1583479,
+      "imdb_id": "tt8865934",
+      "freebase_mid": null,
+      "freebase_id": null,
+      "tvdb_id": 6846445,
+      "tvrage_id": null,
+      "wikidata_id": "Q110249414"
+    },
+    "/3/tv/82728/season/1/episode/3/external_ids": {
+      "id": 1583481,
+      "imdb_id": "tt9150200",
+      "freebase_mid": null,
+      "freebase_id": null,
+      "tvdb_id": 6846444,
+      "tvrage_id": null,
+      "wikidata_id": "Q110249415"
+    },
+    "/3/tv/82728/season/1/episode/4/external_ids": {
+      "id": 1583484,
+      "imdb_id": "tt9150204",
+      "freebase_mid": null,
+      "freebase_id": null,
+      "tvdb_id": 6846441,
+      "tvrage_id": null,
+      "wikidata_id": "Q110249416"
+    }
+  }
+}

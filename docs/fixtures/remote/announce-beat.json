@@ -1,0 +1,19 @@
+{
+  "order": 9,
+  "foreground": true,
+  "canPlay": true,
+  "profileId": "viewer-1",
+  "capabilities": [
+    "play",
+    "pause",
+    "resume",
+    "seek",
+    "skip",
+    "next",
+    "stop",
+    "setAudio",
+    "setSubtitle",
+    "setVolume",
+    "upNext"
+  ]
+}

@@ -1,0 +1,39 @@
+# Lobby Server with Docker Compose. An example: change the media folders on the left of each ":".
+#
+#   docker compose -f tools/release/docker/compose.yaml up -d --build      (from the repository)
+#
+# The image is built here from the source; no image is published.
+services:
+  lobby:
+    build:
+      context: ../../..
+      dockerfile: tools/release/docker/Dockerfile
+    image: lobby-server:local
+    restart: unless-stopped
+    # Host networking, on Linux: the apps find the server with Bonjour (mDNS), which does not
+    # cross Docker's own network, and the server sees each device's real address, which is how it
+    # lets only the home network and the tailnet set it up. With "ports:" instead, every request
+    # seems to come from Docker's private network: then put "claim": "secret" in the config and
+    # set the server up with the secret from `docker compose logs`. Docker Desktop on a Mac has
+    # no host networking that reaches the home network: use the macOS archive there.
+    network_mode: host
+    environment:
+      LOBBY_NAME: Lobby
+      # Your time zone, such as Europe/London: "conversion.hours" are in local time.
+      TZ: Etc/UTC
+    # The image's user, uid 1000. Use your own uid:gid when the media is readable only by you.
+    # user: "1000:1000"
+    volumes:
+      # Catalogue, settings, secrets, backups and the config.
+      - lobby:/lobby
+      # The library, read-only. Pick these folders in the app's first setup.
+      - /srv/media/Movies:/media/Movies:ro
+      - /srv/media/Series:/media/Series:ro
+      - /srv/media/Music:/media/Music:ro
+      # Converting old files needs Lobby's own folder and the library on ONE writable mount of the
+      # drive (a file is renamed between them). Leave it out to keep everything read-only:
+      # - /srv/media:/media/drive
+      # Optional: waking Apple TVs for Play On needs Python with pyatv, which this image does not
+      # have (docs/release.md, "The container image"; docs/operations.md, "Waking the Apple TV").
+volumes:
+  lobby: {}

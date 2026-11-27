@@ -1,0 +1,7 @@
+node_modules
+package-lock.json
+apps/server/data
+apps/apple
+packages
+docs
+*.md

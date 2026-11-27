@@ -1,0 +1,36 @@
+.DS_Store
+node_modules/
+*.log
+
+# Server runtime state. Never commit a household's catalogue, config or secrets.
+apps/server/data/
+lobby.config.json
+.env
+.env.*
+
+# Swift / Xcode. The project is generated from project.yml by XcodeGen.
+.build/
+.swiftpm/
+build/
+DerivedData/
+*.xcodeproj
+xcuserdata/
+
+# The sidecar is built where it runs.
+apps/direct/target/
+wrangler.local.jsonc
+.wrangler/
+
+# Release archives (tools/release/build.ts).
+dist/
+
+# Signing material and local editor state: never committed.
+*.p8
+*.p12
+*.pem
+*.mobileprovision
+*.xcresult
+secrets.json
+.vscode/
+.idea/
+coverage/

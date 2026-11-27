@@ -1,0 +1,11 @@
+# Only what the image is built from (BuildKit reads this file for this Dockerfile).
+*
+!package.json
+!package-lock.json
+!apps/server/package.json
+!apps/server/src
+!apps/introducer/package.json
+!tools/release/package.json
+!tools/release/docker/entrypoint.sh
+!apps/direct
+apps/direct/target

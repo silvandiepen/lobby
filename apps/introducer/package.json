@@ -1,0 +1,23 @@
+{
+  "name": "@lobby/introducer",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MPL-2.0",
+  "type": "module",
+  "description": "Introduces a household's box to its devices. Passes on what it cannot read, and no film.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/node.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "miniflare": "^4.20260730.0"
+  }
+}

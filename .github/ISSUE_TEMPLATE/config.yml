@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/silvandiepen/lobby/security/advisories/new
+    about: Privately, as SECURITY.md describes. Never in a public issue.
+  - name: Ask a question
+    url: mailto:support@hakobs.com
+    about: For help with your own server or the apps.

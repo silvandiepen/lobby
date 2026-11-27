@@ -1,0 +1,148 @@
+# Checks every push and pull request. The Node jobs always run; lobby-direct, LobbyKit and the
+# Apple apps run only when their files (or what they depend on) changed. It needs no secrets.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      direct: ${{ steps.paths.outputs.direct }}
+      lobbykit: ${{ steps.paths.outputs.lobbykit }}
+      apps: ${{ steps.paths.outputs.apps }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: What changed
+        id: paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # A new branch or an unknown base: check everything.
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            changed="everything"
+          else
+            changed="$(git diff --name-only "$BASE" HEAD)"
+          fi
+          echo "$changed"
+          touched() {
+            [ "$changed" = everything ] && return 0
+            printf '%s\n' "$changed" | grep -qE "$1"
+          }
+          flag() { if touched "$2"; then echo "$1=true"; else echo "$1=false"; fi >> "$GITHUB_OUTPUT"; }
+          flag direct '^(apps/direct/|apps/server/src/outside/|\.github/workflows/ci\.yml)'
+          flag lobbykit '^(packages/|docs/api\.md|\.github/workflows/ci\.yml)'
+          flag apps '^(apps/apple/|packages/|\.github/workflows/ci\.yml)'
+
+  server:
+    name: Server, lint and typecheck
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - name: ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg dash
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -w apps/server
+      - run: npm test -w tools/release
+
+  introducer:
+    name: Introducer
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test -w apps/introducer
+
+  push-relay:
+    name: Push relay
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test -w apps/push-relay
+
+  direct:
+    name: lobby-direct
+    needs: changes
+    if: needs.changes.outputs.direct == 'true'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/direct
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust 1.90
+        run: |
+          rustup toolchain install 1.90.0 --profile minimal --component clippy,rustfmt
+          rustup override set 1.90.0
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked --release
+
+  lobbykit:
+    name: LobbyKit
+    needs: changes
+    if: needs.changes.outputs.lobbykit == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Xcode 26
+        run: |
+          xcode="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)"
+          [ -n "$xcode" ] && sudo xcode-select -s "$xcode"
+          xcodebuild -version
+      - run: swift test --package-path packages/LobbyKit
+
+  apps:
+    name: Apple apps (${{ matrix.scheme }})
+    needs: changes
+    if: needs.changes.outputs.apps == 'true'
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { scheme: Lobby, destination: "generic/platform=iOS Simulator" }
+          - { scheme: LobbyMac, destination: "generic/platform=macOS" }
+          - { scheme: LobbyTV, destination: "generic/platform=tvOS Simulator" }
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Xcode 26
+        run: |
+          xcode="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)"
+          [ -n "$xcode" ] && sudo xcode-select -s "$xcode"
+          xcodebuild -version
+      - run: brew install xcodegen
+      - run: npm run apple:generate
+      - name: Build, unsigned
+        run: |
+          xcodebuild build-for-testing \
+            -project apps/apple/Lobby.xcodeproj -scheme "${{ matrix.scheme }}" \
+            -destination "${{ matrix.destination }}" \
+            CODE_SIGNING_ALLOWED=NO
