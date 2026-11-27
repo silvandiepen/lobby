@@ -80,8 +80,9 @@ final class StoriesWalkthrough: LobbyUITestCase {
         let row = app.scrollViews["shelf.Stories"]
         for _ in 0..<6 where !row.exists { app.swipeUp(velocity: .slow) }
         try await save("grownup-home-stories", plan)
-        let stories = element("sidebar.Stories")
+        let stories = app.staticTexts["sidebar.Stories"].firstMatch
         if stories.waitForExistence(timeout: 3) {
+            for _ in 0..<4 where !stories.isHittable { app.swipeUp(velocity: .slow) }
             stories.tap()
         } else if app.tabBars.buttons["Music"].exists {
             app.tabBars.buttons["Music"].tap()
