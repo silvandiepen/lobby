@@ -276,7 +276,8 @@ final class AppModel {
                     ? .init(assetID: record.assetID, isOutOfDate: record.staleness != nil || record.state != .verified)
                     : nil
             },
-            serverIsOutOfReach: serverIsOutOfReach, keepsDownloads: environment.keepsDownloads)
+            serverIsOutOfReach: serverIsOutOfReach, keepsDownloads: environment.keepsDownloads,
+            explainsPreparation: isOwnerManager)
     }
 
     /// iPhone, iPad and Mac. The Apple TV limits what a kids viewer sees, in its ordinary
@@ -1522,9 +1523,15 @@ final class AppModel {
         phase = .chooseProfile
     }
 
+    /// Who was watching before Who is watching? was opened: the picker offers the way back to
+    /// them. nil at the start, when nobody was chosen yet.
+    var viewerToReturnTo: Profile? {
+        phase == .chooseProfile ? activeProfile : nil
+    }
+
     /// The picker was left without choosing: whoever was watching still is.
     func returnToLibrary() {
-        if phase == .chooseProfile, activeProfile != nil { phase = .library }
+        if viewerToReturnTo != nil { phase = .library }
     }
 
     private func asksWhoIsWatching(isLaunch: Bool) -> Bool {

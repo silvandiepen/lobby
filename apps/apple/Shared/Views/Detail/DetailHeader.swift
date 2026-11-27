@@ -27,17 +27,20 @@ struct TitlePage<Actions: View, Content: View>: View {
                         item: item, facts: facts, size: CGSize(width: proxy.size.width, height: height), topInset: inset,
                         isCompact: isCompact
                     ) { actions }
+                    // On a phone Play and its actions sit right under the title and its year,
+                    // with the summary close below: one block, as on Apple's own pages.
+                    if isCompact {
+                        VStack(spacing: AppTheme.Space.m) { actions }
+                            .frame(maxWidth: 480)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, AppTheme.Space.l)
+                            .padding(.top, AppTheme.Space.xs)
+                            .padding(.bottom, AppTheme.Space.l)
+                            .arrives(1)
+                    }
                     LazyVStack(alignment: .leading, spacing: AppTheme.Space.shelf) {
-                        if isCompact {
-                            VStack(spacing: AppTheme.Space.l) { actions }
-                                .frame(maxWidth: 480)
-                                .frame(maxWidth: .infinity)
-                                .padding(.horizontal, AppTheme.Space.l)
-                                .arrives(1)
-                        }
                         content
                     }
-                    .padding(.top, isCompact ? AppTheme.Space.m : 0)
                 }
                 .padding(.bottom, AppTheme.Space.xl)
             }
@@ -112,8 +115,8 @@ private struct TitleHero<Actions: View>: View {
                 }
             }
             .foregroundStyle(Color.lobbyOnArtwork)
-            .padding(.horizontal, isCompact ? AppTheme.Space.l : AppTheme.Space.l)
-            .padding(.bottom, isCompact ? AppTheme.Space.l : 52)
+            .padding(.horizontal, AppTheme.Space.l)
+            .padding(.bottom, isCompact ? AppTheme.Space.m : 52)
             .padding(.top, topInset)
             .frame(maxWidth: isCompact ? .infinity : min(680, max(420, size.width * 0.62)), alignment: isCompact ? .bottom : .bottomLeading)
         }
@@ -216,9 +219,11 @@ struct RoundAction<Label: View>: View {
                     .font(.caption)
                     .foregroundStyle(.lobbySecondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .accessibilityHidden(true)
             }
-            .frame(minWidth: 72)
+            // A few stand together in the middle; many share the row's width, narrower.
+            .frame(minWidth: 60, maxWidth: 88)
         }
     }
 }
@@ -239,7 +244,17 @@ struct TitleActions<Circles: View>: View {
         } else {
             VStack(spacing: AppTheme.Space.l) {
                 PlayActionView(action: action, label: label)
-                HStack(alignment: .top, spacing: AppTheme.Space.s) { circles }
+                // All in one row across the width; with more than fit (large text), the row
+                // scrolls rather than cutting the last one off.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 0) { circles }
+                    ScrollView(.horizontal) {
+                        HStack(alignment: .top, spacing: AppTheme.Space.s) { circles }
+                            .padding(.horizontal, AppTheme.Space.l)
+                    }
+                    .scrollIndicators(.hidden)
+                    .padding(.horizontal, -AppTheme.Space.l)
+                }
             }
             .frame(maxWidth: .infinity)
         }
