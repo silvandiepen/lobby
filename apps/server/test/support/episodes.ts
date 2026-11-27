@@ -93,8 +93,13 @@ export function makeEpisode(
       "[out]",
       "-c:a",
       "aac",
+      // At 64 kbit/s, and with noise substitution, the encoder rounds the sound differently
+      // with and without the processor's vector instructions: where the credits were found
+      // moved by up to 2.6 s between two builds of the same ffmpeg. Like this it does not.
       "-b:a",
-      "64k",
+      "128k",
+      "-aac_pns",
+      "0",
       "-t",
       String(seconds),
       path,
