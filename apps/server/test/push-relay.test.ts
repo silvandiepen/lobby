@@ -134,12 +134,13 @@ describe("push through the relay", () => {
       "production",
     );
     expect(await push.toDevices([phone.id, pad.id], QUESTION)).toBe(2);
-    expect(apple.map((one) => one.url)).toEqual([
-      `https://api.push.apple.com/3/device/${token}`,
-      `https://api.push.apple.com/3/device/${"b".repeat(64)}`,
-    ]);
+    // In no particular order: the devices are looked up by their ids, which are random.
+    const toPhone = `https://api.push.apple.com/3/device/${token}`;
+    const toPad = `https://api.push.apple.com/3/device/${"b".repeat(64)}`;
+    expect(apple.map((one) => one.url).sort()).toEqual([toPhone, toPad]);
     // Apple, and the relay, see only the generic alert; the app opens the rest.
-    const [first, second] = apple;
+    const first = apple.find((one) => one.url === toPhone);
+    const second = apple.find((one) => one.url === toPad);
     expect(first?.body.aps["alert"]).toEqual({ title: "Lobby", body: "A request is waiting." });
     expect(JSON.stringify(first?.body)).not.toContain("Robin");
     const expected: PushContent = {
