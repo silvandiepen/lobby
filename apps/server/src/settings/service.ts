@@ -747,6 +747,13 @@ export class SettingsService {
               : "A woken Apple TV that asks who is watching takes the profile that is focused.",
           );
           break;
+        case "remote.wake.speakers":
+          effect(
+            now === false
+              ? "Play On no longer offers HomePods and speakers. What plays on one stops."
+              : "Play On offers the HomePods and speakers on the server's network for music and stories.",
+          );
+          break;
         case "backup.everyHours":
           effect(
             now === 0

@@ -232,6 +232,7 @@ export const WITHIN_FILE: Readonly<Record<string, string>> = {
   "remote.wake.enabled": "remote.wake",
   "remote.wake.kids": "remote.wake",
   "remote.wake.pickProfile": "remote.wake",
+  "remote.wake.speakers": "remote.wake",
 };
 
 /** The keys a manager can change. `schema.ts` describes each; the list is here so the config can merge without it. */
@@ -258,6 +259,7 @@ export const SETTING_KEYS = [
   "remote.wake.enabled",
   "remote.wake.kids",
   "remote.wake.pickProfile",
+  "remote.wake.speakers",
   "backup.keep",
   "backup.everyHours",
   "statistics.keepDays",

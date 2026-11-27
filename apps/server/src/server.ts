@@ -25,7 +25,14 @@ import { errorMessage, log } from "./log.ts";
 import { MusicLibrary } from "./music/index.ts";
 import { DirectTransport, OutsideEntrance, RelayTransport } from "./outside/index.ts";
 import { BoxKeys } from "./outside/direct/keys.ts";
-import { RemoteHub, WakeService, type WakeHelper, type WakeTimings } from "./remote/index.ts";
+import {
+  RemoteHub,
+  SPEAKER_TIMINGS,
+  SpeakerService,
+  WakeService,
+  type WakeHelper,
+  type WakeTimings,
+} from "./remote/index.ts";
 import { PlaybackService } from "./playback/index.ts";
 import { serverAddresses } from "./addresses.ts";
 import { ConversionService } from "./conversion/index.ts";
@@ -304,6 +311,8 @@ export interface StartOptions {
   wakeHelper?: (config: WakeConfig) => WakeHelper;
   /** How long a woken TV is waited for; tests wait less. */
   wakeTimings?: Partial<WakeTimings>;
+  /** How often speakers are looked for and looked after; tests look more often. */
+  speakerTimings?: Partial<typeof SPEAKER_TIMINGS>;
 }
 
 export async function startServer(
@@ -496,6 +505,8 @@ export async function startServer(
       ? [new RelayTransport(config.outside.tls, config.outside.name)]
       : [],
   });
+  // Set right below: the speakers use the helper of the Apple TVs.
+  let speakers: SpeakerService | null = null;
   const wake = new WakeService({
     db: services.db,
     devices: services.devices,
@@ -503,12 +514,27 @@ export async function startServer(
     changed: () => {
       remote.recheck();
     },
+    helperChanged: () => speakers?.helperChanged(),
+    helperEvent: (event) => speakers?.helperEvent(event),
     ...(options.wakeHelper ? { helper: options.wakeHelper } : {}),
     ...(options.wakeTimings ? { timings: options.wakeTimings } : {}),
   });
   remote.wakeable = (deviceId) => wake.wakeable(deviceId);
   wake.isOpen = (deviceId) => remote.isOpen(deviceId);
   remote.kidsWake = () => wake.kidsMayWake();
+  const speakerService = new SpeakerService({
+    db: services.db,
+    music: services.music,
+    config: () => config.wake,
+    helper: () => wake.process(),
+    ffmpegPath: config.ffmpegPath,
+    changed: () => {
+      remote.speakersChanged();
+    },
+    ...(options.speakerTimings ? { timings: options.speakerTimings } : {}),
+  });
+  speakers = speakerService;
+  remote.speakers = (asker) => speakerService.shownTo(asker);
   const browser = new FolderBrowser(options.browseBases);
   // Set below, once the loop and the announcement exist; the settings are only changed after that.
   let applyLive: SettingsHooks["apply"] = () => Promise.resolve();
@@ -589,6 +615,7 @@ export async function startServer(
     outside,
     remote,
     wake,
+    speakers: speakerService,
     settings: { service: settings, browser },
     imports: {
       imports,
@@ -708,6 +735,7 @@ export async function startServer(
     }
     if (changed.some((key) => key.startsWith("remote.wake."))) {
       wake.settingsChanged();
+      await speakerService.settingsChanged();
     }
     // The addresses and the backups are read from the config each time: nothing to do.
   };
@@ -736,6 +764,7 @@ export async function startServer(
   }, 30_000);
   tagTimer.unref();
   wake.start();
+  speakerService.start();
   services.progress.prune();
   if (config.outside) await outside.start(createApp(deps, "outside"));
   let backingUp: Promise<void> = Promise.resolve();
@@ -777,7 +806,8 @@ export async function startServer(
             conversion.stop(),
             markers.stop(),
             imports.stop(),
-            wake.stop(),
+            // First, so that what streams to a speaker is stopped while the helper still runs.
+            speakerService.stop().then(() => wake.stop()),
             backingUp,
             withdraw?.(),
           ]).finally(() => {
