@@ -112,7 +112,14 @@ private struct TVStoryCover: View {
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if plays, fraction == nil {
-                        KidsPlayCircle(size: 72).padding(AppTheme.Space.m)
+                        Image(systemName: AppSymbol.play)
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(KidsTheme.onPlay)
+                            .offset(x: 3)
+                            .frame(width: 72, height: 72)
+                            .background(KidsTheme.play, in: Circle())
+                            .padding(AppTheme.Space.m)
+                            .accessibilityHidden(true)
                     }
                 }
                 .hoverEffect(.highlight)
