@@ -42,6 +42,8 @@ struct TVLibraryView: View {
         case .group(let id): shelves.group(id: id)?.name ?? ""
         case .viewer: app.activeProfile?.name ?? "Viewer"
         case .music: "Music"
+        // A child's place only.
+        case .stories: "Stories"
         }
     }
 
@@ -54,6 +56,7 @@ struct TVLibraryView: View {
         case .group(let id): AppSymbol.existing(app.look(ofGroup: id).symbol) ?? AppSymbol.group
         case .viewer: AppSymbol.viewers
         case .music: AppSymbol.music
+        case .stories: AppSymbol.stories
         }
     }
 
@@ -66,7 +69,7 @@ struct TVLibraryView: View {
         case .series: TVStack { TVBrowsePage(scope: .series, title: "Series") }
         case .group(let id): TVStack { TVBrowsePage(scope: .group(id), title: app.shelves.group(id: id)?.name ?? "", look: app.look(ofGroup: id)) }
         case .viewer: TVStack { TVViewerPage() }
-        case .music: TVMusicPage()
+        case .music, .stories: TVMusicPage()
         }
     }
 }
