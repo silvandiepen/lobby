@@ -433,8 +433,16 @@ describe("preparing a file", () => {
       await waitFor(async () => (await playback.status(interactive))?.state === "preparing");
       await new Promise((resolve) => setTimeout(resolve, 1500));
       const stoodAt = await written();
-      await waitFor(async () => (await playback.status(interactive))?.state === "ready");
-      expect(await written()).toBe(stoodAt);
+      // Looked at all the while the other file is prepared, not after: once it is ready the copy
+      // made ahead goes on at once, and ffmpeg 6.1 then reads what it missed at full speed.
+      const seen = new Set<number>();
+      await waitFor(async () => {
+        const at = await written();
+        if ((await playback.status(interactive))?.state === "ready") return true;
+        seen.add(at);
+        return false;
+      });
+      expect([...seen]).toEqual([stoodAt]);
       expect(stoodAt).toBeLessThan(60_000);
 
       // And it goes on by itself afterwards.

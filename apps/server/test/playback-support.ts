@@ -184,6 +184,24 @@ export interface ProbedStream {
   disposition?: Record<string, number>;
 }
 
+/**
+ * Where a file's timeline starts, in milliseconds. ffmpeg 6.1 puts the AAC encoder's priming
+ * before zero in an MKV it writes (-23 ms at 44.1 kHz); newer versions start at zero. What is
+ * made from the file starts at its first packet, so its times are later by as much.
+ */
+export function startMsOf(path: string): number {
+  const output = run("ffprobe", [
+    "-v",
+    "error",
+    "-show_entries",
+    "format=start_time",
+    "-of",
+    "csv=p=0",
+    path,
+  ]);
+  return Math.round(Number(output.trim()) * 1000);
+}
+
 export function streamsOf(path: string): ProbedStream[] {
   const output = run("ffprobe", ["-v", "error", "-print_format", "json", "-show_streams", path]);
   return (JSON.parse(output) as { streams: ProbedStream[] }).streams;
@@ -193,10 +211,24 @@ export function streamsOf(path: string): ProbedStream[] {
  * The real ffmpeg, slowed down to a multiple of real time, so a test can look at a
  * preparation while it is running. The same binary does the same work; only its
  * reading of the input is paced (`-readrate`).
+ *
+ * Only the preparation itself (the pass that reports `-progress`) is paced. A sidecar subtitle
+ * is converted by the same program, and ffmpeg 6.1 paces a subtitle file too: a two-minute
+ * SubRip took fifteen seconds at eight times real time, while the film was finished meanwhile.
  */
 export function slowFfmpeg(dir: string, rate: number): string {
   const path = join(dir, `ffmpeg-readrate-${rate}`);
-  writeFileSync(path, `#!/bin/sh\nexec ffmpeg -readrate ${rate} "$@"\n`);
+  writeFileSync(
+    path,
+    [
+      "#!/bin/sh",
+      'for arg in "$@"; do',
+      `  [ "$arg" = -progress ] && exec ffmpeg -readrate ${String(rate)} "$@"`,
+      "done",
+      'exec ffmpeg "$@"',
+      "",
+    ].join("\n"),
+  );
   chmodSync(path, 0o755);
   return path;
 }
