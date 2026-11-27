@@ -18,7 +18,11 @@ WORKDIR /src
 COPY apps/direct/ ./
 ENV CARGO_TARGET_DIR=/build SOURCE_DATE_EPOCH=0 \
     RUSTFLAGS="-C target-feature=+crt-static --remap-path-prefix=/usr/local/cargo=cargo --remap-path-prefix=/src=src"
-RUN cargo build --release --locked --bin lobby-direct && cp /build/release/lobby-direct /lobby-direct
+# An explicit --target keeps RUSTFLAGS (crt-static) off the host: without it a proc-macro
+# dependency (thiserror-impl) cannot be built on a musl host. build-direct.sh does the same.
+RUN triple="$(uname -m)-unknown-linux-musl" \
+ && cargo build --release --locked --bin lobby-direct --target "$triple" \
+ && cp "/build/$triple/release/lobby-direct" /lobby-direct
 
 # The server's production dependencies, exactly as package-lock.json has them.
 FROM ${NODE_IMAGE} AS dependencies
