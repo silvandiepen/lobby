@@ -1523,9 +1523,15 @@ final class AppModel {
         phase = .chooseProfile
     }
 
+    /// Who was watching before Who is watching? was opened: the picker offers the way back to
+    /// them. nil at the start, when nobody was chosen yet.
+    var viewerToReturnTo: Profile? {
+        phase == .chooseProfile ? activeProfile : nil
+    }
+
     /// The picker was left without choosing: whoever was watching still is.
     func returnToLibrary() {
-        if phase == .chooseProfile, activeProfile != nil { phase = .library }
+        if viewerToReturnTo != nil { phase = .library }
     }
 
     private func asksWhoIsWatching(isLaunch: Bool) -> Bool {
