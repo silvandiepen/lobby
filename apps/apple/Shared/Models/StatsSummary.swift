@@ -181,15 +181,16 @@ enum StatsSummary {
                 id: "sent", title: "Sent", value: bytes(sent),
                 detail: share(away, of: sent).map { "\($0) away from home" }, symbol: "arrow.up.arrow.down"),
         ]
-        if stats.preparations.count > 0 {
+        // A household's overview has neither: they are the server's.
+        if let preparations = stats.preparations, preparations.count > 0 {
             cards.append(StatsCard(
-                id: "prepared", title: "Prepared", value: "\(stats.preparations.count)",
-                detail: "In \(duration(stats.preparations.timeMs))", symbol: "gearshape.2.fill"))
+                id: "prepared", title: "Prepared", value: "\(preparations.count)",
+                detail: "In \(duration(preparations.timeMs))", symbol: "gearshape.2.fill"))
         }
-        if stats.conversions.done > 0 || stats.conversions.savedInAllBytes > 0 {
+        if let conversions = stats.conversions, conversions.done > 0 || conversions.savedInAllBytes > 0 {
             cards.append(StatsCard(
-                id: "converted", title: "Converted", value: "\(stats.conversions.done)",
-                detail: "\(bytes(stats.conversions.savedBytes)) saved", symbol: "arrow.triangle.2.circlepath"))
+                id: "converted", title: "Converted", value: "\(conversions.done)",
+                detail: "\(bytes(conversions.savedBytes)) saved", symbol: "arrow.triangle.2.circlepath"))
         }
         if stats.playOn.sessions > 0 {
             cards.append(StatsCard(

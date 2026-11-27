@@ -3,8 +3,8 @@ import Charts
 import LobbyKit
 import SwiftUI
 
-/// "Your Month in Lobby": what a viewer watched and listened to, and when. Their own, or a
-/// child's for a grown-up of the household.
+/// "Your Month in Lobby": what a viewer watched and listened to, and when. Their own, or for
+/// an admin any viewer's, a child's too (docs/decisions.md, "Who sees which statistics").
 struct ViewerStatsView: View {
     @State private var model: ViewerStatsModel
     @State private var confirmsForget = false
@@ -38,6 +38,9 @@ struct ViewerStatsView: View {
                     ContentUnavailableView(
                         "Not on this server yet", systemImage: "chart.bar",
                         description: Text("Lobby Server shows statistics from a newer version on."))
+                } else if let refusal = model.refusal {
+                    ContentUnavailableView("Not shown here", systemImage: "lock", description: Text(refusal))
+                        .accessibilityIdentifier("stats.refused")
                 } else {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 200)
                 }

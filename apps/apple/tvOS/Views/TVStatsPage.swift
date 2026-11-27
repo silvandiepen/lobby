@@ -60,6 +60,8 @@ struct TVStatsPage: View {
                     }
                 } else if model.isUnavailable {
                     TVNotice(symbol: "chart.bar", tint: .secondary, title: "Not on this server yet", text: "Lobby Server shows statistics from a newer version on.")
+                } else if let refusal = model.refusal {
+                    TVNotice(symbol: "lock", tint: .secondary, title: "Not shown here", text: refusal)
                 } else {
                     ProgressView()
                 }

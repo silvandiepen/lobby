@@ -4,13 +4,14 @@ import LobbyKit
 import SwiftUI
 
 /// Settings → Server → Statistics: what the whole server does, for its admins. Other
-/// households are totals here until one is opened.
+/// households are totals here until one is opened. With `.household`, a household's overview for
+/// its admins: the same page, of that household's watching only, without the server's parts.
 struct ServerStatsView: View {
     @State private var model: ServerStatsModel
     @Environment(\.horizontalSizeClass) private var sizeClass
 
-    init(app: AppModel) {
-        _model = State(initialValue: ServerStatsModel(app: app))
+    init(app: AppModel, scope: ServerStatsModel.Scope = .server) {
+        _model = State(initialValue: ServerStatsModel(app: app, scope: scope))
     }
 
     var body: some View {
@@ -27,17 +28,21 @@ struct ServerStatsView: View {
                     grid {
                         if !stats.viewers.isEmpty { viewers(stats) }
                         if !stats.devices.isEmpty { devices(stats) }
-                        households(stats)
+                        if let households = stats.households { self.households(households) }
                         roads(stats)
                     }
                     traffic(stats)
                     grid {
-                        work(stats)
-                        library(stats)
+                        if let preparations = stats.preparations, let conversions = stats.conversions {
+                            work(preparations, conversions)
+                        }
+                        if let library = stats.library { self.library(library, timeZone: stats.range.timeZone) }
                         if stats.playOn.sessions > 0 { playOn(stats) }
-                        storage(stats)
+                        if let storage = stats.storage { self.storage(storage) }
                     }
-                    Text("Kept for \(stats.keptDays) days (Server Settings, General).")
+                    Text(model.scope == .server
+                        ? "Kept for \(stats.keptDays) days (Server Settings, General)."
+                        : "Lobby Server keeps this for \(stats.keptDays) days.")
                         .font(.footnote)
                         .foregroundStyle(.lobbySecondary)
                 } else if model.isUnavailable {
@@ -54,7 +59,7 @@ struct ServerStatsView: View {
             .frame(maxWidth: .infinity)
         }
         .artworkBackground(model.artworks)
-        .navigationTitle("Statistics")
+        .navigationTitle(model.scope == .server ? "Statistics" : "Household Statistics")
         .task { await model.load() }
         .refreshable { await model.load() }
         .alert(
@@ -75,7 +80,7 @@ struct ServerStatsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.m) {
-            Text(model.stats?.household.map { "\($0.name) on This Server" } ?? "This Server")
+            Text(title)
                 .font(.largeTitle.weight(.bold))
                 .accessibilityAddTraits(.isHeader)
             HStack {
@@ -85,6 +90,13 @@ struct ServerStatsView: View {
                         .buttonStyle(.lobbyText)
                 }
             }
+        }
+    }
+
+    private var title: String {
+        switch model.scope {
+        case .server: model.stats?.household.map { "\($0.name) on This Server" } ?? "This Server"
+        case .household: model.stats?.household.map(\.name) ?? "Your Household"
         }
     }
 
@@ -102,18 +114,35 @@ struct ServerStatsView: View {
     private func viewers(_ stats: ServerStats) -> some View {
         StatsPanel(title: "Viewers") {
             ForEach(stats.viewers) { viewer in
-                HStack(spacing: AppTheme.Space.m) {
-                    ProfileAvatar(name: viewer.name, color: viewer.color ?? "blue", avatar: viewer.avatar, size: 32)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(viewer.name).font(.headline)
-                        Text("\(StatsSummary.duration(viewer.watchedMs)) · last \(viewer.lastAt.formatted(.relative(presentation: .named)))")
-                            .font(.footnote)
-                            .foregroundStyle(.lobbySecondary)
+                if model.opens(viewer) {
+                    NavigationLink(value: Route.viewerStats(viewer.id)) {
+                        HStack {
+                            viewerRow(viewer)
+                            Spacer()
+                            Image(systemName: "chevron.forward").foregroundStyle(.lobbySecondary)
+                        }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("stats.viewer.\(viewer.id)")
+                } else {
+                    viewerRow(viewer)
                 }
-                .accessibilityElement(children: .combine)
             }
         }
+    }
+
+    private func viewerRow(_ viewer: ServerStatsViewer) -> some View {
+        HStack(spacing: AppTheme.Space.m) {
+            ProfileAvatar(name: viewer.name, color: viewer.color ?? "blue", avatar: viewer.avatar, size: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(viewer.name).font(.headline)
+                Text("\(StatsSummary.duration(viewer.watchedMs)) · last \(viewer.lastAt.formatted(.relative(presentation: .named)))")
+                    .font(.footnote)
+                    .foregroundStyle(.lobbySecondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private func devices(_ stats: ServerStats) -> some View {
@@ -126,9 +155,9 @@ struct ServerStatsView: View {
         }
     }
 
-    private func households(_ stats: ServerStats) -> some View {
+    private func households(_ households: [ServerStatsHousehold]) -> some View {
         StatsPanel(title: "Households", note: "Others as totals: open one to see its viewers") {
-            ForEach(stats.households) { household in
+            ForEach(households) { household in
                 Button {
                     Task { await model.open(household: household.owner ? nil : household.id) }
                 } label: {
@@ -187,26 +216,26 @@ struct ServerStatsView: View {
         }
     }
 
-    private func work(_ stats: ServerStats) -> some View {
+    private func work(_ preparations: StatsPreparations, _ conversions: StatsConversions) -> some View {
         StatsPanel(title: "Preparing and Converting") {
-            LabeledContent("Prepared for playing", value: "\(stats.preparations.count)")
-            LabeledContent("Of them converted", value: "\(stats.preparations.converted)")
-            LabeledContent("Prepared ahead", value: "\(stats.preparations.ahead)")
-            LabeledContent("Time preparing", value: StatsSummary.duration(stats.preparations.timeMs))
-            LabeledContent("Files converted", value: "\(stats.conversions.done)")
-            LabeledContent("Time converting", value: StatsSummary.duration(stats.conversions.timeMs))
-            LabeledContent("Space saved", value: StatsSummary.bytes(stats.conversions.savedBytes))
-            if stats.conversions.waiting > 0 || stats.conversions.failed > 0 {
-                LabeledContent("Waiting · failed", value: "\(stats.conversions.waiting) · \(stats.conversions.failed)")
+            LabeledContent("Prepared for playing", value: "\(preparations.count)")
+            LabeledContent("Of them converted", value: "\(preparations.converted)")
+            LabeledContent("Prepared ahead", value: "\(preparations.ahead)")
+            LabeledContent("Time preparing", value: StatsSummary.duration(preparations.timeMs))
+            LabeledContent("Files converted", value: "\(conversions.done)")
+            LabeledContent("Time converting", value: StatsSummary.duration(conversions.timeMs))
+            LabeledContent("Space saved", value: StatsSummary.bytes(conversions.savedBytes))
+            if conversions.waiting > 0 || conversions.failed > 0 {
+                LabeledContent("Waiting · failed", value: "\(conversions.waiting) · \(conversions.failed)")
             }
         }
         .font(.subheadline)
     }
 
-    private func library(_ stats: ServerStats) -> some View {
-        StatsPanel(title: "Library", note: "\(stats.library.films) films, \(stats.library.shows) series, \(stats.library.episodes) episodes") {
-            Chart(stats.library.months) { month in
-                if let date = StatsSummary.date(day: month.month, timeZone: stats.range.timeZone) {
+    private func library(_ library: StatsLibrary, timeZone: String) -> some View {
+        StatsPanel(title: "Library", note: "\(library.films) films, \(library.shows) series, \(library.episodes) episodes") {
+            Chart(library.months) { month in
+                if let date = StatsSummary.date(day: month.month, timeZone: timeZone) {
                     BarMark(x: .value("Month", date, unit: .month), y: .value("Added", month.films))
                         .foregroundStyle(by: .value("What", "Films"))
                     BarMark(x: .value("Month", date, unit: .month), y: .value("Added", month.episodes))
@@ -227,9 +256,9 @@ struct ServerStatsView: View {
         }
     }
 
-    private func storage(_ stats: ServerStats) -> some View {
+    private func storage(_ storage: StatsStorage) -> some View {
         StatsPanel(title: "Storage") {
-            if let fill = model.cacheFill, let used = stats.storage.playbackCacheBytes {
+            if let fill = model.cacheFill, let used = storage.playbackCacheBytes {
                 Gauge(value: fill) {
                     Text("Prepared copies")
                 } currentValueLabel: {
@@ -237,13 +266,13 @@ struct ServerStatsView: View {
                 }
                 .tint(.orange)
             }
-            if let music = stats.storage.musicCacheBytes {
+            if let music = storage.musicCacheBytes {
                 LabeledContent("Music copies", value: StatsSummary.bytes(music))
             }
-            if let database = stats.storage.databaseBytes {
+            if let database = storage.databaseBytes {
                 LabeledContent("Catalogue", value: StatsSummary.bytes(database))
             }
-            if let free = stats.storage.dataFreeBytes, let total = stats.storage.dataTotalBytes {
+            if let free = storage.dataFreeBytes, let total = storage.dataTotalBytes {
                 LabeledContent("Data drive free", value: "\(StatsSummary.bytes(free)) of \(StatsSummary.bytes(total))")
             }
         }

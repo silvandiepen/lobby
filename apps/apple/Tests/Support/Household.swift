@@ -85,6 +85,10 @@ final class Household: Sendable {
         /// nil: a server from before statistics.
         var viewerStats: String? = nil
         var serverStats: String? = nil
+        /// `GET /v1/stats/household`, for a household admin.
+        var householdStats: String? = nil
+        /// The server's `403` for a viewer's page, as when another grown-up is in front.
+        var viewerStatsRefusal: String? = nil
         /// What the statistics were asked for, as `path?range=…`.
         var statsAsked: [String] = []
         /// Sittings taken out of a history, as `viewer/sitting`, and viewers whose history went.
@@ -403,6 +407,7 @@ final class Household: Sendable {
                 return .json(200, #"{"tmdbKey":{"set":true,"source":"settings"}}"#)
             case ("GET", _) where route.count == 3 && route[0] == "stats" && route[1] == "viewers" && state.viewerStats != nil:
                 state.statsAsked.append("viewers/\(route[2])?range=\(request.query["range"] ?? "")")
+                if let refusal = state.viewerStatsRefusal { return .error(403, "forbidden", refusal) }
                 return .json(200, state.viewerStats ?? "")
             case ("DELETE", _) where route.count == 5 && route[0] == "stats" && route[3] == "history":
                 state.removedSittings.append("\(route[2])/\(route[4])")
@@ -413,6 +418,12 @@ final class Household: Sendable {
                 }
                 state.forgottenViewers.append(route[2])
                 return StubResponse(status: 204)
+            case ("GET", ["stats", "household"]) where state.householdStats != nil:
+                guard state.device.level != .viewer else {
+                    return .error(403, "forbidden", "Only an admin of this household can see the household's statistics.")
+                }
+                state.statsAsked.append("household?range=\(request.query["range"] ?? "")")
+                return .json(200, state.householdStats ?? "")
             case ("GET", ["stats", "server"]) where state.serverStats != nil:
                 guard state.device.level == .admin else { return .error(403, "forbidden", "Only a server admin can.") }
                 state.statsAsked.append("server?range=\(request.query["range"] ?? "")&household=\(request.query["household"] ?? "")")
