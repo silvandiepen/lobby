@@ -537,6 +537,15 @@ describe("playing on a speaker", () => {
       startMs: 500,
       album: "The Long Story",
     });
+    // As the example of the contract has it (docs/fixtures/remote).
+    await until(() => speakerNamed(channel, "Kitchen")?.play?.["status"] === "playing");
+    const examples = JSON.parse(readFileSync(EVENTS, "utf8")) as {
+      event: string;
+      data: { speakers?: unknown[] };
+    }[];
+    const example = examples.find((one) => one.event === "speakers")?.data.speakers ?? [];
+    expect(shape(speakerNamed(channel, "Kitchen"))).toEqual(shape(example[0]));
+    expect(shape(speakerNamed(channel, "Bedroom"))).toEqual(shape(example[1]));
     await new Promise((done) => setTimeout(done, 700));
     const paused = await ask(
       "POST",
