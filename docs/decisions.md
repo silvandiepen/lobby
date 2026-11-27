@@ -666,3 +666,11 @@ Context: Apple takes pushes for the App Store apps only when they are signed wit
 **Not yet**: the Mac app has no notification service, so on a Mac a relayed notification shows the generic alert without actions; opening the app shows the question. tvOS gets no pushes. The relay cannot tell an app's registration from a stranger's who holds the same box's ticket and somebody's token; App Attest would, at a cost.
 
 **Rejected:** giving servers the key (it is the publisher's, for all its apps); the relay keeping a list of allowed boxes (every server's owner would have to ask); the server registering tokens (it would learn them, and could register any it learned); a silent push to prove a token (background pushes are throttled and need another mode); one sealed text for all devices (a key per device and server lets one be removed alone); text in clear for the Mac (the relay would read it).
+
+## D-065 Why a file is repackaged is said to server admins, on the title's page
+
+Context: under Play, a film's page said what Lobby Server does with an MKV or an old AVI before it plays ("The file is MKV, which has to be repackaged as MP4…"). For a family watching on a phone that is noise between Play and the summary, and nothing they can act on.
+
+**Only a server admin's device shows it**, as one short line under Play: they are the ones who can replace the file or convert it (D-026). Everyone else just presses Play; the player says why the first start takes a moment, while it waits ("Files in a format Apple devices cannot open are repackaged once"). Notes that are about the device itself, such as an older copy on this device being played, are shown to everyone.
+
+**Rejected:** dropping the line for everybody (the admin then learns it only by playing); moving it into Details (still a format explanation, now hidden from the one person it helps).

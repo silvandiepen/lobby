@@ -276,7 +276,8 @@ final class AppModel {
                     ? .init(assetID: record.assetID, isOutOfDate: record.staleness != nil || record.state != .verified)
                     : nil
             },
-            serverIsOutOfReach: serverIsOutOfReach, keepsDownloads: environment.keepsDownloads)
+            serverIsOutOfReach: serverIsOutOfReach, keepsDownloads: environment.keepsDownloads,
+            explainsPreparation: isOwnerManager)
     }
 
     /// iPhone, iPad and Mac. The Apple TV limits what a kids viewer sees, in its ordinary
