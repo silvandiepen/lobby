@@ -31,7 +31,7 @@ struct TVViewerPage: View {
                         Button("Change Picture", systemImage: AppSymbol.picture) { picking = profile }
                             .accessibilityIdentifier("viewer.picture")
                     }
-                    if let profile = app.activeProfile {
+                    if let profile = app.activeProfile, app.statsAccess.showsOwn {
                         NavigationLink(value: Route.viewerStats(profile.id)) {
                             Label(StatsSummary.headline(.month), systemImage: "chart.bar.xaxis")
                         }

@@ -22,14 +22,16 @@ struct ViewerPageView: View {
                 if app.offersPlaybackPreferences {
                     playbackSection(profile)
                 }
-                Section {
-                    NavigationLink(value: Route.viewerStats(profile.id)) {
-                        Label(profile.kids != nil ? "What \(profile.name) Watches" : "Statistics", systemImage: "chart.bar.xaxis")
-                    }
-                    .accessibilityIdentifier("viewer.stats")
-                } footer: {
-                    if profile.kids != nil {
-                        Text("Screen time each day, what, and when: evenings and weekends.")
+                if app.statsAccess.mayOpen(viewerID: profile.id, kids: profile.kids != nil) {
+                    Section {
+                        NavigationLink(value: Route.viewerStats(profile.id)) {
+                            Label(profile.kids != nil ? "What \(profile.name) Watches" : "Statistics", systemImage: "chart.bar.xaxis")
+                        }
+                        .accessibilityIdentifier("viewer.stats")
+                    } footer: {
+                        if profile.kids != nil {
+                            Text("Screen time each day, what, and when: evenings and weekends.")
+                        }
                     }
                 }
                 kidsSection

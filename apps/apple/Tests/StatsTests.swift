@@ -117,6 +117,7 @@ import Testing
         #expect(model.isOwn)
         #expect(model.headline == "Your Month in Lobby")
         #expect(model.stats?.totals.watchedMs == 9_000_000)
+        #expect(!model.isKid)
         #expect(model.canRemove)
         // A viewer's device does not forget a whole history.
         #expect(!model.canForget)
@@ -164,7 +165,7 @@ import Testing
         let app = try await test.launchPaired(as: "alex")
         let model = ServerStatsModel(app: app)
         await model.load()
-        #expect(model.stats?.households.count == 2)
+        #expect(model.stats?.households?.count == 2)
         #expect(model.cacheFill == 0.25)
         await model.open(household: "h-2")
         #expect(model.householdID == "h-2")
@@ -175,6 +176,62 @@ import Testing
         ])
     }
 
+    /// A household's overview: the server's page without the server's parts.
+    static var household: String {
+        get throws {
+            var page = try #require(JSONSerialization.jsonObject(with: Data(server.utf8)) as? [String: Any])
+            for key in ["households", "preparations", "conversions", "library", "storage"] { page[key] = nil }
+            page["household"] = ["id": "owner", "name": "Home"]
+            return String(decoding: try JSONSerialization.data(withJSONObject: page), as: UTF8.self)
+        }
+    }
+
+    @Test func saysAHouseholdsOverviewWithoutTheServersParts() throws {
+        let stats = try LobbyJSON.decoder().decode(ServerStats.self, from: Data(try Self.household.utf8))
+        #expect(stats.households == nil)
+        #expect(stats.storage == nil)
+        #expect(stats.library == nil)
+        #expect(StatsSummary.cards(stats).map(\.id) == ["watched", "viewers", "sent", "playOn"])
+    }
+
+    @Test func aHouseholdAdminSeesTheirHouseholdsOverview() async throws {
+        var device = Device(id: "dev-1", name: "iPad", platform: .ipados, role: .viewer, createdAt: Make.epoch)
+        device.access = .householdAdmin
+        let test = try TestApp(Household(.init(device: device)))
+        let overview = try Self.household
+        test.household.change {
+            $0.householdStats = overview
+            $0.serverStats = Self.server
+        }
+        let app = try await test.launchPaired(as: "alex")
+        #expect(app.statsAccess.showsHouseholdOverview)
+        #expect(!app.statsAccess.showsServerPage)
+        let model = ServerStatsModel(app: app, scope: .household)
+        await model.load()
+        #expect(model.stats?.household?.id == "owner")
+        #expect(model.cacheFill == nil)
+        // Their household's viewers open; the server's page is not asked for.
+        let alex = try #require(model.stats?.viewers.first)
+        #expect(model.opens(alex))
+        await ServerStatsModel(app: app).load()
+        #expect(test.household.current.statsAsked == ["household?range=month"])
+    }
+
+    @Test func aViewerIsToldWhyTheirsAreNotShown() async throws {
+        let test = try TestApp()
+        test.household.change {
+            $0.viewerStats = Self.viewer
+            $0.viewerStatsRefusal = "Only your own statistics: choose yourself as the viewer on this device."
+        }
+        let app = try await test.launchPaired(as: "alex")
+        let model = ViewerStatsModel(app: app, profileID: "alex")
+        await model.load()
+        #expect(model.stats == nil)
+        #expect(model.refusal?.hasPrefix("Only your own") == true)
+        #expect(model.problem == nil)
+        #expect(!model.canRemove)
+    }
+
     @Test func aViewerDeviceHasNoServerPage() async throws {
         let test = try TestApp()
         test.household.change { $0.serverStats = Self.server }
@@ -182,6 +239,70 @@ import Testing
         let model = ServerStatsModel(app: app)
         await model.load()
         #expect(model.stats == nil)
+        let overview = ServerStatsModel(app: app, scope: .household)
+        await overview.load()
+        #expect(overview.stats == nil)
         #expect(test.household.current.statsAsked.isEmpty)
+    }
+}
+
+/// Who is offered which statistics (docs/decisions.md, "Who sees which statistics").
+@Suite struct StatsAccessTests {
+    private func access(_ level: DeviceAccess, kidsMode: Bool = false, viewer: String? = "alex") -> StatsAccess {
+        StatsAccess(level: level, isKidsMode: kidsMode, viewerID: viewer, householdID: "owner")
+    }
+
+    @Test func aServerAdminSeesEveryViewerOfEveryHousehold() {
+        let admin = access(.admin)
+        #expect(admin.showsOwn)
+        #expect(admin.showsServerPage)
+        #expect(!admin.showsHouseholdOverview)
+        #expect(admin.mayOpen(viewerID: "robin", kids: false))
+        #expect(admin.mayOpen(viewerID: "kid", kids: true))
+        #expect(admin.mayOpen(viewerID: "guest", kids: false, householdID: "h-2"))
+        #expect(admin.mayRemove(viewerID: "guest", kids: true, householdID: "h-2"))
+        #expect(admin.mayForget)
+    }
+
+    @Test func aHouseholdAdminSeesTheirHouseholdOnly() {
+        let admin = access(.householdAdmin)
+        #expect(admin.showsOwn)
+        #expect(admin.showsHouseholdOverview)
+        #expect(!admin.showsServerPage)
+        #expect(admin.mayOpen(viewerID: "robin", kids: false))
+        #expect(admin.mayOpen(viewerID: "kid", kids: true))
+        #expect(!admin.mayOpen(viewerID: "guest", kids: false, householdID: "h-2"))
+        #expect(admin.mayForget)
+    }
+
+    @Test func aViewerSeesOnlyThemselves() {
+        let viewer = access(.viewer)
+        #expect(viewer.showsOwn)
+        #expect(!viewer.showsHouseholdOverview)
+        #expect(!viewer.showsServerPage)
+        #expect(viewer.mayOpen(viewerID: "alex", kids: false))
+        #expect(viewer.mayRemove(viewerID: "alex", kids: false))
+        #expect(!viewer.mayOpen(viewerID: "robin", kids: false))
+        #expect(!viewer.mayRemove(viewerID: "robin", kids: false))
+        #expect(!viewer.mayOpen(viewerID: "kid", kids: true))
+        #expect(!viewer.mayOpen(viewerID: "alex", kids: false, householdID: "h-2"))
+        #expect(!viewer.mayForget)
+        // Nobody chosen yet: nobody's.
+        #expect(!access(.viewer, viewer: nil).showsOwn)
+        #expect(!access(.viewer, viewer: nil).mayOpen(viewerID: "alex", kids: false))
+        // An access this build does not know is a viewer's.
+        #expect(!access(.unknown("owner")).mayOpen(viewerID: "robin", kids: false))
+    }
+
+    @Test func kidsModeHasNoStatistics() {
+        for level in [DeviceAccess.admin, .householdAdmin, .viewer] {
+            let kids = access(level, kidsMode: true, viewer: "kid")
+            #expect(!kids.showsOwn)
+            #expect(!kids.showsHouseholdOverview)
+            #expect(!kids.showsServerPage)
+            #expect(!kids.mayOpen(viewerID: "kid", kids: true))
+            #expect(!kids.mayOpen(viewerID: "alex", kids: false))
+            #expect(!kids.mayForget)
+        }
     }
 }

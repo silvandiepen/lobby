@@ -721,6 +721,13 @@ final class AppModel {
     /// The device shows a kids viewer's screens and nothing else.
     var isKidsMode: Bool { isBoundToKids || activeProfile?.kids != nil }
 
+    /// Which statistics this device offers: by its level, and none in kids mode.
+    var statsAccess: StatsAccess {
+        StatsAccess(
+            level: device?.level ?? .viewer, isKidsMode: isKidsMode, viewerID: activeProfile?.id,
+            householdID: device?.householdId ?? HouseholdSummary.ownerID)
+    }
+
     /// Whoever was watching, from what this device kept. A kids viewer it can no longer find
     /// stays one, with nothing to watch: never the picker, never somebody else's library.
     private func restoreViewer() {
@@ -1508,6 +1515,8 @@ final class AppModel {
         if activeProfile?.id != profile.id { startAtTheTop() }
         activeProfile = profile
         environment.preferences.activeProfileID = profile.id
+        // The server keeps some things to the viewer in front: it hears of the switch at once.
+        remote.changed()
         rememberKidsMode()
         showCatalogue()
         progress = await environment.progressStore.progress(profileID: profile.id)

@@ -50,16 +50,17 @@ Adapt split navigation for Mac and wider iPad windows. Phone navigation should p
 - **Nothing is kept for offline.** tvOS gives an app only a cache, so there are no downloads, a manager's list for the device is not followed, and the library stays whole while the server is out of reach (`AppEnvironment.keepsDownloads`). The server is looked for again every 15 seconds then.
 - **A slow link.** The film is sent as it is: the server makes no smaller version, so a link slower than the film pauses it. The player says so: buffering, how much of what the film needs is arriving, or that nothing arrives, with Try Again. Addresses get 10 seconds to answer instead of 4, pictures are fetched one size smaller on their own few connections, and closing the player does not wait for the server.
 - **The player** is `AVPlayerViewController`, with Play Next as its contextual button. While the server still writes the copy, and for waiting, failures and the end of an episode, the app's own controls stand on the picture instead, so a growing stream never looks live.
-- **Statistics:** the viewer page links to a simple summary of the viewer's week, month or year: the big numbers and what was watched most (`TVStatsPage`).
+- **Statistics:** the viewer page links to a simple summary of the viewer's week, month or year: the big numbers and what was watched most (`TVStatsPage`). Not while a kids viewer is in front.
 - **Not there:** downloads, manager tools, trailers. The top shelf pictures are placeholders.
 
 ## Statistics
 
-`Shared/Views/Stats`, from `GET /v1/stats/…` (docs/api.md, Statistics; D-060), drawn with Swift Charts on the page in the colours of what was watched most, headings as the home's shelves have them.
+`Shared/Views/Stats`, from `GET /v1/stats/…` (docs/api.md, Statistics; D-060), drawn with Swift Charts on the page in the colours of what was watched most, headings as the home's shelves have them. What a device offers follows D-066 (`StatsAccess`): a server admin every viewer of every household and the server's page, a household admin their household's viewers and its overview, anyone else only the viewer in front, and kids mode no statistics at all. The server refuses the rest too; a refused page says why. Before a viewer's own page is asked for, the app tells the server on the live channel who is in front, and it does so at every switch of viewer.
 
 - **A viewer's own.** "Your Month in Lobby" in the viewer menu and under This Device in Settings: cards with the big numbers, time per day (per month for a year), when as weekdays by hours, the most watched, series and how far along, genres, studios and categories, devices and how much away from home, listening and the top albums, and the history. Week, month, year or all. A sitting can be taken out of the history; a household admin can forget a viewer's history at the bottom.
 - **A grown-up's view of a child.** On the viewer's page for a manager, "What … Watches": the same page, with screen time per day (watching and listening) and how much is in the evening and at weekends.
-- **The server's.** Settings → Statistics for a server admin, at home: watched per day, busiest hours, the most watched by how many viewers, viewers, devices, households (others as totals until opened), where and how it was sent, data sent home and away, preparing and converting, the library by month, Play On and storage.
+- **The household's.** Settings → Household Statistics for a household admin: the server's page cut to their household, without households, preparing and converting, the library or storage. Its viewers open their pages.
+- **The server's.** Settings → Statistics for a server admin, at home: watched per day, busiest hours, the most watched by how many viewers, viewers, devices, households (others as totals until opened), where and how it was sent, data sent home and away, preparing and converting, the library by month, Play On and storage. Its viewers open their pages, in any household.
 
 ## Search
 

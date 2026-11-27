@@ -45,6 +45,8 @@ enum Route: Hashable, Sendable {
     case viewerStats(String)
     /// The server's statistics, for a server admin.
     case serverStats
+    /// A household's overview, for its admins.
+    case householdStats
     /// When and what a kids viewer may do, for a grown-up who decides for it.
     case kidsPlan(String)
     /// A part of the music: its home, artists, albums…
@@ -144,6 +146,8 @@ struct RouteView: View {
             ViewerStatsView(app: app, profileID: id)
         case .serverStats:
             ServerStatsView(app: app)
+        case .householdStats:
+            ServerStatsView(app: app, scope: .household)
         case .kidsPlan(let id):
             KidsPlanPage(app: app, profileID: id)
         case .music(let section):

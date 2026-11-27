@@ -274,6 +274,12 @@ final class RemoteModel {
         Task { await announce() }
     }
 
+    /// Says now who is in front, for what the server keeps to that viewer alone, such as their
+    /// statistics. Returns at once while there is no channel.
+    func sayWhoIsWatching() async {
+        await announce()
+    }
+
     /// Every second: say what changed, and at least every five seconds that this device is here.
     private func tick() async {
         let now = SteadyClock.nowMs()

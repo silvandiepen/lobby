@@ -3,7 +3,8 @@ import Foundation
 import LobbyKit
 import Observation
 
-/// One viewer's statistics (docs/api.md, Statistics): their own, or a child's for a grown-up.
+/// One viewer's statistics (docs/api.md, Statistics): their own, or for an admin any viewer's,
+/// a child's too.
 @MainActor
 @Observable
 final class ViewerStatsModel {
@@ -13,6 +14,9 @@ final class ViewerStatsModel {
     private(set) var isLoading = false
     /// The server is from before statistics.
     private(set) var isUnavailable = false
+    /// The server would not give them: not this device's to see (docs/decisions.md, "Who sees
+    /// which statistics"), or it does not know yet who is in front here.
+    private(set) var refusal: String?
     var problem: String?
     private let app: AppModel
     private let timeZone: TimeZone
@@ -44,13 +48,13 @@ final class ViewerStatsModel {
     var isEmpty: Bool { (stats?.totals.watchedMs ?? 0) == 0 && (stats?.totals.listenedMs ?? 0) == 0 }
 
     /// A grown-up's view of a child: screen time and when.
-    var isKid: Bool { stats?.viewer.kids ?? profile?.kids != nil }
+    var isKid: Bool { stats?.viewer.kids ?? (profile?.kids != nil) }
 
-    /// Forgetting everything is for whoever manages the household; not from a child's device.
-    var canForget: Bool { app.isManager && !app.isBoundToKids }
+    /// Forgetting everything is for whoever manages the household; not in kids mode.
+    var canForget: Bool { app.statsAccess.mayForget }
 
-    /// Taking one sitting out of the history: any grown-up.
-    var canRemove: Bool { !app.isBoundToKids && stats?.simple == false }
+    /// Taking one sitting out of the history: whoever may see it.
+    var canRemove: Bool { stats != nil && app.statsAccess.mayRemove(viewerID: profileID, kids: isKid) }
 
     /// The titles the page takes its colours from: the most watched.
     var artworks: [Artwork] {
@@ -75,11 +79,17 @@ final class ViewerStatsModel {
         let range = range
         let profileID = profileID
         let timeZone = timeZone
+        // A viewer's own are theirs while they are in front: the server is told first.
+        if app.statsAccess.level == .viewer { await app.remote.sayWhoIsWatching() }
         do {
             stats = try await app.asViewer { try await $0.viewerStats(profileID: profileID, range: range, timeZone: timeZone) }
             isUnavailable = false
+            refusal = nil
         } catch LobbyError.notFound {
             isUnavailable = true
+            stats = nil
+        } catch LobbyError.forbidden(let message) {
+            refusal = message
             stats = nil
         } catch {
             problem = await app.managerProblem(error)
@@ -120,10 +130,19 @@ final class ViewerStatsModel {
     }
 }
 
-/// The server's statistics, for a server admin. Other households as totals, unless one is opened.
+/// The server's statistics, for a server admin, with other households as totals unless one is
+/// opened; or a household's overview, for its admins.
 @MainActor
 @Observable
 final class ServerStatsModel {
+    enum Scope: Equatable {
+        /// `GET /v1/stats/server`.
+        case server
+        /// `GET /v1/stats/household`: the device's own household, without the server's parts.
+        case household
+    }
+
+    let scope: Scope
     var range: StatsRange
     /// The guest household opened; nil: the owner's.
     private(set) var householdID: String?
@@ -134,10 +153,24 @@ final class ServerStatsModel {
     private let app: AppModel
     private let timeZone: TimeZone
 
-    init(app: AppModel, range: StatsRange = .month, timeZone: TimeZone = .current) {
+    init(app: AppModel, scope: Scope = .server, range: StatsRange = .month, timeZone: TimeZone = .current) {
         self.app = app
+        self.scope = scope
         self.range = range
         self.timeZone = timeZone
+    }
+
+    /// Whether this device may open the page at all.
+    var isOffered: Bool {
+        switch scope {
+        case .server: app.statsAccess.showsServerPage
+        case .household: app.statsAccess.showsHouseholdOverview
+        }
+    }
+
+    /// Whether a viewer in the list opens their page here.
+    func opens(_ viewer: ServerStatsViewer) -> Bool {
+        app.statsAccess.mayOpen(viewerID: viewer.id, kids: viewer.kids, householdID: householdID ?? stats?.household?.id)
     }
 
     var cards: [StatsCard] { stats.map(StatsSummary.cards) ?? [] }
@@ -155,7 +188,7 @@ final class ServerStatsModel {
 
     /// How full the cache for playback is, from 0 to 1.
     var cacheFill: Double? {
-        guard let used = stats?.storage.playbackCacheBytes, let most = stats?.storage.playbackCacheMaxBytes, most > 0 else { return nil }
+        guard let used = stats?.storage?.playbackCacheBytes, let most = stats?.storage?.playbackCacheMaxBytes, most > 0 else { return nil }
         return min(1, Double(used) / Double(most))
     }
 
@@ -166,14 +199,20 @@ final class ServerStatsModel {
     }
 
     func load() async {
-        guard app.isOwnerManager else { return }
+        guard isOffered else { return }
         isLoading = true
         defer { isLoading = false }
         let range = range
         let household = householdID
         let timeZone = timeZone
+        let scope = scope
         do {
-            stats = try await app.asManager { try await $0.serverStats(range: range, timeZone: timeZone, householdID: household) }
+            stats = try await app.asManager {
+                switch scope {
+                case .server: try await $0.serverStats(range: range, timeZone: timeZone, householdID: household)
+                case .household: try await $0.householdStats(range: range, timeZone: timeZone)
+                }
+            }
             isUnavailable = false
         } catch LobbyError.notFound {
             isUnavailable = true

@@ -31,7 +31,8 @@ struct ProfileMenu: View {
                 Button("Choose a Picture…", systemImage: AppSymbol.picture) { picking = profile }
                     .accessibilityIdentifier("profile.picture")
             }
-            if app.activeProfile != nil {
+            // None in kids mode (docs/decisions.md, "Who sees which statistics").
+            if app.activeProfile != nil, app.statsAccess.showsOwn {
                 Button(StatsSummary.headline(.month) + "…", systemImage: "chart.bar.xaxis") { showsStats = true }
                     .accessibilityIdentifier("profile.stats")
             }
@@ -133,6 +134,16 @@ struct SettingsView: View {
                         Label("Lobby Server", systemImage: AppSymbol.server)
                     }
                 }
+                if app.statsAccess.showsHouseholdOverview {
+                    Section {
+                        NavigationLink(value: Route.householdStats) {
+                            Label("Household Statistics", systemImage: "chart.bar.xaxis")
+                        }
+                        .accessibilityIdentifier("settings.householdStatistics")
+                    } footer: {
+                        Text("What your household watches, and each of its viewers.")
+                    }
+                }
                 if app.isOwnerManager, app.serverCompatibility != .compatible {
                     Section {
                         Label(app.serverCompatibility.title, systemImage: AppSymbol.problem)
@@ -153,10 +164,12 @@ struct SettingsView: View {
                             Label("Server Settings", systemImage: AppSymbol.settings)
                         }
                         .accessibilityIdentifier("settings.server")
-                        NavigationLink(value: Route.serverStats) {
-                            Label("Statistics", systemImage: "chart.bar.xaxis")
+                        if app.statsAccess.showsServerPage {
+                            NavigationLink(value: Route.serverStats) {
+                                Label("Statistics", systemImage: "chart.bar.xaxis")
+                            }
+                            .accessibilityIdentifier("settings.statistics")
                         }
-                        .accessibilityIdentifier("settings.statistics")
                         if app.serverSetup?.needed == true {
                             Button("Finish Setting Up the Server…") { showsSetup = true }
                                 .accessibilityIdentifier("settings.finishSetup")
@@ -221,7 +234,7 @@ struct SettingsView: View {
                             .accessibilityIdentifier("settings.skipping")
                         }
                     }
-                    if let profile = app.activeProfile {
+                    if let profile = app.activeProfile, app.statsAccess.showsOwn {
                         NavigationLink(value: Route.viewerStats(profile.id)) {
                             Label(StatsSummary.headline(.month), systemImage: "chart.bar.xaxis")
                         }

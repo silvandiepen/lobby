@@ -28,6 +28,26 @@ export function roadOf(c: { env: AppEnv["Bindings"] | undefined }): Road {
   return TAILNET.check(peer, isIPv6(peer) ? "ipv6" : "ipv4") ? "tailnet" : "home";
 }
 
+/**
+ * What of the server's page a household's overview has: its own watching, and nothing of the
+ * server, its drive or other households. A list of what goes in, so a new part stays out.
+ */
+const HOUSEHOLD_FIELDS = [
+  "range",
+  "household",
+  "totals",
+  "days",
+  "heatmap",
+  "hours",
+  "topTitles",
+  "viewers",
+  "devices",
+  "roads",
+  "deliveries",
+  "traffic",
+  "playOn",
+] as const;
+
 /** Per device: a person looks at a page now and then, and a page asks once. */
 export const STATS_RATE = { burst: 30, perMinute: 20 } as const;
 
@@ -38,13 +58,19 @@ export interface StatsRouteDeps {
   storage?: () => Record<string, number | null>;
   requireManager: (c: Ctx, action: string) => Device;
   requireHouseholdAdmin: (c: Ctx, action: string) => Device;
+  /**
+   * The viewer a device's app last said was in front (the live channel), or null. A device
+   * that is not an admin sees only that viewer's statistics.
+   */
+  inFront: (deviceId: string) => string | null;
   now: () => number;
 }
 
 /**
- * Statistics (docs/api.md, Statistics). Each viewer's for whoever may be that viewer on a device
- * of the household; the server's for its admins. The guards keep a viewer to their household
- * and a child's device to its own child.
+ * Statistics (docs/api.md, Statistics; docs/decisions.md, "Who sees which statistics"). A server
+ * admin sees every viewer's and the server's; a household admin their household's viewers and
+ * its overview; anyone else only the viewer in front on their device, never a child's. A kids
+ * device, and a device while a child is in front, sees none.
  */
 export function registerStatsRoutes(app: Hono<AppEnv>, deps: StatsRouteDeps): void {
   const { db, stats, now } = deps;
@@ -59,15 +85,34 @@ export function registerStatsRoutes(app: Hono<AppEnv>, deps: StatsRouteDeps): vo
     }
   };
 
-  const viewer = (
-    c: Ctx,
-  ): {
+  interface Viewer {
     id: string;
     name: string;
     color: string;
     avatar: string | null;
     kids: boolean;
-  } => {
+  }
+
+  const isKids = (profileId: string): boolean =>
+    db.get<{ kids: number }>("select kids_json is not null as kids from profile where id = ?", [
+      profileId,
+    ])?.kids === 1;
+
+  /** No statistics on a child's device, nor while a child is in front on a grown-up's. */
+  const notAsChild = (c: Ctx): void => {
+    const device = c.get("device");
+    // The kids guard has already said 404 to a kids device; this is in case it ever does not.
+    if (device.kidsProfileId !== null) throw new ApiError("not_found", "There is no such viewer.");
+    const front = deps.inFront(device.id);
+    if (front !== null && isKids(front)) {
+      throw new ApiError("forbidden", "There are no statistics in kids mode.");
+    }
+  };
+
+  /** The viewer `:id`, if this device may see their statistics. */
+  const viewer = (c: Ctx): Viewer => {
+    notAsChild(c);
+    const device = c.get("device");
     const row = db.get<{
       id: string;
       name: string;
@@ -80,9 +125,21 @@ export function registerStatsRoutes(app: Hono<AppEnv>, deps: StatsRouteDeps): vo
        where id = ? and deleted_at is null`,
       [c.req.param("id") ?? ""],
     );
-    // The household guard lets one that is nobody's through: it is not there either.
-    if (!row || row.household_id !== c.get("device").householdId) {
+    // The household guard lets one that is nobody's through: it is not there either. A server
+    // admin sees the viewers of every household.
+    if (!row || (row.household_id !== device.householdId && device.access !== "admin")) {
       throw new ApiError("not_found", "There is no such viewer.");
+    }
+    if (device.access === "viewer") {
+      if (row.kids === 1) {
+        throw new ApiError("forbidden", "A child's statistics are for the household's admins.");
+      }
+      if (deps.inFront(device.id) !== row.id) {
+        throw new ApiError(
+          "forbidden",
+          "Only your own statistics: choose yourself as the viewer on this device.",
+        );
+      }
     }
     return {
       id: row.id,
@@ -115,18 +172,13 @@ export function registerStatsRoutes(app: Hono<AppEnv>, deps: StatsRouteDeps): vo
     const clock = clockOf(c);
     take(c);
     stats.prune();
-    const device = c.get("device");
     const range = rangeOf(name, clock, now(), stats.oldest);
-    const simple = device.kidsProfileId !== null;
     return c.json({
       viewer: who,
       keptDays: stats.kept,
-      simple,
-      ...reader.viewer(who.id, range, clock, {
-        view: c.get("kids"),
-        simple,
-        oldest: stats.oldest,
-      }),
+      // Always false: older apps read it, from when a child's device had a page of its own.
+      simple: false,
+      ...reader.viewer(who.id, range, clock, { view: c.get("kids"), oldest: stats.oldest }),
     });
   });
 
@@ -145,8 +197,38 @@ export function registerStatsRoutes(app: Hono<AppEnv>, deps: StatsRouteDeps): vo
     return c.body(null, 204);
   });
 
+  app.get("/v1/stats/household", (c) => {
+    const device = deps.requireHouseholdAdmin(c, "see the household's statistics");
+    notAsChild(c);
+    const name = rangeName(c);
+    const clock = clockOf(c);
+    const asked = c.req.query("household") ?? device.householdId;
+    // A household admin has their own; a server admin opens any.
+    if (asked !== device.householdId && device.access !== "admin") {
+      throw new ApiError("not_found", "There is no such household.");
+    }
+    if (!db.get("select 1 as x from household where id = ? and removed_at is null", [asked])) {
+      throw new ApiError("not_found", "There is no such household.");
+    }
+    take(c);
+    stats.prune();
+    const range = rangeOf(name, clock, now(), stats.oldest);
+    const all = reader.server(range, clock, {
+      householdId: asked,
+      ownerHouseholdId: OWNER_HOUSEHOLD,
+      storage: {},
+      only: asked,
+      view: asked === device.householdId ? c.get("kids") : null,
+    });
+    return c.json({
+      keptDays: stats.kept,
+      ...Object.fromEntries(HOUSEHOLD_FIELDS.map((key) => [key, all[key]])),
+    });
+  });
+
   app.get("/v1/stats/server", (c) => {
     deps.requireManager(c, "see the server's statistics");
+    notAsChild(c);
     const name = rangeName(c);
     const clock = clockOf(c);
     const asked = c.req.query("household");

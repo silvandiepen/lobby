@@ -265,7 +265,6 @@ describe("the modes on a child's device", () => {
           "/v1/popular",
           `/v1/items/${item("Balloon").id}`,
           "/v1/search?q=balloon",
-          `/v1/stats/viewers/${kid}`,
         ]) {
           expect((await call(tablet.token, "GET", path, undefined, from)).status, path).toBe(200);
         }

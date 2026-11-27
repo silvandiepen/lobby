@@ -259,9 +259,9 @@ export class StatsReader {
     profileId: string,
     range: Range,
     clock: Clock,
-    options: { view: KidsView | null; simple: boolean; oldest: number },
+    options: { view: KidsView | null; oldest: number },
   ): Record<string, unknown> {
-    const { view, simple } = options;
+    const { view } = options;
     const allowed = (row: { item_id: string; title_id: string }): boolean =>
       !view || (view.items.has(row.item_id) && view.items.has(row.title_id));
     const rows = this.sessions("profile_id = ? and started_at >= ? and started_at <= ?", [
@@ -446,9 +446,6 @@ export class StatsReader {
           .map(([name, ms]) => ({ name, listenedMs: ms })),
       },
     };
-    // A child's own device is told what the child watched, and nothing else.
-    if (simple) return result;
-
     const deviceNames = this.names("device", devices.keys());
     const showsOf = this.shows([...itemsWatched.keys()]);
     const historyRows = rows.slice(-HISTORY).reverse();
@@ -574,10 +571,23 @@ export class StatsReader {
       householdId: string | null;
       ownerHouseholdId: string;
       storage: Record<string, number | null>;
+      /** Only this household's watching, listening and bytes: its overview. */
+      only?: string;
+      /** What the asking device may see of the library, for a household with a part of it. */
+      view?: KidsView | null;
     },
   ): Record<string, unknown> {
     const detail = options.householdId ?? options.ownerHouseholdId;
-    const rows = this.sessions("started_at >= ? and started_at <= ?", [range.from, range.to]);
+    const { only, view } = options;
+    const rows = (
+      only === undefined
+        ? this.sessions("started_at >= ? and started_at <= ?", [range.from, range.to])
+        : this.sessions("household_id = ? and started_at >= ? and started_at <= ?", [
+            only,
+            range.from,
+            range.to,
+          ])
+    ).filter((row) => !view || (view.items.has(row.item_id) && view.items.has(row.title_id)));
 
     const days = new Map<string, { watchedMs: number; sessions: number; viewers: Set<string> }>();
     const heatmap = emptyHeatmap();
@@ -670,6 +680,7 @@ export class StatsReader {
     const sentDays = new Map<string, { homeBytes: number; awayBytes: number }>();
     const householdBytes = new Map<string, number>();
     for (const row of traffic) {
+      if (only !== undefined && row.household_id !== only) continue;
       sent[row.road] += row.bytes;
       add(householdBytes, row.household_id, row.bytes);
       const local = clock.at(row.hour * HOUR_MS);
@@ -732,8 +743,9 @@ export class StatsReader {
     );
     const listening = this.db.get<{ ms: number; plays: number }>(
       `select coalesce(sum(played_ms), 0) as ms, count(*) as plays from music_play
-       where played_at >= ? and played_at <= ?`,
-      [range.from, range.to],
+       where played_at >= ? and played_at <= ?
+         and (? is null or profile_id in (select id from profile where household_id = ?))`,
+      [range.from, range.to, only ?? null, only ?? null],
     );
 
     const topTitleRows = [...titles]
