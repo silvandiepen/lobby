@@ -248,7 +248,10 @@ function npmNotices(modules: string): Notice[] {
 /** The crates in lobby-direct for one target, with their licences, from cargo. */
 function crateNotices(rustTarget: string): Notice[] {
   const manifest = join(REPO, "apps/direct/Cargo.toml");
-  run("cargo", ["fetch", "--locked", "--target", rustTarget, "--manifest-path", manifest]);
+  // Every platform's crates, not only the target's: `cargo tree --target` also resolves what the
+  // build scripts and proc-macros need on the host, which differs when the target is another
+  // platform (cpufeatures for an aarch64 target on an x86_64 runner).
+  run("cargo", ["fetch", "--locked", "--manifest-path", manifest]);
   const inBinary = new Set(
     run("cargo", [
       "tree",
