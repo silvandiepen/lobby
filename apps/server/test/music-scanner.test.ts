@@ -187,6 +187,48 @@ describe("audio scanner", () => {
     expect(books.map((one) => one.title)).toContain("Dad tells one");
   });
 
+  it("makes a story of each file in a folder of its own, with the picture inside it", async () => {
+    // Read-along stories: a collection's folder, a folder per story, one MP3 each with its
+    // cover inside, and the reader in every name tag.
+    const blue = join(f.dir, "blue.png");
+    const green = join(f.dir, "green.png");
+    makePicture(blue, "blue");
+    makePicture(green, "green");
+    const story = (title: string, reader: string, cover: string, tone: number) => {
+      makeAudio(join(f.books, "Read Along", title, `${title}.mp3`), {
+        tone,
+        cover,
+        tags: {
+          title,
+          album: title,
+          artist: reader,
+          album_artist: reader,
+          composer: reader,
+          genre: "Stories",
+          track: "1/1",
+        },
+      });
+    };
+    story("The Brave Little Kettle", "Robin Reed", blue, 700);
+    story("Paper Moons", "Alex Hart", green, 710);
+    await f.scan();
+    const { books, artists } = await all();
+    expect(artists).toEqual([]);
+    expect(books.map((one) => one.title).sort()).toEqual([
+      "Paper Moons",
+      "The Brave Little Kettle",
+    ]);
+    const kettle = books.find((one) => one.title === "The Brave Little Kettle");
+    const moons = books.find((one) => one.title === "Paper Moons");
+    expect(kettle).toMatchObject({ narrators: ["Robin Reed"], genres: ["Stories"], chapters: [] });
+    expect(kettle?.parts).toHaveLength(1);
+    // Each its own picture, from inside its file.
+    expect(kettle?.coverId).not.toBeNull();
+    expect(moons?.coverId).not.toBeNull();
+    expect(kettle?.coverId).not.toBe(moons?.coverId);
+    expect((await f.call("GET", `/v1/music/covers/${kettle?.coverId}?w=200`)).status).toBe(200);
+  });
+
   it("syncs only what changed, with tombstones", async () => {
     makeAudio(join(album("Opera"), "01.mp3"), queen("One", 1));
     makeAudio(join(f.music, "Gone/01.mp3"), {
