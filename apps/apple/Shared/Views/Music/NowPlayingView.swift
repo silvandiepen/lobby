@@ -82,7 +82,7 @@ struct NowPlayingView: View {
                     .font(.title3.weight(.semibold))
                     .lineLimit(2)
                     .accessibilityIdentifier("music.player.title")
-                Text(player.book.map { $0.title + " · " + $0.authors.joined(separator: ", ") }
+                Text(player.book.map { [$0.title, $0.credit].compactMap { $0 }.joined(separator: " · ") }
                     ?? [track.artistCredit, player.currentCollection].compactMap { $0 }.joined(separator: " · "))
                     .font(.body)
                     .foregroundStyle(.lobbySecondary)

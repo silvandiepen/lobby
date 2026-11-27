@@ -36,8 +36,8 @@ struct MusicEmpty: View {
     }
 }
 
-/// The music's front page: the places, what was played and added lately, albums, playlists
-/// and books.
+/// The music's front page: the places, the stories to go on with, what was played and added
+/// lately, albums, playlists and stories.
 struct MusicHomeView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -56,6 +56,7 @@ struct MusicHomeView: View {
             } else {
                 VStack(alignment: .leading, spacing: AppTheme.Space.shelf) {
                     places
+                    ContinueListeningShelf(width: width)
                     if !recent.isEmpty {
                         Shelf(title: "Recently Played") {
                             ForEach(recent) { entry in
@@ -93,7 +94,7 @@ struct MusicHomeView: View {
                         }
                     }
                     if !catalogue.books.isEmpty {
-                        Shelf(title: "Audiobooks", seeAll: .music(.books)) {
+                        Shelf(title: "Stories", seeAll: .music(.books)) {
                             ForEach(catalogue.sortedBooks) { book in
                                 NavigationLink(value: Route.musicBook(book.id)) {
                                     MusicTile(book: book, width: width, music: music)
@@ -286,7 +287,7 @@ struct MusicBooksView: View {
             }
         }
         .lobbyPage()
-        .navigationTitle("Audiobooks")
+        .navigationTitle("Stories")
     }
 }
 
@@ -401,7 +402,7 @@ struct MusicFavouritesView: View {
                         }
                     }
                     if !books.isEmpty {
-                        Shelf(title: "Audiobooks") {
+                        Shelf(title: "Stories") {
                             ForEach(books) { book in
                                 NavigationLink(value: Route.musicBook(book.id)) {
                                     MusicTile(book: book, width: width, music: music)

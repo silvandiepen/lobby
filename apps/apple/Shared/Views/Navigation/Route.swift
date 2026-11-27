@@ -69,7 +69,7 @@ enum MusicSection: String, CaseIterable, Hashable, Sendable {
         case .artists: "Artists"
         case .albums: "Albums"
         case .songs: "Songs"
-        case .books: "Audiobooks"
+        case .books: "Stories"
         case .playlists: "Playlists"
         case .favourites: "Favourites"
         }
