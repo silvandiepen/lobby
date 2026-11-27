@@ -74,6 +74,7 @@ export async function startIntroducer(options: NodeOptions): Promise<RunningIntr
   const kept = new Map<string, unknown>();
   const now = options.now ?? Date.now;
   let timer: NodeJS.Timeout | null = null;
+  let timerAt = 0;
   const ground: Ground = {
     lines: () => [...lines],
     read: (key) => Promise.resolve(kept.get(key)),
@@ -86,7 +87,10 @@ export async function startIntroducer(options: NodeOptions): Promise<RunningIntr
       return Promise.resolve();
     },
     wakeAt: (at) => {
-      timer ??= setTimeout(
+      if (timer && timerAt <= at) return Promise.resolve();
+      if (timer) clearTimeout(timer);
+      timerAt = at;
+      timer = setTimeout(
         () => {
           timer = null;
           void introducer.woke();

@@ -132,7 +132,9 @@ export class IntroducerRoom {
         await storage.delete(key);
       },
       wakeAt: async (at) => {
-        if ((await storage.getAlarm()) === null) await storage.setAlarm(at);
+        const set = await storage.getAlarm();
+        // The earlier wish wins: a line that came later can be due before one that is waiting.
+        if (set === null || at < set) await storage.setAlarm(at);
       },
       now: () => Date.now(),
     };
