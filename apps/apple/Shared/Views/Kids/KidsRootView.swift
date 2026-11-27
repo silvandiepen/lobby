@@ -6,6 +6,7 @@ import SwiftUI
 /// page per title, and no way to anything else but through a grown-up.
 struct KidsRootView: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.motion) private var motion
     var body: some View {
         // When and what: resting, listening or asking shows no library at all.
         let screen = app.kidsControl.screen
@@ -13,7 +14,8 @@ struct KidsRootView: View {
             library
                 .overlay(alignment: .top) { KidsCountdown() }
         } else if screen == .listening, app.kidsControl.now?.at.listening == true {
-            KidsListeningHome()
+            // Only listening lands on the stories, the one place there is.
+            KidsListeningRoot()
                 .environment(\.lobbyIsPlayful, true)
                 .preferredColorScheme(.dark)
         } else {
@@ -25,20 +27,28 @@ struct KidsRootView: View {
 
     private var library: some View {
         @Bindable var app = app
+        let sections = app.kidsSections
+        // Stories go when listening does: Home is there always.
+        let section = sections.contains(app.kidsSection) ? app.kidsSection : .home
         return NavigationStack(path: $app.kidsPath) {
-            KidsSectionView(section: app.kidsSection)
-                .modifier(KidsSectionArrival(section: app.kidsSection))
-                .safeAreaInset(edge: .bottom, spacing: 0) { KidsTabBar(selection: $app.kidsSection) }
+            Group {
+                if section == .stories {
+                    KidsStoriesPage()
+                } else {
+                    KidsSectionView(section: section)
+                }
+            }
+                .modifier(KidsSectionArrival(section: section))
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: AppTheme.Space.s) {
+                        KidsNowPlayingBar()
+                        KidsTabBar(sections: sections, selection: $app.kidsSection)
+                    }
+                    .animation(motion.animation(.open), value: app.music.player.isActive)
+                }
                 .kidsWithoutBars()
                 .navigationDestination(for: KidsRoute.self) { route in
-                    Group {
-                        if let category = route.categoryID {
-                            KidsCategoryView(categoryID: category)
-                        } else {
-                            KidsTitleView(route: route)
-                        }
-                    }
-                    .opensPage(route)
+                    KidsDestination(route: route)
                 }
                 #if os(macOS)
                 .returns(isInFront: app.kidsPath.isEmpty)
@@ -60,8 +70,50 @@ struct KidsRootView: View {
     }
 }
 
-/// The bar: four places on dark glass, larger than the regular app's.
+/// Only listening: the stories, with their pages, and what plays at the foot.
+private struct KidsListeningRoot: View {
+    @Environment(AppModel.self) private var app
+    @Environment(\.motion) private var motion
+    @State private var path: [KidsRoute] = []
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            KidsStoriesPage(onlyListening: true)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    KidsNowPlayingBar()
+                        .padding(.bottom, AppTheme.Space.s)
+                        .animation(motion.animation(.open), value: app.music.player.isActive)
+                }
+                .kidsWithoutBars()
+                .navigationDestination(for: KidsRoute.self) { route in
+                    KidsDestination(route: route)
+                }
+        }
+        .opensFromTiles()
+    }
+}
+
+/// Where a tap on the kids screens leads: a story, a category, or a film or series.
+private struct KidsDestination: View {
+    let route: KidsRoute
+
+    var body: some View {
+        Group {
+            if let story = route.storyID {
+                KidsStoryView(storyID: story)
+            } else if let category = route.categoryID {
+                KidsCategoryView(categoryID: category)
+            } else {
+                KidsTitleView(route: route)
+            }
+        }
+        .opensPage(route)
+    }
+}
+
+/// The bar: the places on dark glass, larger than the regular app's.
 private struct KidsTabBar: View {
+    let sections: [KidsSection]
     @Binding var selection: KidsSection
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.motion) private var motion
@@ -73,10 +125,11 @@ private struct KidsTabBar: View {
     private var symbolSize: CGFloat { (isWide ? 28 : 25) * scale }
     /// On a phone the tabs share the width; in a wide window the bar is as wide as its tabs.
     private var tabWidth: CGFloat { isWide ? 140 * scale : .infinity }
+    private var isSelected: KidsSection { sections.contains(selection) ? selection : .home }
 
     var body: some View {
         HStack(spacing: AppTheme.Space.xs) {
-            ForEach(KidsSection.allCases, id: \.self) { section in
+            ForEach(sections, id: \.self) { section in
                 tab(section)
             }
         }
@@ -94,14 +147,14 @@ private struct KidsTabBar: View {
         .shadow(color: KidsTheme.shadow, radius: 14, y: 6)
         .padding(.horizontal, AppTheme.Space.m)
         .padding(.bottom, isWide ? AppTheme.Space.l : AppTheme.Space.s)
-        // Larger text makes it larger, up to where four names still fit beside each other.
+        // Larger text makes it larger, up to where the names still fit beside each other.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isTabBar)
     }
 
     private func tab(_ section: KidsSection) -> some View {
-        let isSelected = section == selection
+        let isSelected = section == self.isSelected
         return Button {
             selection = section
         } label: {
