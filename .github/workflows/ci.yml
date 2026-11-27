@@ -1,5 +1,6 @@
-# Checks every push and pull request. The Node jobs always run; lobby-direct, LobbyKit and the
-# Apple apps run only when their files (or what they depend on) changed. It needs no secrets.
+# Checks every push and pull request. The Node jobs always run; lobby-direct, LobbyKit, the Apple
+# apps and the container image run only when their files (or what they depend on) changed. It
+# needs no secrets.
 name: CI
 
 on:
@@ -9,6 +10,11 @@ on:
 
 permissions:
   contents: read
+
+env:
+  # The Xcode the apps are built with, not the image's newest: a newer Swift can refuse what this
+  # one takes (Xcode 26.6 gave up type-checking a test). macos-26 has it; move both together.
+  XCODE: "26.2"
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -21,6 +27,7 @@ jobs:
       direct: ${{ steps.paths.outputs.direct }}
       lobbykit: ${{ steps.paths.outputs.lobbykit }}
       apps: ${{ steps.paths.outputs.apps }}
+      image: ${{ steps.paths.outputs.image }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -45,6 +52,7 @@ jobs:
           flag direct '^(apps/direct/|apps/server/src/outside/|\.github/workflows/ci\.yml)'
           flag lobbykit '^(packages/|docs/api\.md|\.github/workflows/ci\.yml)'
           flag apps '^(apps/apple/|packages/|\.github/workflows/ci\.yml)'
+          flag image '^(tools/release/docker/|apps/server/(src/|package\.json)|apps/direct/|package-lock\.json)'
 
   server:
     name: Server, lint and typecheck
@@ -109,21 +117,21 @@ jobs:
     name: LobbyKit
     needs: changes
     if: needs.changes.outputs.lobbykit == 'true'
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Xcode 26
+      - name: Xcode ${{ env.XCODE }}
         run: |
-          xcode="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)"
-          [ -n "$xcode" ] && sudo xcode-select -s "$xcode"
+          sudo xcode-select -s "/Applications/Xcode_${XCODE}.app"
           xcodebuild -version
+          swift --version
       - run: swift test --package-path packages/LobbyKit
 
   apps:
     name: Apple apps (${{ matrix.scheme }})
     needs: changes
     if: needs.changes.outputs.apps == 'true'
-    runs-on: macos-latest
+    runs-on: macos-26
     strategy:
       fail-fast: false
       matrix:
@@ -133,11 +141,11 @@ jobs:
           - { scheme: LobbyTV, destination: "generic/platform=tvOS Simulator" }
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Xcode 26
+      - name: Xcode ${{ env.XCODE }}
         run: |
-          xcode="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)"
-          [ -n "$xcode" ] && sudo xcode-select -s "$xcode"
+          sudo xcode-select -s "/Applications/Xcode_${XCODE}.app"
           xcodebuild -version
+          swift --version
       - run: brew install xcodegen
       - run: npm run apple:generate
       - name: Build, unsigned
@@ -146,3 +154,35 @@ jobs:
             -project apps/apple/Lobby.xcodeproj -scheme "${{ matrix.scheme }}" \
             -destination "${{ matrix.destination }}" \
             CODE_SIGNING_ALLOWED=NO
+
+  image:
+    name: Container image (${{ matrix.arch }})
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, os: ubuntu-24.04 }
+          # On an arm64 runner of its own, as the release builds it: under QEMU, compiling
+          # lobby-direct takes many times as long.
+          - { arch: arm64, os: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - name: Build the image, as the release does
+        run: |
+          docker buildx build --platform linux/${{ matrix.arch }} \
+            -f tools/release/docker/Dockerfile --load -t lobby-server:ci .
+      - name: It starts and answers
+        run: |
+          docker run -d --name lobby -p 127.0.0.1:8674:8674 lobby-server:ci
+          for _ in $(seq 1 60); do
+            if curl -fs http://127.0.0.1:8674/v1/server; then echo; exit 0; fi
+            sleep 1
+          done
+          docker logs lobby
+          exit 1
+      - name: Its lobby-direct runs here
+        run: docker run --rm --entrypoint /opt/lobby/bin/lobby-direct lobby-server:ci < /dev/null
