@@ -16,9 +16,11 @@ struct LobbyTVApp: App {
         WindowGroup {
             switch AppLaunch.shared.result {
             case .success(let servers):
+                // No `.tint` here: the accent comes from the asset catalogue. A tint on the
+                // whole app fills every unfocused button with it, and their words, in the same
+                // colour, disappear.
                 ServersRoot(servers: servers) { TVRootView() }
                     .lobbyMotion()
-                    .tint(Color("AccentColor"))
             case .failure(let error):
                 // The app's own folder could not be made: nothing else can work.
                 ContentUnavailableView(
