@@ -333,16 +333,16 @@ A kids viewer's preferences are **the grown-ups'** (D-058, D-059;
 
 ## 7. Statistics for kids
 
-From D-060 ([api.md, Statistics](api.md#statistics)):
+From D-060 and D-066 ([api.md, Statistics](api.md#statistics)):
 
-- A grown-up sees a child on the viewer's page: **What *name* Watches**, with screen time per day
-  (watching and listening) and how much is in the evening and at weekends.
-- Any device of the household may read a viewer's statistics, a child's included: there is no
-  sign-in per viewer.
-- A child's own device gets its own child only, `simple`: no history, devices or roads, only
-  titles it may see now. The kids screens link to no statistics page.
-- One sitting can be taken out of the history by anyone who may be the viewer, not from a child's
-  device. Forgetting a viewer's history is a household admin's.
+- Children see no statistics, their own included. The kids screens have no statistics entry, and
+  the server answers `404` to every statistics route from a child's own device and `403` to a
+  grown-up's device while a child is in front on it.
+- The household's admins (and the server admins) see a child on the viewer's page: **What *name*
+  Watches**, with screen time per day (watching and listening) and how much is in the evening and
+  at weekends. Other grown-ups of the household do not see a child's statistics.
+- One sitting can be taken out of a child's history by whoever may see it. Forgetting a viewer's
+  history is a household admin's.
 
 ## 8. Households and who decides
 

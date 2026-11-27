@@ -1510,7 +1510,18 @@ What is watched, when and by whom (docs/decisions.md, D-060). The server keeps s
 
 Everything is kept for `statistics.keepDays` (a setting, 730 days by default, 30 to 3650) and then deleted, the music play history with it. Nothing older is taken in. Places in titles (progress) are not statistics and stay.
 
-Both pages take:
+**Who sees which** (docs/decisions.md, D-066):
+
+| Device | A viewer's page | The household's overview | The server's page |
+| --- | --- | --- | --- |
+| Server admin | every viewer of every household, children included | any household's (`?household=`) | yes |
+| Household admin | every viewer of their own household, children included | their own household's | no (`403`) |
+| Anyone else | only the viewer in front on the device, never a child | no (`403`) | no (`403`) |
+| A child's own device | none (`404`) | none (`404`) | none (`404`) |
+
+There is no sign-in per viewer, so "the viewer in front" is the viewer the device's app last said was in front on its live channel (`POST /v1/live/{session}`, `profileId`), kept per device while the server runs. Until it has said so, after a start of the server for instance, a device that is not an admin sees no viewer's page (`403`). A device whose viewer in front is a child (the kids screens of a grown-up's device) sees no statistics at all, an admin's included (`403`). A viewer of another household is `404`, except for a server admin.
+
+All pages take:
 
 - `range`: `week` (the last 7 local days, today included), `month` (30), `year` (365) or `all` (as far back as is kept). Default `month`.
 - `tz`: the viewer's time zone, such as `Europe/Amsterdam`. Days, months, weekdays and hours are the viewer's there. Default the server's. A sitting's time is spread over the hours it took, so one across midnight counts for both days. Sittings known from before statistics (migration 24, from the daily plays) only have a day: they count for days and months, not for hours.
@@ -1519,13 +1530,14 @@ Times are milliseconds since the epoch; amounts of time `…Ms`, of data `…Byt
 
 ### `GET /v1/stats/viewers/{profileId}?range=&tz=` — Built.
 
-For any device of the viewer's household, as their progress is; a child's device only for its own child, and then `simple` (no history, devices or roads). A guest household with a part of the library sees only titles of that part; a child's own device only titles it may see now. `404` for a viewer of another household. Rate limited per device (`429`).
+As the table above says. A guest household with a part of the library sees only titles of that part. Rate limited per device (`429`).
 
 ```ts
 interface ViewerStats {
   viewer: { id: string; name: string; color: string; avatar: string | null; kids: boolean };
   keptDays: number;
-  simple: boolean;
+  /** Always false. Older apps read it, from when a child's own device had a page of its own. */
+  simple: false;
   range: { name: "week" | "month" | "year" | "all"; timeZone: string; firstDay: string; lastDay: string; from: number; to: number };
   totals: { watchedMs: number; sessions: number; titles: number; filmsFinished: number; episodesFinished: number; listenedMs: number; tracksPlayed: number; activeDays: number };
   /** Every day of the range, oldest first, also the empty ones. */
@@ -1551,13 +1563,12 @@ interface ViewerStats {
     topAlbums: { id: string; title: string; artist: string; coverId: string | null; listenedMs: number; plays: number }[];
     topArtists: { name: string; listenedMs: number }[];
   };
-  // Not when `simple`:
-  playOnSessions?: number;
-  roads?: Record<"home" | "tailnet" | "relay" | "direct" | "unknown", number>;
-  deliveries?: Record<"direct" | "prepared" | "download" | "unknown", number>;
-  devices?: { id: string; name: string; platform: string | null; watchedMs: number }[];
+  playOnSessions: number;
+  roads: Record<"home" | "tailnet" | "relay" | "direct" | "unknown", number>;
+  deliveries: Record<"direct" | "prepared" | "download" | "unknown", number>;
+  devices: { id: string; name: string; platform: string | null; watchedMs: number }[];
   /** The last 50 sittings of the range, newest first. */
-  history?: {
+  history: {
     id: string; itemId: string; titleId: string;
     /** The film, or the series; for an episode `subtitle` is "S1 E2 · Its title". */
     title: string; subtitle: string | null;
@@ -1571,11 +1582,22 @@ A kids viewer's page is the grown-ups' view of that child: `days` is their scree
 
 ### `DELETE /v1/stats/viewers/{profileId}/history/{sessionId}` — Built.
 
-Takes one sitting out of a viewer's history, and that day of that title out of what is popular. `204`; `404` when it is not this viewer's. Any device of the household, not a child's (`404`); at home only (outside: `403`).
+Takes one sitting out of a viewer's history, and that day of that title out of what is popular. `204`; `404` when it is not this viewer's. Whoever may see the viewer's page, as the table above says; at home only (outside: `403`).
 
 ### `DELETE /v1/stats/viewers/{profileId}` — Household admin. Built.
 
-Forgets everything the viewer watched and listened to: sittings, the daily plays behind `GET /v1/popular`, and the music play history. Their places in titles stay. `204`. At home only.
+Forgets everything the viewer watched and listened to: sittings, the daily plays behind `GET /v1/popular`, and the music play history. Their places in titles stay. `204`. An admin of the viewer's household, or a server admin for any household. At home only.
+
+### `GET /v1/stats/household?range=&tz=&household=` — Household admin. Built.
+
+A household's own overview: the server's page cut to that household's watching. A household admin gets their own household (`household` left out, or their own id; another is `404`); a server admin any household, their own without `household`. Every number is the household's alone: sittings of its viewers, the music its viewers played, the bytes sent to its devices. Nothing of the server (preparing, converting, the library, storage) or of other households is in it. A guest household's admins read it from outside too; for everyone else it waits for home. A household with a part of the library sees only titles of that part.
+
+```ts
+type HouseholdStats = Pick<
+  ServerStats,
+  "keptDays" | "range" | "totals" | "days" | "heatmap" | "hours" | "topTitles" | "viewers" | "devices" | "roads" | "deliveries" | "traffic" | "playOn"
+> & { household: { id: string; name: string } };
+```
 
 ### `GET /v1/stats/server?range=&tz=&household=` — Server admin. Built.
 
