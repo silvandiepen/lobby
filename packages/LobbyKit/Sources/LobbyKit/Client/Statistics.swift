@@ -171,8 +171,6 @@ public struct ViewerStatsTotals: Codable, Hashable, Sendable {
 public struct ViewerStats: Codable, Hashable, Sendable {
     public var viewer: StatsViewer
     public var keptDays: Int
-    /// A child's own device: no history, devices or roads.
-    public var simple: Bool
     public var range: StatsPeriod
     public var totals: ViewerStatsTotals
     public var days: [StatsDay]
@@ -293,11 +291,12 @@ public struct StatsStorage: Codable, Hashable, Sendable {
     public var dataTotalBytes: Int?
 }
 
-/// `GET /v1/stats/server`: the server's page, for its admins.
+/// `GET /v1/stats/server`: the server's page, for its admins; and `GET /v1/stats/household`, a
+/// household's overview, which has none of the server's own parts (they are nil there).
 public struct ServerStats: Codable, Hashable, Sendable {
     public var keptDays: Int
     public var range: StatsPeriod
-    /// The household the admin opened; nil: the owner's.
+    /// The household the admin opened, or the household of an overview; nil: the owner's.
     public var household: HouseholdName?
     public var totals: ServerStatsTotals
     public var days: [StatsDay]
@@ -306,15 +305,20 @@ public struct ServerStats: Codable, Hashable, Sendable {
     public var topTitles: [StatsTitle]
     public var viewers: [ServerStatsViewer]
     public var devices: [StatsDevice]
-    public var households: [ServerStatsHousehold]
+    /// The server's page only.
+    public var households: [ServerStatsHousehold]?
     public var roads: [String: Int]
     public var deliveries: [String: Int]
     public var traffic: StatsTraffic
-    public var preparations: StatsPreparations
-    public var conversions: StatsConversions
-    public var library: StatsLibrary
+    /// The server's page only.
+    public var preparations: StatsPreparations?
+    /// The server's page only.
+    public var conversions: StatsConversions?
+    /// The server's page only.
+    public var library: StatsLibrary?
     public var playOn: StatsPlayOn
-    public var storage: StatsStorage
+    /// The server's page only.
+    public var storage: StatsStorage?
 
     public struct HouseholdName: Codable, Hashable, Sendable {
         public var id: String
@@ -323,21 +327,23 @@ public struct ServerStats: Codable, Hashable, Sendable {
 }
 
 extension LobbyClient {
-    /// `GET /v1/stats/viewers/{id}`. Any device of the viewer's household; a child's device only
-    /// for its own child.
+    /// `GET /v1/stats/viewers/{id}`. A server admin any viewer, a household admin their
+    /// household's; anyone else only the viewer in front on the device, never a child. A kids
+    /// device none.
     public func viewerStats(profileID: String, range: StatsRange, timeZone: TimeZone = .current) async throws -> ViewerStats {
         try await get(
             ["stats", "viewers", profileID],
             query: [URLQueryItem(name: "range", value: range.rawValue), URLQueryItem(name: "tz", value: timeZone.identifier)])
     }
 
-    /// `DELETE /v1/stats/viewers/{id}/history/{session}`: one sitting out of the history.
+    /// `DELETE /v1/stats/viewers/{id}/history/{session}`: one sitting out of the history. Whoever
+    /// may see the viewer's page.
     public func removeFromHistory(profileID: String, sittingID: String) async throws {
         try await sendDiscardingAnswer("DELETE", ["stats", "viewers", profileID, "history", sittingID])
     }
 
-    /// `DELETE /v1/stats/viewers/{id}`. Household admin: everything the viewer watched and
-    /// listened to. Their places in titles stay.
+    /// `DELETE /v1/stats/viewers/{id}`. A household admin, or a server admin: everything the
+    /// viewer watched and listened to. Their places in titles stay.
     public func forgetHistory(profileID: String) async throws {
         try await sendDiscardingAnswer("DELETE", ["stats", "viewers", profileID])
     }
@@ -350,5 +356,13 @@ extension LobbyClient {
         var query = [URLQueryItem(name: "range", value: range.rawValue), URLQueryItem(name: "tz", value: timeZone.identifier)]
         if let householdID { query.append(URLQueryItem(name: "household", value: householdID)) }
         return try await get(["stats", "server"], query: query)
+    }
+
+    /// `GET /v1/stats/household`. A household admin: their own household's overview, without
+    /// the server's own parts. A server admin may name any household.
+    public func householdStats(range: StatsRange, timeZone: TimeZone = .current, householdID: String? = nil) async throws -> ServerStats {
+        var query = [URLQueryItem(name: "range", value: range.rawValue), URLQueryItem(name: "tz", value: timeZone.identifier)]
+        if let householdID { query.append(URLQueryItem(name: "household", value: householdID)) }
+        return try await get(["stats", "household"], query: query)
     }
 }
