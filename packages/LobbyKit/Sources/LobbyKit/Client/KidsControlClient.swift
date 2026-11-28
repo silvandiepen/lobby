@@ -75,6 +75,17 @@ extension LobbyClient {
         return answer.now
     }
 
+    /// `PUT /v1/me/kids/lock`: whether Screen Time lets this device lock itself to Lobby, and
+    /// whether it does now. The answer says whether it should.
+    @discardableResult
+    public func reportKidsLock(_ status: KidsLockStatus, locked: Bool, profileID: String? = nil) async throws -> KidsLockWish {
+        var body: [String: JSONValue] = ["status": .string(status.rawValue), "locked": .bool(locked)]
+        if let profileID { body["profileId"] = .string(profileID) }
+        struct Answer: Decodable { var lock: KidsLockWish }
+        let answer: Answer = try await send("PUT", ["me", "kids", "lock"], body: body)
+        return answer.lock
+    }
+
     /// `POST /v1/me/kids/screen-time`: what this device counted offline.
     public func reportKidsScreenTime(day: String, seconds: Double, profileID: String? = nil) async throws {
         var body: [String: JSONValue] = ["day": .string(day), "seconds": .number(seconds.rounded())]
@@ -171,6 +182,21 @@ extension LobbyClient {
     public func setKidsPlan(_ plan: KidsPlan, profileID: String) async throws -> KidsPlanView {
         struct Body: Encodable { var plan: KidsPlan }
         return try await send("PUT", ["profiles", profileID, "kids", "plan"], body: Body(plan: plan))
+    }
+
+    /// `PUT /v1/profiles/{id}/kids/lock/{deviceId}`: lock one of the child's devices to Lobby in
+    /// kids mode, or not; nil: as the child's plan says.
+    public func setKidsLock(_ lock: Bool?, deviceID: String, profileID: String) async throws -> KidsPlanView {
+        struct Body: Encodable {
+            var lock: Bool?
+            func encode(to encoder: any Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                // Null, not left out: null is "as the plan says".
+                try container.encode(lock, forKey: .lock)
+            }
+            enum CodingKeys: String, CodingKey { case lock }
+        }
+        return try await send("PUT", ["profiles", profileID, "kids", "lock", deviceID], body: Body(lock: lock))
     }
 
     /// `PUT /v1/profiles/{id}/kids/override`: "Nothing until 15:00".
