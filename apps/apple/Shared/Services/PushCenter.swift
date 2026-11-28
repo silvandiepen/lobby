@@ -2,6 +2,7 @@
 #if os(iOS) || os(macOS)
 import Foundation
 import LobbyKit
+import OSLog
 import UserNotifications
 #if os(iOS)
 import UIKit
@@ -22,15 +23,13 @@ final class PushCenter: NSObject, UNUserNotificationCenterDelegate {
     nonisolated static let no = "LOBBY_KIDS_NO"
 
     /// The device token Apple handed over, once it did.
-    private(set) var token: Data?
+    var token: Data?
     private weak var servers: ServersModel?
     private var started = false
 
-    #if DEBUG
-    nonisolated static let environment = PushEnvironment.development
-    #else
-    nonisolated static let environment = PushEnvironment.production
-    #endif
+    /// Sandbox or production, by what this build is signed with (`PushEnvironmentDetector`).
+    nonisolated static let environment = PushEnvironmentDetector.current()
+    private nonisolated static let log = Logger(subsystem: "mt.sil.lobby", category: "push")
 
     /// The answer an action of a notification stands for.
     nonisolated static func answer(for action: String) -> KidsAnswer? {
@@ -62,7 +61,15 @@ final class PushCenter: NSObject, UNUserNotificationCenterDelegate {
         center.delegate = self
         center.setNotificationCategories([Self.kidsQuestionCategory()])
         Task {
-            guard (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) == true else {
+            let allowed: Bool
+            do {
+                allowed = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            } catch {
+                Self.log.error("Asking for notification permission failed: \(error.localizedDescription, privacy: .public)")
+                allowed = false
+            }
+            guard allowed else {
+                Self.log.notice("Notifications are off for Lobby: no push token is asked for")
                 // Notifications are off for Lobby: the server forgets where it pushed to.
                 await servers.active.environment.unregisterPush()
                 return
@@ -78,7 +85,13 @@ final class PushCenter: NSObject, UNUserNotificationCenterDelegate {
     /// Apple gave this device a token: the server in use hears it.
     func registered(_ token: Data) {
         self.token = token
+        Self.log.info("Apple gave this device a push token (\(Self.environment.rawValue, privacy: .public))")
         Task { await servers?.active.registerPushIfNeeded() }
+    }
+
+    /// Apple could not give this device a token: no push will arrive until it can.
+    func failed(_ error: Error) {
+        Self.log.error("Registering for remote notifications failed: \(error.localizedDescription, privacy: .public)")
     }
 
     /// A question the live channel brought while the app is behind another one.

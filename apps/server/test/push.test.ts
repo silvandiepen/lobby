@@ -132,6 +132,61 @@ describe("push notifications", () => {
     expect(db.all("select * from push_token where device_id = ?", [phone.id])).toEqual([]);
   });
 
+  it("tries the other Apple host when a token is for the other environment, and corrects it", async () => {
+    // A development-signed build that said "production": Apple's production host answers
+    // BadDeviceToken, its sandbox takes the token.
+    const sandboxReceived: string[] = [];
+    const sandbox = createServer((request, response) => {
+      sandboxReceived.push(String(request.headers[":path"]));
+      request.resume();
+      request.on("end", () => {
+        response.writeHead(200);
+        response.end();
+      });
+    });
+    await new Promise<void>((done) => sandbox.listen(0, "127.0.0.1", done));
+    const production = createServer((request, response) => {
+      request.resume();
+      request.on("end", () => {
+        response.writeHead(400, { "content-type": "application/json" });
+        response.end(JSON.stringify({ reason: "BadDeviceToken" }));
+      });
+    });
+    await new Promise<void>((done) => production.listen(0, "127.0.0.1", done));
+    const at = (server: Http2Server): string =>
+      `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`;
+    try {
+      const push = new PushService({
+        db,
+        config,
+        hosts: { development: at(sandbox), production: at(production) },
+      });
+      const phone = devices.createLocalManager("Phone").device;
+      push.setToken(phone.id, TOKEN, "production");
+      const sent = await push.toDevices([phone.id], { title: "t", body: "b", data: {} });
+      expect(sent).toBe(1);
+      expect(sandboxReceived).toEqual([`/3/device/${TOKEN}`]);
+      // Kept, and now with the environment Apple took it for.
+      expect(db.all("select environment from push_token where device_id = ?", [phone.id])).toEqual([
+        { environment: "development" },
+      ]);
+    } finally {
+      await new Promise((done) => sandbox.close(done));
+      await new Promise((done) => production.close(done));
+    }
+  });
+
+  it("forgets a token that neither Apple host takes", async () => {
+    const push = service();
+    const phone = devices.createLocalManager("Phone").device;
+    push.setToken(phone.id, TOKEN, "development");
+    answers.set(TOKEN, 400);
+    expect(await push.toDevices([phone.id], { title: "t", body: "b", data: {} })).toBe(0);
+    // Without BadDeviceToken as the reason the other host is not tried.
+    expect(received).toHaveLength(1);
+    expect(db.all("select * from push_token where device_id = ?", [phone.id])).toEqual([]);
+  });
+
   it("refuses a key file others can read, and never tells the key", () => {
     chmodSync(config.keyFile, 0o644);
     const push = service();

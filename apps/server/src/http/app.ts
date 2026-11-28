@@ -820,7 +820,10 @@ export function createApp(deps: AppDeps, entrance: "home" | "outside" = "home"):
 
   app.put("/v1/me/push", async (c) => {
     const body = await readBody(c, MAX_SMALL_BODY);
-    if (!push || push.status().mode === "off") throw noPush();
+    if (!push || push.status().mode === "off") {
+      log.warn("A device wanted to register for push, but push is off on this server");
+      throw noPush();
+    }
     const environment = oneOf(body, "environment", ENVIRONMENTS);
     const deviceId = c.get("device").id;
     try {
