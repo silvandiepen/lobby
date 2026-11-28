@@ -69,6 +69,7 @@ export const KIDS_ROUTES: Readonly<Record<string, KidsDecision>> = {
   // Kids control: its own plan, what it says of the places, its screen time, its questions.
   "GET /v1/me/kids": "limited",
   "PUT /v1/me/kids/place": "limited",
+  "PUT /v1/me/kids/lock": "limited",
   "POST /v1/me/kids/screen-time": "limited",
   "POST /v1/me/kids/requests": "limited",
   "GET /v1/me/kids/requests/:id": "limited",
@@ -81,6 +82,7 @@ export const KIDS_ROUTES: Readonly<Record<string, KidsDecision>> = {
   "GET /v1/profiles/:id/kids/plan": "none",
   "PUT /v1/profiles/:id/kids/plan": "none",
   "PUT /v1/profiles/:id/kids/override": "none",
+  "PUT /v1/profiles/:id/kids/lock/:deviceId": "none",
   "DELETE /v1/profiles/:id/kids/override": "none",
   "PATCH /v1/profiles/:id/kids/answer": "none",
   "DELETE /v1/profiles/:id/kids/answer": "none",
@@ -319,6 +321,8 @@ export const KIDS_MODE_ROUTES: Readonly<Record<string, ModeNeed>> = {
   "DELETE /v1/remote/wake/:deviceId/plays/:id": "always",
   "GET /v1/me/kids": "always",
   "PUT /v1/me/kids/place": "always",
+  // The lock is told in every mode: Nothing is when it matters most.
+  "PUT /v1/me/kids/lock": "always",
   "POST /v1/me/kids/screen-time": "always",
   "POST /v1/me/kids/requests": "always",
   "GET /v1/me/kids/requests/:id": "always",

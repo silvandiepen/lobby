@@ -67,6 +67,11 @@ export interface KidsPlan {
   askers: Asker[];
   /** The music libraries (music sources) the child hears; null: all of them. */
   musicSourceIds: string[] | null;
+  /**
+   * Lock the child's iPhone or iPad to Lobby while it is in kids mode: every other app shielded
+   * (docs/decisions.md, "Lock to Lobby"). A device of the child's can say otherwise.
+   */
+  lockToLobby: boolean;
 }
 
 export interface Asker {
@@ -88,6 +93,7 @@ export const NO_PLAN: KidsPlan = {
   askDevices: [],
   askers: [],
   musicSourceIds: null,
+  lockToLobby: false,
 };
 
 export interface Override {
@@ -625,6 +631,10 @@ export function readPlan(value: unknown): KidsPlan {
   const sources = body["musicSourceIds"];
   const music = body["music"] ?? true;
   if (typeof music !== "boolean") throw new PlanError(`"music" must be true or false.`);
+  const lockToLobby = body["lockToLobby"] ?? false;
+  if (typeof lockToLobby !== "boolean") {
+    throw new PlanError(`"lockToLobby" must be true or false.`);
+  }
   return {
     defaultMode: oneOf(body["defaultMode"] ?? "everything", MODES, "defaultMode"),
     blocks: list("blocks", MAX_BLOCKS).map(readBlock),
@@ -640,6 +650,7 @@ export function readPlan(value: unknown): KidsPlan {
     askers,
     musicSourceIds:
       sources === null || sources === undefined ? null : ids(sources, "musicSourceIds"),
+    lockToLobby,
   };
 }
 

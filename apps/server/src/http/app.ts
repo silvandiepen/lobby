@@ -655,6 +655,7 @@ export function createApp(deps: AppDeps, entrance: "home" | "outside" = "home"):
              select 1 as x from up where id in (select value from json_each(?)) limit 1`,
             [itemId, JSON.stringify(state.titles)],
           ) !== undefined),
+      lock: (profileId, deviceId) => control.lockWish(profileId, deviceId).wanted,
     };
     control.on((event) => {
       if (event.type === "changed") {

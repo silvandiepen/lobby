@@ -138,6 +138,8 @@ export interface KidsHooks {
   state: (profileId: string, deviceId: string, outside: boolean) => ModeNow;
   /** Whether video of this title may play for the child, by what `state` said. */
   allowsVideo: (state: ModeNow, itemId: string) => boolean;
+  /** Whether this device is to lock itself to Lobby while the child is in front. */
+  lock?: (profileId: string, deviceId: string) => boolean;
 }
 
 type Outcome = "done" | "failed" | "expired" | "superseded";
@@ -866,7 +868,9 @@ export class RemoteHub {
       }
       if (!all && one.kidsTold !== null) continue;
       const now = kids.state(child, one.device.id, one.outside);
+      const lock = kids.lock?.(child, one.device.id) ?? false;
       const key = JSON.stringify([
+        lock,
         child,
         now.mode,
         now.browse,
@@ -878,7 +882,7 @@ export class RemoteHub {
       ]);
       if (one.kidsTold === key) continue;
       one.kidsTold = key;
-      this.push(one, "kidsMode", { profileId: child, now }, "kidsMode");
+      this.push(one, "kidsMode", { profileId: child, now, lock }, "kidsMode");
     }
   }
 
