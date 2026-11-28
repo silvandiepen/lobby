@@ -135,6 +135,9 @@ final class StoriesWalkthrough: LobbyUITestCase {
         try await start(as: plan.listener, plan)
         _ = element("kids.listening").waitForExistence(timeout: 30)
         try await save("listener-home", plan, wait: 4)
+        // The way out is only behind the child's picture, which is at the top of this page too.
+        XCTAssertTrue(app.buttons["kids.avatar"].exists, "The child's picture, and so the way out, is missing.")
+        XCTAssertFalse(app.buttons["For Grown-ups"].exists, "A second way out on the page.")
         if tapIfThere(element("kids.story.\(plan.story)")) {
             try await save("listener-story", plan)
             if tapIfThere(app.buttons["kids.story.play"]) {

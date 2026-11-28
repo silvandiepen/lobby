@@ -72,10 +72,6 @@ struct KidsStoriesPage: View {
                         }
                         .arrives(2)
                     }
-                    if onlyListening {
-                        KidsGrownUpsButton()
-                            .frame(maxWidth: .infinity)
-                    }
                 }
                 .padding(.bottom, KidsTheme.gap)
             }

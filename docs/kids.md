@@ -48,9 +48,10 @@ Details that hold for both:
 
 ### Leaving kids mode: the grown-up gate
 
-On **iPhone, iPad and Mac** the way out is **For Grown-ups**: on the child's picture page (tap the
-picture on Home), on the resting, listening and asking pages, and as the picture itself with a
-server that knows no avatars. It asks for Face ID, Touch ID or the device passcode
+On **iPhone, iPad and Mac** the way out is **For Grown-ups**, and only there: in the child's own
+menu, behind its picture at the top of every kids page (also on the resting, listening and asking
+pages), or as the picture itself with a server that knows no avatars. No page, toolbar or menu
+bar has another. It asks for Face ID, Touch ID or the device passcode
 (`GrownUpGate.swift`, `.deviceOwnerAuthentication`: not biometrics alone, so a grown-up whose
 face is not on the device can type the passcode).
 
@@ -283,8 +284,8 @@ household's audiobooks are **Stories** in the apps (D-067).
 
 - **Where a child finds them.** While the mode allows listening, the kids bar has **Stories**
   (headphones) after Home, on iPhone, iPad and Mac, and a **Stories** place in the TV's sidebar. In
-  **Only listening** that page is all the kids screens are: "Time to listen", with the way out for
-  grown-ups at its foot; on the TV the child's own page and Stories. Kids Home shows **Keep
+  **Only listening** that page is all the kids screens are: "Time to listen", with the child's
+  picture (and so the way out) at the top; on the TV the child's own page and Stories. Kids Home shows **Keep
   listening** too. "There is nothing to listen to yet." when there is nothing.
 - **The page:** Keep listening (the stories begun, a tap goes on at once), the stories as big
   covers with their names and how far the child is, then Music, whose albums play at once

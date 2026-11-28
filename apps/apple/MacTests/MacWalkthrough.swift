@@ -557,11 +557,10 @@ final class MacWalkthrough: XCTestCase {
 
         // Nothing in the menu bar leads out.
         await settle()
-        for title in ["All Viewers…", "Home", "Downloads", "Devices and Viewers", "Categories"] + app.profiles.map(\.name) {
+        for title in ["All Viewers…", "Home", "Downloads", "Devices and Viewers", "Categories", "For Grown-ups…"] + app.profiles.map(\.name) {
             XCTAssertNil(menuItem(title), "“\(title)” is still in the menu bar.")
         }
         XCTAssertFalse(menuItem("Find in Library")?.isEnabled ?? false)
-        XCTAssertNotNil(menuItem("For Grown-ups…"))
         XCTAssertNil(menuItem("New Window"))
         app.chooseAnotherProfile()
         await app.selectProfile(try XCTUnwrap(app.profiles.first { $0.kids == nil }))
