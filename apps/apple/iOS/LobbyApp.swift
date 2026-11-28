@@ -32,6 +32,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         PushCenter.shared.registered(token)
     }
 
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        PushCenter.shared.failed(error)
+    }
+
     /// What the system wants called once the download events were handled, by session.
     private var backgroundCompletions: [String: () -> Void] = [:]
 

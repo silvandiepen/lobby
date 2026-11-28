@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
-import { createPublicKey, verify } from "node:crypto";
+import { createPublicKey, generateKeyPairSync, verify } from "node:crypto";
+import { chmodSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http2";
+import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import type { Hono } from "hono";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -18,6 +21,7 @@ import { ItemReader, type ApiItem } from "../src/library/items.ts";
 import { Scanner } from "../src/library/scanner.ts";
 import { MusicLibrary } from "../src/music/index.ts";
 import { ProgressStore } from "../src/progress.ts";
+import { PushService } from "../src/push/service.ts";
 import { RemoteHub, WakeService } from "../src/remote/index.ts";
 import type { Player } from "../src/remote/messages.ts";
 import { makeAudio } from "./support/audio.ts";
@@ -1232,4 +1236,67 @@ describe("the signed plan for offline", () => {
     const again = await call<{ publicKey: string }>(tablet.token, "GET", "/v1/me/kids");
     expect(again.body.publicKey).toBe(reply.body.publicKey);
   });
+});
+
+describe("A child's question reaches the grown-ups' phones", () => {
+  it("registers a token, then pushes the question to it through Apple (direct mode)", async () => {
+    const paths: string[] = [];
+    const bodies: Record<string, unknown>[] = [];
+    const apple = createServer((request, response) => {
+      let text = "";
+      request.on("data", (part: Buffer) => (text += part.toString()));
+      request.on("end", () => {
+        paths.push(String(request.headers[":path"]));
+        bodies.push(JSON.parse(text) as Record<string, unknown>);
+        response.writeHead(200);
+        response.end();
+      });
+    });
+    await new Promise<void>((done) => apple.listen(0, "127.0.0.1", done));
+    try {
+      const host = `http://127.0.0.1:${String((apple.address() as AddressInfo).port)}`;
+      const keyFile = join(dir, "AuthKey_ABCDE12345.p8");
+      writeFileSync(
+        keyFile,
+        generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey.export({
+          type: "pkcs8",
+          format: "pem",
+        }),
+      );
+      chmodSync(keyFile, 0o600);
+      const push = new PushService({
+        db,
+        config: { keyFile, keyId: "ABCDE12345", teamId: "FGHIJ67890", topic: "mt.sil.lobby" },
+        hosts: { development: host, production: host },
+      });
+      // The question's events read the push service of the dependencies (the first app's, which
+      // is the one that listens); the routes take it when an app is made.
+      deps.push = push;
+      app = createApp(deps);
+      expect((await call(admin.token, "GET", "/v1/me/push")).body).toEqual({ mode: "direct" });
+      const token = "c".repeat(64);
+      expect(
+        (await call(admin.token, "PUT", "/v1/me/push", { token, environment: "development" }))
+          .status,
+      ).toBe(204);
+      expect(db.all("select token, environment from push_token")).toEqual([
+        { token, environment: "development" },
+      ]);
+
+      await setPlan({ defaultMode: "ask" });
+      const asked = await call(tablet.token, "POST", "/v1/me/kids/requests", { kind: "open" });
+      expect(asked.status).toBe(201);
+      // Sent in the background: waited for.
+      for (let turn = 0; turn < 100 && paths.length === 0; turn += 1) {
+        await new Promise((done) => setTimeout(done, 20));
+      }
+      expect(paths).toEqual([`/3/device/${token}`]);
+      expect(bodies[0]).toMatchObject({
+        aps: { category: "LOBBY_KIDS_QUESTION", "thread-id": `kids-${kid}` },
+        lobby: { kind: "kidsRequest" },
+      });
+    } finally {
+      await new Promise((done) => apple.close(done));
+    }
+  }, 30_000);
 });

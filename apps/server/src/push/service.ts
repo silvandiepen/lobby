@@ -259,6 +259,7 @@ export class PushService {
 
   setToken(deviceId: string, token: string, environment: PushEnvironment): void {
     if (!DEVICE_TOKEN.test(token)) throw new PushError(`"token" must be the device token in hex.`);
+    log.info("A device registered for push", { device: deviceId, environment });
     this.db.run(
       `insert into push_token (device_id, token, environment, updated_at) values (?, ?, ?, ?)
        on conflict (device_id) do update set token = excluded.token,
@@ -273,6 +274,7 @@ export class PushService {
    */
   setRelayHandle(deviceId: string, handle: string, key: string, environment: PushEnvironment) {
     if (!HANDLE.test(handle)) throw new PushError(`"handle" must be the relay's handle.`);
+    log.info("A device registered for push through the relay", { device: deviceId, environment });
     if (!unb64(key, 32)) throw new PushError(`"key" must be 32 bytes, base64url.`);
     this.db.run(
       `insert into push_relay (device_id, handle, key, environment, updated_at)
@@ -321,6 +323,9 @@ export class PushService {
        where push_token.device_id in (select value from json_each(?))`,
       [JSON.stringify(deviceIds)],
     );
+    if (rows.length === 0) {
+      log.info("No device with a push token to notify", { devices: deviceIds.length });
+    }
     const payload = JSON.stringify({
       aps: {
         alert: { title: message.title, body: message.body },
@@ -331,21 +336,68 @@ export class PushService {
       lobby: message.data,
     });
     const sessions = new Map<PushEnvironment, ClientHttp2Session>();
+    const sessionFor = (environment: PushEnvironment): ClientHttp2Session => {
+      let session = sessions.get(environment);
+      if (!session) {
+        session = connect(this.hosts[environment]);
+        session.on("error", () => undefined);
+        sessions.set(environment, session);
+      }
+      return session;
+    };
+    const other = (environment: PushEnvironment): PushEnvironment =>
+      environment === "production" ? "development" : "production";
     let sent = 0;
     try {
       await Promise.all(
         rows.map(async (row) => {
-          let session = sessions.get(row.environment);
-          if (!session) {
-            session = connect(this.hosts[row.environment]);
-            session.on("error", () => undefined);
-            sessions.set(row.environment, session);
+          let reply = await this.post(
+            sessionFor(row.environment),
+            row.token,
+            payload,
+            provider,
+            config,
+            message,
+          );
+          // A token is Apple's sandbox's or Apple's production's, never both. When the app said
+          // the wrong one (a development-signed build that thought it was a store build), the
+          // other host takes it: the stored environment is corrected.
+          if (reply.status === 400 && reply.reason === "BadDeviceToken") {
+            const environment = other(row.environment);
+            const again = await this.post(
+              sessionFor(environment),
+              row.token,
+              payload,
+              provider,
+              config,
+              message,
+            );
+            if (again.status === 200) {
+              this.db.run("update push_token set environment = ? where device_id = ?", [
+                environment,
+                row.device_id,
+              ]);
+              log.info("A device's push token belongs to the other Apple environment: corrected", {
+                device: row.device_id,
+                was: row.environment,
+                now: environment,
+              });
+            }
+            reply = again.status === 200 ? again : reply;
           }
-          const status = await this.post(session, row.token, payload, provider, config, message);
-          if (status === 200) sent += 1;
-          // The app was removed, or the token is no longer valid: forget it.
-          if (status === 410 || status === 400) this.removeToken(row.device_id);
-          if (status === 403) this.provider = null;
+          if (reply.status === 200) {
+            sent += 1;
+            return;
+          }
+          log.warn("Apple did not take a notification", {
+            device: row.device_id,
+            environment: row.environment,
+            status: reply.status,
+            reason: reply.reason,
+          });
+          // The app was removed, or the token is no longer valid in either environment.
+          if (reply.status === 410 || reply.status === 400) this.removeToken(row.device_id);
+          if (reply.status === 403) this.provider = null;
         }),
       );
     } finally {
@@ -439,11 +491,11 @@ export class PushService {
     provider: string,
     config: PushConfig,
     message: PushMessage,
-  ): Promise<number> {
+  ): Promise<{ status: number; reason?: string }> {
     return new Promise((done) => {
       const timer = setTimeout(() => {
         request.close();
-        done(0);
+        done({ status: 0 });
       }, SEND_TIMEOUT_MS);
       const request = session.request({
         ":method": "POST",
@@ -456,18 +508,28 @@ export class PushService {
         "content-type": "application/json",
       });
       let status = 0;
+      let text = "";
       request.on("response", (headers) => {
         status = headers[":status"] ?? 0;
       });
+      request.on("data", (part: Buffer) => {
+        if (text.length < 1000) text += part.toString();
+      });
       request.on("error", () => {
         clearTimeout(timer);
-        done(0);
+        done({ status: 0 });
       });
       request.on("close", () => {
         clearTimeout(timer);
-        done(status);
+        let reason: string | undefined;
+        try {
+          const said = (JSON.parse(text) as { reason?: unknown }).reason;
+          if (typeof said === "string") reason = said;
+        } catch {
+          // No body, or not JSON: the status says enough.
+        }
+        done(reason ? { status, reason } : { status });
       });
-      request.resume();
       request.end(payload);
     });
   }

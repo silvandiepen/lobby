@@ -281,6 +281,8 @@ final class RemoteModel {
                 isConnected = true
                 // Woken for a play: it comes in a moment, and who is watching is not asked first.
                 app?.heardOfRemotePlay(waiting: hello.pendingPlay == true)
+                // The server is there now: a push token that waited for it is told.
+                Task { await app?.registerPushIfNeeded() }
                 forgetting?.cancel()
                 forgetting = nil
                 if !hello.resumed { devices = [] }

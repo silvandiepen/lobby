@@ -80,4 +80,8 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken token: Data) {
         MainActor.assumeIsolated { PushCenter.shared.registered(token) }
     }
+
+    func application(_ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        MainActor.assumeIsolated { PushCenter.shared.failed(error) }
+    }
 }

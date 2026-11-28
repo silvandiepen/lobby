@@ -4,6 +4,7 @@ import Foundation
 import LobbyDirect
 import LobbyKit
 import Observation
+import OSLog
 
 /// The app's one UI-facing state object: the connection, the viewer, the device's copy of the
 /// library and the player. Made at launch and passed down through the environment.
@@ -943,22 +944,37 @@ final class AppModel {
     @ObservationIgnored private(set) lazy var places = KidsPlaceWatcher(follow: environment.followPlaces)
     /// The push token this server was told last.
     @ObservationIgnored private var toldPushToken: Data?
+    @ObservationIgnored private var isRegisteringPush = false
+    private nonisolated static let pushLog = Logger(subsystem: "mt.sil.lobby", category: "push")
 
     /// Tells the server where this device gets pushes, once there is a token it was not told.
     func registerPushIfNeeded() async {
         #if os(iOS) || os(macOS)
-        guard
-            let token = PushCenter.shared.token, token != toldPushToken, let client = liveClient,
-            let serverID = connection?.serverID
-        else { return }
+        guard let token = PushCenter.shared.token, token != toldPushToken else { return }
+        guard let client = liveClient, let serverID = connection?.serverID else {
+            // The server is not reached yet: the live channel and the next refresh try again.
+            Self.pushLog.info("The push token waits: the server is not reached yet")
+            return
+        }
+        guard !isRegisteringPush else { return }
+        isRegisteringPush = true
+        defer { isRegisteringPush = false }
         do {
             // Through the relay, or directly, as this server sends them (docs/decisions.md, "Push
             // through a relay").
-            _ = try await PushRegistrar(keys: environment.pushKeys).register(
+            let outcome = try await PushRegistrar(keys: environment.pushKeys).register(
                 token: token, environment: PushCenter.environment, serverID: serverID, client: client)
-            toldPushToken = token
+            switch outcome {
+            case .off:
+                // Not remembered: this server may have push set up the next time.
+                Self.pushLog.notice("This server does not push: no token was given")
+            case .direct, .relay:
+                toldPushToken = token
+                Self.pushLog.info("The server knows where to push this device (\(PushCenter.environment.rawValue, privacy: .public))")
+            }
         } catch {
             // A server without push, or a relay that cannot be reached: tried again next time.
+            Self.pushLog.error("Telling the server about the push token failed: \(error.localizedDescription, privacy: .public)")
         }
         #endif
     }
@@ -974,6 +990,7 @@ final class AppModel {
             try await client.unregisterPush()
         } catch {
             // Out of reach, or a server without push: nothing more to do from here.
+            Self.pushLog.notice("Telling the server to stop pushing failed: \(error.localizedDescription, privacy: .public)")
         }
         #endif
     }
