@@ -113,6 +113,10 @@ export interface WakeOptions {
   config: () => WakeConfig | null;
   /** Something that devices are shown changed: whether a TV can be woken. */
   changed?: () => void;
+  /** The helper came up or went down; the speakers hear of it (speakers.ts). */
+  helperChanged?: () => void;
+  /** What the helper says by itself: that a stream to a speaker ended. */
+  helperEvent?: (event: Record<string, unknown>) => void;
   now?: () => number;
   /** Makes the helper; a test passes one of its own. */
   helper?: (config: WakeConfig) => WakeHelper;
@@ -165,7 +169,11 @@ export class WakeService {
         }));
     this.helper = make(config);
     // Whether TVs are wakeable changes when it comes up or goes down.
-    this.helper.onChange = () => this.options.changed?.();
+    this.helper.onChange = () => {
+      this.options.changed?.();
+      this.options.helperChanged?.();
+    };
+    this.helper.onEvent = (event) => this.options.helperEvent?.(event);
     this.helper.start();
   }
 
@@ -174,6 +182,11 @@ export class WakeService {
     const helper = this.helper;
     this.helper = null;
     await helper?.stop();
+  }
+
+  /** The helper process, which the speakers use too; null without `remote.wake`. */
+  process(): WakeHelper | null {
+    return this.helper;
   }
 
   /** The setting changed: devices are told whether TVs can be woken. */

@@ -747,9 +747,11 @@ interface KidsPlan {
   /** The mode away from the home network (outside entrance, direct road, tailnet). */
   away: Mode | null;
   /** At most 10; radius 100…10000 m. Watched only on the child's device. */
-  places: { id: string; name: string; latitude: number; longitude: number; radiusMeters: number; mode: Mode }[];
-  /** When the device cannot tell where it is; null: the strictest place's mode. */
-  whenPlaceUnknown: Mode | null;
+  /** "schedule": the place changes nothing, inside it the schedule or the default decides. */
+  places: { id: string; name: string; latitude: number; longitude: number; radiusMeters: number; mode: Mode | "schedule" }[];
+  /** When the device cannot tell where it is: a mode, or "strictest" for the strictest of the
+   * places' modes (places "schedule" passed by); null: the places do not apply (D-069). */
+  whenPlaceUnknown: Mode | "strictest" | null;
   /** Who is asked: grown-up viewers with their devices; []: every admin device of the child's
    * household, named by all its grown-up viewers. */
   askers: { profileId: string; deviceIds: string[] }[];
@@ -783,7 +785,7 @@ interface KidsNow {
 }
 ```
 
-**How the mode is worked out.** An override wins while it runs. Otherwise the strictest of: the schedule's block (the strictest of overlapping ones) or the default; the away rule when away; the place the device is in, or `whenPlaceUnknown` when it cannot tell (also when it said nothing for six hours, or since the server started); screen time when the day's minutes are used. Ask first is lifted only by an answer, and never past a stricter mode. A viewer without a plan: Everything, with music.
+**How the mode is worked out.** An override wins while it runs. Otherwise the strictest of: the schedule's block (the strictest of overlapping ones) or the default; the away rule when away; the place the device is in (none for a place `"schedule"`), or `whenPlaceUnknown` when it cannot tell (also when it said nothing for six hours, or since the server started) and that is not null; screen time when the day's minutes are used. Ask first is lifted only by an answer, and never past a stricter mode. A viewer without a plan: Everything, with music.
 
 **Enforcement.** For a device bound to a kids viewer, every route it may use has a need (`KIDS_MODE_ROUTES` in `src/kids/guard.ts`, tested to be there for every route): its own `GET /v1/me`, `/v1/me/kids…`, `/v1/me/direct`, `/v1/household`, `/v1/profiles`, the live channel and `POST /v1/remote/commands` always (the hub checks each play), `PUT …/progress/{item}` always (where a film stopped at a switch), the avatar unless Nothing, library, items, categories, logos, artwork, popular, progress and `/v1/me/wanted` when `browse`, `/v1/assets/…` and `POST /v1/remote/wake` when `video` allows that file, music when `listening`. Otherwise `403 kids_mode`, with `now: KidsNow`; an app keeps what it has (downloads, the catalogue) and shows the mode. What is being sent stops within a second of a switch. Play On as a kids viewer needs video allowed on the target and, when the child sends it, on its own device: otherwise `403` with `reason: "kids_mode"`. A grown-up's device in kids mode is limited by the app, as for kids limits; the server checks its Play On, wake and questions by the `profileId` it names.
 
@@ -1990,6 +1992,7 @@ An event is the lines `id:` (not always), `event:` and one line `data:` with JSO
 | `wake` | `deviceId`, `commandId`, `step`, `reason` | How waking a TV for this device goes after `202`: `profile` (Lobby did not come up, select was pressed on the TV), `not_open` (it did not come up after that either, `reason: "timeout"`; a kept play still waits). `commandId` is the kept play's, or null. |
 | `upload` | `upload: Upload` | To managers' channels at home: an upload changed, or more of it arrived (at most once a second). See [Uploads](#uploads--manager-built). |
 | `import` | `item: ImportItem` | To managers' channels at home: a file of an import folder or an upload changed state. |
+| `speakers` | `speakers: ShownSpeaker[]` | The HomePods and speakers this session may play on, and what plays there ([Playing on a speaker](#playing-on-a-speaker)). Replaces what is known. After the snapshot, and when it changes. Not sent by a server without `remote.wake`. |
 | `heartbeat` | | Every `heartbeatMs` (5 s). No id. |
 
 ```ts
@@ -2164,6 +2167,7 @@ For `play` the device asks the server for the file and its progress as for any f
 | Outside | `allowOutside` to come in at all; sees and controls others only with `remoteOutside`. |
 | Another household | Not there: a device sees, controls and is controlled by the devices of its own household only. Of what plays, a guest household with a part of the library sees only that part. |
 | Waking an Apple TV | At home only, by a device with `allowRemote`; by a child only when the household lets kids turn on the TV (`remote.wake.kids`, off by default). See [Waking an Apple TV](#waking-an-apple-tv). |
+| A speaker | The owner's household, with `allowRemote`; started at home only. A child only as itself and while it may listen. See [Playing on a speaker](#playing-on-a-speaker). |
 
 ### How it goes
 
@@ -2318,6 +2322,100 @@ Phone                     server                       Apple TV (asleep)
   |                         |<------------- POST live -----|   re-checks who asked
   |                         |-------------- command play ->|
   |<- result done ----------|<------------- POST results --|
+```
+
+## Playing on a speaker
+
+Built (D-068). Lobby Server plays music and stories to the HomePods and other AirPlay speakers on its network itself: the app says what, and is then only the remote; it can be closed or leave. The server streams the files of its own library, decoded by ffmpeg, with the helper of the Apple TVs ([pyatv](https://pyatv.dev)'s RAOP). It exists only when `remote.wake` is in `lobby.config.json` ([operations](operations.md#playing-on-speakers)) and the setting `remote.wake.speakers` is on (the default). Speakers are found by themselves, every minute; Apple TVs and Macs are not among them.
+
+Every route here is on the home entrance only, and an **Owner** route: the speakers are on the owner's network (D-052). Starting needs an address at home or in the tailnet (`403 home_only` otherwise). What plays is kept in memory; the place in a story and the listens are written for the viewer it plays for, as an app writes them: `/v1/music/profiles/{id}/progress` every 15 s and at pause, stop and the end, and `/v1/music/profiles/{id}/plays` for every track heard.
+
+```ts
+interface ShownSpeaker {
+  /** Lobby Server's own id for it. */
+  id: string;
+  /** As a manager named it, or its own. */
+  name: string;
+  kind: "homepod" | "speaker";
+  /** Something can be started on it now: it is on the network and the helper runs. */
+  canPlay: boolean;
+  /**
+   * "home_only": it lets only people of its Home play (Home app: Allow Speaker & TV Access →
+   * Everyone on the Same Network). "password": it wants one, and none is kept. Said before trying.
+   */
+  access: "open" | "password" | "home_only";
+  /** 0 to 1, as the speaker last said; null before it played. */
+  volume: number | null;
+  /** What plays is this session's to pause, stop and so on. A child's only when it plays as itself. */
+  controllable: boolean;
+  play: SpeakerPlay | null;
+}
+
+type SpeakerPlay =
+  /** Something plays that this session may not see: a grown-up's music, to a child. */
+  | { redacted: true; status: Status }
+  | {
+      redacted: false;
+      /** The viewer it plays for. */
+      profileId: string;
+      kind: "story" | "music";
+      bookId: string | null;
+      albumId: string | null;
+      /** The queue, in the order it plays. A story's files. */
+      trackIds: string[];
+      index: number;
+      trackId: string;
+      /** "loading", "playing", "paused", "ended" or "error". */
+      status: Status;
+      /** In the current track, at `at` (server time); moves on while "playing", at most `durationMs`. */
+      positionMs: number;
+      at: number;
+      durationMs: number | null;
+      /** Why it stopped by itself: refused, not_found, timeout, unavailable, drive_away, kids_mode, failed. */
+      problem: string | null;
+      /** The device that started it. */
+      startedBy: string;
+    };
+```
+
+### `POST /v1/speakers/{id}/play` — Built.
+
+`{ "session", "profileId", "trackIds"?, "index"?, "bookId"?, "startMs"?, "albumId"? }` → `200` `ShownSpeaker` once the speaker plays (a second or two). `session` is the sender's channel: who uses it (a child in the kids screens) counts, as for waking. Either `trackIds` (at most 500, played from `index`, `startMs` into that track) or `bookId` (its files in order, from `startMs` on the book's line of time, or where this viewer was when it is left out). What played there before is stopped and its place kept.
+
+A child (a bound kids device, or a session whose viewer is a kids viewer) plays only as itself (`403 title_not_allowed`), only while its plan allows listening (`403 kids_mode`), only from the music libraries it was given and only with music on for it (`404`), and not over what plays as someone else (`409 speaker_busy`). A kids viewer started from a grown-up's device is held to the same.
+
+### `POST /v1/speakers/{id}/control` — Built.
+
+`{ "session", "type": "pause" | "resume" | "stop" | "next" | "previous" | "skip" | "seek" | "volume", "deltaMs"?, "positionMs"?, "volume"? }` → `200` `ShownSpeaker`. `skip` goes across the files of the queue (back 15 s at the start of a story's second file is in the first); `previous` goes to the start of the track after three seconds of it. `volume` is 0 to 1, kept for the next stream while nothing plays. Pause stops the stream and keeps the place; resume streams again from there. `409 nothing_playing`; a child only what plays as itself (`403 title_not_allowed`), and going on only while it may listen (pausing and stopping always). When a child's plan stops allowing listening, what plays as the child stops within seconds (`problem: "kids_mode"`).
+
+| Status | `reason` | |
+| --- | --- | --- |
+| `403` | `speaker_refused` | The speaker did not let Lobby Server play: its access in the Home app, or a password. The message says what to do. |
+| `404` | `speaker_not_found` | It did not answer on the network. |
+| `503` | `speaker_timeout`, `speaker_unavailable` | It did not answer in time; the helper does not run. |
+| `503` | `drive_away` | The drive of that file is not connected. |
+| `409` | `speaker_busy`, `nothing_playing` | |
+| `403` | `home_only`, `title_not_allowed`, `kids_mode` | |
+| `429` | | 10 at once and 30 plays a minute, 30 and 240 controls a minute, per device. |
+
+### For managers — Built.
+
+At home or in the tailnet only, as the Apple TVs.
+
+- `GET /v1/speakers` → `{ configured, enabled, running, problem, scannedAt, speakers: ManagedSpeaker[] }`; `ManagedSpeaker` is `{ id, name, foundName, customName, model, kind, hidden, found, access, hasPassword, playing }`. A speaker that missed two looks in a row is `found: false` and not in Play On.
+- `PATCH /v1/speakers` `{ "enabled": boolean }` → the same: the setting `remote.wake.speakers`, as `PATCH /v1/settings` would change it. Off stops what plays. `404 speakers_not_configured` without `remote.wake`.
+- `POST /v1/speakers/scan` → the same, after a look of five seconds.
+- `PATCH /v1/speakers/{id}` `{ "name"?: string | null, "hidden"?: boolean }` → `ManagedSpeaker`. `null` gives it its own name again. A hidden speaker is not in Play On, and what played there stops.
+- `PUT /v1/speakers/{id}/password` `{ "password": string | null }` → `ManagedSpeaker`. Kept in pyatv's credentials file on the server, never in an answer or a log; `null` removes it.
+
+```
+Phone                      server                          HomePod
+  |-- POST speakers/k/play -->|-- ffmpeg file → FLAC --------->|   RAOP, from the server
+  |<- 200 playing ------------|                                |
+  |      (the phone may go)   |-- next track, by itself ------>|
+  |                           |   the story's place, every 15 s, for the viewer
+  |-- POST control pause ---->|-- stop the stream ------------>|   the place is kept
+  |-- POST control resume --->|-- stream again from there ---->|
 ```
 
 ## Music and audiobooks

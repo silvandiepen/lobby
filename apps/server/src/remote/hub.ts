@@ -130,6 +130,8 @@ interface Session {
   told: Map<string, ShownDevice>;
   /** The kids mode it was told last, for the child it is used by. */
   kidsTold: string | null;
+  /** The speakers it was told last, as said. */
+  speakersTold: string | null;
 }
 
 /** When and what of the kids viewers (kids/control.ts); set by the server. */
@@ -140,6 +142,14 @@ export interface KidsHooks {
   allowsVideo: (state: ModeNow, itemId: string) => boolean;
   /** Whether this device is to lock itself to Lobby while the child is in front. */
   lock?: (profileId: string, deviceId: string) => boolean;
+  /**
+   * Whether the child may listen now, on this device, and to which music libraries (null: all).
+   * Null when music is off for it.
+   */
+  listening?: (
+    profileId: string,
+    deviceId: string,
+  ) => { allowed: boolean; sources: string[] | null } | null;
 }
 
 type Outcome = "done" | "failed" | "expired" | "superseded";
@@ -256,6 +266,18 @@ export class RemoteHub {
   kidsWake: () => boolean = () => false;
   /** The plans of the kids viewers; without them, nothing of a plan holds (as before plans). */
   kids: KidsHooks | null = null;
+  /**
+   * The HomePods and speakers a session is shown (speakers.ts); null: none to speak of, and
+   * nothing is said. Set by the server.
+   */
+  speakers:
+    | ((asker: {
+        device: Device;
+        profileId: string | null;
+        kid: string | null;
+        outside: boolean;
+      }) => unknown[] | null)
+    | null = null;
   private checkedAt = 0;
   private kidsCheckedAt = 0;
   private stopped = false;
@@ -373,6 +395,7 @@ export class RemoteHub {
         keptBytes: 0,
         told: new Map(),
         kidsTold: null,
+        speakersTold: null,
       };
       this.sessions.set(key, session);
     }
@@ -427,6 +450,7 @@ export class RemoteHub {
         devices: [...one.told.values()],
       });
       one.kidsTold = null;
+      one.speakersTold = null;
     }
     this.run();
     this.sync();
@@ -948,7 +972,29 @@ export class RemoteHub {
         one.told.set(device.id, device);
         this.push(one, "device", { device }, `device ${device.id}`);
       }
+      this.syncSpeakers(one);
     }
+  }
+
+  /** Tells a session the speakers it may play on, when that is different from what it knows. */
+  private syncSpeakers(one: Session): void {
+    if (!this.speakers || !one.announced) return;
+    const speakers = this.speakers({
+      device: one.device,
+      profileId: one.profileId,
+      kid: this.kidOf(one),
+      outside: one.outside,
+    });
+    if (speakers === null) return;
+    const key = JSON.stringify(speakers);
+    if (key === one.speakersTold) return;
+    one.speakersTold = key;
+    this.push(one, "speakers", { speakers }, "speakers");
+  }
+
+  /** What the speakers play changed: every session is told what is different for it. */
+  speakersChanged(): void {
+    this.sync();
   }
 
   // ---- Commands ----

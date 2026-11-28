@@ -72,6 +72,7 @@ struct MusicAlbumView: View {
                             HStack(spacing: AppTheme.Space.s) {
                                 MusicFavouriteButton(id: album.id, kind: .album)
                                 MusicDownloadButton(collectionID: album.id) { music.download(album) }
+                                SpeakerPlayOnButton(audio: .album(album))
                                 Menu {
                                     MusicTrackMenu(tracks: tracks)
                                     if let artist = album.artistIds.first {
@@ -184,7 +185,8 @@ struct MusicArtistView: View {
     }
 }
 
-/// A book: where the viewer is, Resume, its chapters, how fast it is read, and the download.
+/// A book: where the viewer is, Resume, the film of the same name, its chapters, how fast it is
+/// read, and the download.
 struct MusicBookView: View {
     let bookID: String
     @Environment(AppModel.self) private var app
@@ -201,9 +203,9 @@ struct MusicBookView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppTheme.Space.l) {
                     CollectionHeader(
-                        coverID: book.coverId, title: book.title, subtitle: book.authors.joined(separator: ", "),
-                        detail: ((book.narrators.isEmpty ? [] : ["Read by " + book.narrators.joined(separator: ", ")])
-                            + [MusicTime.long(book.durationMs)]).joined(separator: " · "),
+                        coverID: book.coverId, title: book.title,
+                        subtitle: book.writers.isEmpty ? nil : book.writers.joined(separator: ", "),
+                        detail: ([book.readBy, MusicTime.long(book.durationMs)].compactMap { $0 }).joined(separator: " · "),
                         symbol: AppSymbol.audiobooks
                     ) {
                         VStack(spacing: AppTheme.Space.m) {
@@ -219,9 +221,11 @@ struct MusicBookView: View {
                             PlayButtons(playTitle: begun ? "Resume" : "Play", play: {
                                 if isThisBook { music.player.resume() } else { music.player.play(book: book) }
                             })
+                            StoryFilmLink(book: book)
                             HStack(spacing: AppTheme.Space.s) {
                                 MusicFavouriteButton(id: book.id, kind: .book)
                                 MusicDownloadButton(collectionID: book.id) { music.download(book) }
+                                SpeakerPlayOnButton(audio: .story(book))
                                 SpeedMenu()
                             }
                             .foregroundStyle(.primary)
@@ -268,6 +272,7 @@ struct MusicBookView: View {
             }
             .artworkBackground(book.coverId.map(Artwork.musicCover))
             .navigationTitle(sizeClass == .compact ? "" : book.title)
+            .accessibilityIdentifier("music.bookPage")
         } else {
             ContentUnavailableView("No longer in the library", systemImage: AppSymbol.audiobooks,
                 description: Text("This book was removed from Lobby Server."))

@@ -698,18 +698,20 @@ final class AppModel {
     /// Music reads what it kept, for the viewer of now.
     private func startMusic() async {
         music.isForKids = isKidsMode
-        await music.start(profileID: isKidsMode ? nil : activeProfile?.id) { [weak self] in
+        // A child's own: where it is in each story (docs/decisions.md, "Stories").
+        await music.start(profileID: activeProfile?.id) { [weak self] in
             self?.keepArtworkOfDownloads()
         }
         music.setDownloadsUseMobileData(downloadsUseMobileData)
     }
 
-    /// Another viewer, or kids mode began or ended: music follows. A child has none.
+    /// Another viewer, or kids mode began or ended: music follows. A child listens where its
+    /// plan allows, with its own places in the stories.
     private func musicFollowsViewer() {
         let forKids = isKidsMode
         music.isForKids = forKids
         if forKids { music.player.stop() }
-        let profile = forKids ? nil : activeProfile?.id
+        let profile = activeProfile?.id
         Task { await music.viewerChanged(profile) }
     }
 

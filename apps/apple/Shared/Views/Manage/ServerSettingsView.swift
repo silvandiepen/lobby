@@ -7,6 +7,9 @@ import SwiftUI
 struct ServerSettingsView: View {
     @State private var model: ServerSettingsModel
     @State private var showsReview = false
+    /// The folder being picked. Held here, outside the list: a sheet on a section or a row of
+    /// the lazy list closed again at once, and took Settings with it.
+    @State private var picking: FolderPick?
     @Environment(\.motion) private var motion
 
     init(app: AppModel) {
@@ -20,14 +23,14 @@ struct ServerSettingsView: View {
                 ForEach(settings.sections) { section in
                     switch section.id {
                     case "library":
-                        FoldersSection(model: model)
-                        SettingsSection(model: model, section: section, skipping: ["roots"])
+                        FoldersSection(model: model) { picking = .library }
+                        SettingsSection(model: model, section: section, skipping: ["roots"]) { picking = $0 }
                         TMDBKeySection(model: model)
                     case "imports":
-                        ImportFoldersSection(model: model)
-                        SettingsSection(model: model, section: section, skipping: ["import.folders"])
+                        ImportFoldersSection(model: model) { picking = .importFolder }
+                        SettingsSection(model: model, section: section, skipping: ["import.folders"]) { picking = $0 }
                     case "advanced":
-                        SettingsSection(model: model, section: section)
+                        SettingsSection(model: model, section: section) { picking = $0 }
                         Section {
                             NavigationLink("All Settings, as Stored") { RawSettingsView(model: model) }
                                 .accessibilityIdentifier("serverSettings.raw")
@@ -38,17 +41,21 @@ struct ServerSettingsView: View {
                         }
                     case "general":
                         // Waking is switched on its own page, beside the TVs it is for.
-                        SettingsSection(model: model, section: section, skipping: ["remote.wake.enabled"])
+                        SettingsSection(model: model, section: section, skipping: ["remote.wake.enabled", "remote.wake.speakers"]) { picking = $0 }
                         Section {
                             NavigationLink(value: Route.appleTVs) {
                                 Label("Apple TVs", systemImage: AppSymbol.television)
                             }
                             .accessibilityIdentifier("serverSettings.appleTVs")
+                            NavigationLink(value: Route.speakers) {
+                                Label("Speakers", systemImage: "homepod.and.homepodmini")
+                            }
+                            .accessibilityIdentifier("serverSettings.speakers")
                         } footer: {
-                            Text("The Apple TVs Lobby Server turns on for Play On.")
+                            Text("The Apple TVs Lobby Server turns on for Play On, and the HomePods and speakers it plays music and stories to.")
                         }
                     default:
-                        SettingsSection(model: model, section: section)
+                        SettingsSection(model: model, section: section) { picking = $0 }
                     }
                 }
             }
@@ -76,6 +83,15 @@ struct ServerSettingsView: View {
         .sheet(isPresented: $showsReview) {
             ReviewSheet(model: model)
         }
+        .sheet(item: $picking) { pick in
+            FolderPickerSheet(app: model.appForPicker, purpose: pick.purpose) { path, hint, kids in
+                switch pick {
+                case .library: model.addFolder(path: path, hint: hint, forKids: kids)
+                case .importFolder: model.addImportFolder(path: path, mode: hint)
+                case .setting(let key): model.set(key, .string(path))
+                }
+            }
+        }
         .alert(
             "That did not work",
             isPresented: Binding(get: { model.problem != nil && model.settings != nil }, set: { if !$0 { model.problem = nil } })
@@ -83,6 +99,26 @@ struct ServerSettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(model.problem ?? "")
+        }
+    }
+}
+
+/// Which folder Settings → Server is picking.
+enum FolderPick: Identifiable, Hashable {
+    /// A library folder to add.
+    case library
+    /// An import folder to add.
+    case importFolder
+    /// The folder of a setting, by its key.
+    case setting(String)
+
+    var id: Self { self }
+
+    var purpose: FolderPickerSheet.Purpose {
+        switch self {
+        case .library: .library
+        case .importFolder: .importFolder
+        case .setting: .lobbyFolder
         }
     }
 }
@@ -202,13 +238,14 @@ private struct SettingsSection: View {
     let model: ServerSettingsModel
     let section: ServerSettings.Section
     var skipping: Set<String> = []
+    let pick: (FolderPick) -> Void
 
     var body: some View {
         let rows = model.settings(in: section.id).filter { !skipping.contains($0.key) }
         if !rows.isEmpty {
             Section {
                 ForEach(rows) { descriptor in
-                    SettingRow(model: model, descriptor: descriptor)
+                    SettingRow(model: model, descriptor: descriptor) { pick(.setting(descriptor.key)) }
                 }
             } header: {
                 Text(section.title)
@@ -221,7 +258,7 @@ private struct SettingsSection: View {
 private struct SettingRow: View {
     let model: ServerSettingsModel
     let descriptor: SettingDescriptor
-    @State private var picksFolder = false
+    let pickFolder: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
@@ -237,11 +274,6 @@ private struct SettingRow: View {
             }
         }
         .accessibilityIdentifier("setting.\(descriptor.key)")
-        .sheet(isPresented: $picksFolder) {
-            FolderPickerSheet(app: model.appForPicker, purpose: .lobbyFolder) { path, _, _ in
-                model.set(descriptor.key, .string(path))
-            }
-        }
     }
 
     private var value: SettingValue { model.value(descriptor.key) }
@@ -266,7 +298,7 @@ private struct SettingRow: View {
                         if descriptor.nullable, !value.isNull {
                             Button("None") { model.set(descriptor.key, .null) }.buttonStyle(.lobbyText)
                         }
-                        Button("Choose…") { picksFolder = true }.buttonStyle(.lobbyText)
+                        Button("Choose…") { pickFolder() }.buttonStyle(.lobbyText)
                     }
                 }
             }
@@ -399,22 +431,17 @@ private struct AddressesField: View {
 /// The library folders: what is in each, whether it is for the children, and adding one.
 private struct FoldersSection: View {
     let model: ServerSettingsModel
-    @State private var picks = false
+    let add: () -> Void
 
     var body: some View {
         Section {
             FolderList(model: model)
-            Button("Add a Folder…", systemImage: "plus") { picks = true }
+            Button("Add a Folder…", systemImage: "plus") { add() }
                 .accessibilityIdentifier("serverSettings.addFolder")
         } header: {
             Text("Library Folders")
         } footer: {
             Text("Lobby only reads these folders; nothing in them is changed. A folder that is taken away leaves the library, and its watch history comes back when it is added again.")
-        }
-        .sheet(isPresented: $picks) {
-            FolderPickerSheet(app: model.appForPicker, purpose: .library) { path, hint, kids in
-                model.addFolder(path: path, hint: hint, forKids: kids)
-            }
         }
     }
 }

@@ -84,6 +84,7 @@ private struct TitleHero<Actions: View>: View {
                 .overlay { scrim }
                 .parallaxHeader(height: size.height)
                 .mask { fade }
+                .extendsUnderSidebar()
                 .accessibilityHidden(true)
             VStack(alignment: isCompact ? .center : .leading, spacing: AppTheme.Space.m) {
                 TitleLogo(

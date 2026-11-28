@@ -37,6 +37,65 @@ public enum KidsMode: OpenStringEnum {
     }
 }
 
+/// What a place says: a mode, or "as schedule" for a place that changes nothing, such as home
+/// (docs/decisions.md, D-069). A value this build does not know is as strict as Nothing.
+public enum KidsPlaceMode: OpenStringEnum {
+    case asSchedule, everything, ask, listening, nothing
+    case unknown(String)
+
+    public static let knownCases: [KidsPlaceMode] = [.asSchedule, .everything, .ask, .listening, .nothing]
+
+    public init(_ mode: KidsMode) {
+        self = Self(mode.rawValue)
+    }
+
+    public var rawValue: String {
+        switch self {
+        case .asSchedule: "schedule"
+        case .everything: "everything"
+        case .ask: "ask"
+        case .listening: "listening"
+        case .nothing: "nothing"
+        case .unknown(let raw): raw
+        }
+    }
+
+    /// The mode the place holds inside it; nil for a place as schedule.
+    public var mode: KidsMode? {
+        self == .asSchedule ? nil : KidsMode(rawValue)
+    }
+}
+
+/// What holds where the device cannot tell which place it is in, when a grown-up chose it: the
+/// strictest place, or a mode. No choice (nil) is "as schedule": the places do not apply
+/// (docs/decisions.md, D-069). A value this build does not know is as strict as Nothing.
+public enum KidsPlaceUnknown: OpenStringEnum {
+    case strictestPlace, everything, ask, listening, nothing
+    case unknown(String)
+
+    public static let knownCases: [KidsPlaceUnknown] = [.strictestPlace, .everything, .ask, .listening, .nothing]
+
+    public init(_ mode: KidsMode) {
+        self = Self(mode.rawValue)
+    }
+
+    public var rawValue: String {
+        switch self {
+        case .strictestPlace: "strictest"
+        case .everything: "everything"
+        case .ask: "ask"
+        case .listening: "listening"
+        case .nothing: "nothing"
+        case .unknown(let raw): raw
+        }
+    }
+
+    /// The mode it names; nil for the strictest place, which is worked out from the places.
+    public var mode: KidsMode? {
+        self == .strictestPlace ? nil : KidsMode(rawValue)
+    }
+}
+
 public enum KidsAnswerMode: String, Codable, Hashable, Sendable {
     case everything, listening
 }
@@ -74,9 +133,9 @@ public struct KidsPlace: Codable, Hashable, Sendable, Identifiable {
     public var latitude: Double
     public var longitude: Double
     public var radiusMeters: Double
-    public var mode: KidsMode
+    public var mode: KidsPlaceMode
 
-    public init(id: String, name: String, latitude: Double, longitude: Double, radiusMeters: Double, mode: KidsMode) {
+    public init(id: String, name: String, latitude: Double, longitude: Double, radiusMeters: Double, mode: KidsPlaceMode) {
         self.id = id
         self.name = name
         self.latitude = latitude
@@ -119,8 +178,8 @@ public struct KidsPlan: Codable, Hashable, Sendable {
     /// The mode away from the home network; nil: no rule.
     public var away: KidsMode?
     public var places: [KidsPlace]
-    /// When the device cannot tell where it is; nil: the strictest place's mode.
-    public var whenPlaceUnknown: KidsMode?
+    /// When the device cannot tell where it is; nil: as schedule, the places do not apply.
+    public var whenPlaceUnknown: KidsPlaceUnknown?
     /// Grown-ups' devices that are asked; empty: all who may decide. The server works it out
     /// from `askers`.
     public var askDevices: [String]
@@ -140,7 +199,7 @@ public struct KidsPlan: Codable, Hashable, Sendable {
     public init(
         defaultMode: KidsMode = .everything, blocks: [KidsPlanBlock] = [], askStyle: KidsAskStyle = .open,
         music: Bool = true, screenTime: KidsScreenTime? = nil, away: KidsMode? = nil, places: [KidsPlace] = [],
-        whenPlaceUnknown: KidsMode? = nil, askDevices: [String] = [], askers: [KidsAsker] = [], musicSourceIds: [String]? = nil,
+        whenPlaceUnknown: KidsPlaceUnknown? = nil, askDevices: [String] = [], askers: [KidsAsker] = [], musicSourceIds: [String]? = nil,
         lockToLobby: Bool = false
     ) {
         self.defaultMode = defaultMode
@@ -166,7 +225,7 @@ public struct KidsPlan: Codable, Hashable, Sendable {
         screenTime = try c.decodeIfPresent(KidsScreenTime.self, forKey: .screenTime)
         away = try c.decodeIfPresent(KidsMode.self, forKey: .away)
         places = try c.decodeIfPresent([KidsPlace].self, forKey: .places) ?? []
-        whenPlaceUnknown = try c.decodeIfPresent(KidsMode.self, forKey: .whenPlaceUnknown)
+        whenPlaceUnknown = try c.decodeIfPresent(KidsPlaceUnknown.self, forKey: .whenPlaceUnknown)
         askDevices = try c.decodeIfPresent([String].self, forKey: .askDevices) ?? []
         askers = try c.decodeIfPresent([KidsAsker].self, forKey: .askers) ?? []
         musicSourceIds = try c.decodeIfPresent([String].self, forKey: .musicSourceIds)
@@ -177,11 +236,17 @@ public struct KidsPlan: Codable, Hashable, Sendable {
     public var strictest: KidsMode {
         var mode = defaultMode
         for block in blocks { mode = mode.stricter(block.mode) }
-        for place in places { mode = mode.stricter(place.mode) }
+        if let place = strictestPlace { mode = mode.stricter(place) }
         if let away { mode = mode.stricter(away) }
-        if let whenPlaceUnknown { mode = mode.stricter(whenPlaceUnknown) }
+        // The strictest place names no mode of its own: the places are counted already.
+        if let unknown = whenPlaceUnknown?.mode { mode = mode.stricter(unknown) }
         if let screenTime { mode = mode.stricter(screenTime.whenOut) }
         return mode
+    }
+
+    /// The strictest mode the places name; nil when none names one (all as schedule, or none).
+    public var strictestPlace: KidsMode? {
+        places.compactMap(\.mode.mode).reduce(nil) { $0?.stricter($1) ?? $1 }
     }
 }
 

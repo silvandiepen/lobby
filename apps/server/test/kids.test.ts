@@ -37,7 +37,7 @@ import { Scanner } from "../src/library/scanner.ts";
 import { MusicLibrary } from "../src/music/index.ts";
 import { OutsideEntrance } from "../src/outside/index.ts";
 import { PlaybackService } from "../src/playback/index.ts";
-import { RemoteHub, WakeService } from "../src/remote/index.ts";
+import { RemoteHub, SpeakerService, WakeService } from "../src/remote/index.ts";
 import { ProgressStore, type Progress } from "../src/progress.ts";
 import { makeMkv } from "./playback-support.ts";
 import { makeAudio } from "./support/audio.ts";
@@ -290,6 +290,14 @@ beforeEach(async () => {
   deps.remote = new RemoteHub({ db, devices });
   // Not set up (no remote.wake), so its routes are there and no helper runs.
   deps.wake = new WakeService({ db, devices, config: () => null });
+  deps.speakers = new SpeakerService({
+    db,
+    music,
+    config: () => null,
+    helper: () => null,
+    ffmpegPath: "ffmpeg",
+    changed: () => undefined,
+  });
   deps.settings = settingsFor(db, devices, dir);
   deps.imports = importsFor(db, dir);
   app = createApp(deps);

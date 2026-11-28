@@ -96,7 +96,8 @@ extension LobbyClient {
         return components.url
     }
 
-    private func remote<Body: Encodable>(_ method: String, _ segments: [String], body: Body) async throws -> Data {
+    /// A post of the remote's: a refusal is a `RemoteRefusal` with the server's reason.
+    func remote<Body: Encodable>(_ method: String, _ segments: [String], body: Body) async throws -> Data {
         var request = request(method, segments)
         request.httpBody = try LobbyJSON.encoder().encode(body)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

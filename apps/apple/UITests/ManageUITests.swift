@@ -141,6 +141,35 @@ final class ManageUITests: LobbyUITestCase {
         XCTAssertTrue(app.staticTexts["Short Notice"].waitForExistence(timeout: 20), "The page shows the file's title again.")
     }
 
+    /// The folder pickers of Settings → Server stay open while the settings load around them and
+    /// while the picker looks through the server's folders, until they are closed.
+    func testTheFolderPickersOfServerSettingsStayOpen() async throws {
+        _ = try await pairAsManager()
+        openSettings()
+        scrolledTo(app.buttons["settings.server"], "Server Settings").tap()
+
+        let add = app.buttons["serverSettings.addFolder"]
+        scrolledTo(add, "Add a Folder").tap()
+        waitFor(app.navigationBars["Add a Folder"], "The Add a Folder sheet")
+        waitFor(app.buttons["browse.folder"].firstMatch, "The server's places, in the sheet")
+        // Long enough for the settings around it to have loaded and been shown again.
+        sleep(3)
+        attachScreenshot("add-a-folder")
+        XCTAssertTrue(app.navigationBars["Add a Folder"].exists, "The Add a Folder sheet closed by itself.")
+        app.buttons["browse.folder"].firstMatch.tap()
+        sleep(2)
+        XCTAssertTrue(app.navigationBars["Add a Folder"].exists, "The sheet closed while it looked into a folder.")
+        app.navigationBars["Add a Folder"].buttons["Cancel"].tap()
+        XCTAssertTrue(app.navigationBars["Add a Folder"].waitForNonExistence(timeout: 5))
+
+        let addImport = app.buttons["serverSettings.addImportFolder"]
+        scrolledTo(addImport, "Add an Import Folder").tap()
+        waitFor(app.navigationBars["Add an Import Folder"], "The Add an Import Folder sheet")
+        sleep(3)
+        XCTAssertTrue(app.navigationBars["Add an Import Folder"].exists, "The Add an Import Folder sheet closed by itself.")
+        app.navigationBars["Add an Import Folder"].buttons["Cancel"].tap()
+    }
+
     /// A series is marked watched as a whole, from its page, by whoever watches.
     func testASeriesIsMarkedWatchedAndUnwatched() async throws {
         let servers = try TestServers.load()

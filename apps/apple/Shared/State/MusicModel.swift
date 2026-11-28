@@ -133,11 +133,14 @@ final class MusicModel {
         }
     }
 
-    /// Another viewer: their favourites, playlists, listens and books.
+    /// Another viewer: their favourites, playlists, listens and books, as kept here and then as
+    /// the server has them, so that their stories resume where they left them on another device.
     func viewerChanged(_ profileID: String?) async {
-        if self.profileID != nil, profileID != self.profileID { player.stop() }
+        let isAnother = profileID != self.profileID
+        if self.profileID != nil, isAnother { player.stop() }
         self.profileID = profileID
         await reloadPersonal()
+        if isAnother, profileID != nil, let client, !serverIsOutOfReach { await refresh(using: client) }
     }
 
     /// Fetches what changed: the library, then the viewer's own. Quiet when there is no music.

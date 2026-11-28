@@ -3,8 +3,9 @@ import LobbyKit
 import SwiftUI
 
 /// A film's or series' page: its picture from edge to edge, the title, one Play, and a button
-/// that says the title; Play on TV while a TV can play it, and what the child plays there. A
-/// series has its episodes under that, as large pictures.
+/// that says the title; Play on TV while a TV can play it, and what the child plays there; the
+/// story of the same name while the child may listen. A series has its episodes under that, as
+/// large pictures.
 struct KidsTitleView: View {
     let route: KidsRoute
     @Environment(AppModel.self) private var app
@@ -108,6 +109,14 @@ struct KidsTitleView: View {
                     if let request = action?.request, app.kidsControl.allowsVideo(of: [item.id] + (item.parentId.map { [$0] } ?? [])) {
                         KidsPlayOnButton(request: request)
                             .arrives(1)
+                    }
+                    if let story = app.story(ofFilm: item) {
+                        NavigationLink(value: KidsRoute(storyID: story.id)) {
+                            KidsLinkLabel(title: "Listen to the story", symbol: AppSymbol.stories)
+                        }
+                        .buttonStyle(.lobbyPill)
+                        .accessibilityIdentifier("kids.film.story")
+                        .arrives(1)
                     }
                     KidsTVRemote()
                         .frame(maxWidth: 520)

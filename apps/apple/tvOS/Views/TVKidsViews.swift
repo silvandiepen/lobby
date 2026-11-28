@@ -9,7 +9,11 @@ struct TVKidsRootView: View {
     @State private var selection = TVTab.home
 
     var body: some View {
-        let tabs = TVTab.kids(for: app.kidsLibrary)
+        let screen = app.kidsControl.screen
+        let tabs = TVTab.kids(
+            for: app.kidsLibrary, listens: app.music.isAvailable,
+            onlyListening: screen == .listening && app.kidsControl.now?.at.listening == true)
+        @Bindable var player = app.music.player
         TabView(selection: $selection) {
             ForEach(tabs, id: \.self) { tab in
                 Tab(value: tab) {
@@ -22,8 +26,12 @@ struct TVKidsRootView: View {
         .tabViewStyle(.sidebarAdaptable)
         .environment(\.lobbyIsPlayful, true)
         .preferredColorScheme(.dark)
-        .onChange(of: tabs) { _, tabs in
-            if !tabs.contains(selection) { selection = .home }
+        .onChange(of: tabs, initial: true) { _, tabs in
+            if !tabs.contains(selection) { selection = TVTab.kidsStart(in: tabs) }
+        }
+        .fullScreenCover(isPresented: $player.showsNowPlaying) {
+            TVKidsNowPlaying()
+                .environment(app)
         }
     }
 
@@ -31,6 +39,7 @@ struct TVKidsRootView: View {
         switch tab {
         case .movies: "Movies"
         case .series: "Series"
+        case .stories: "Stories"
         case .viewer: app.activeProfile.map { $0.name.isEmpty ? "You" : $0.name } ?? "You"
         default: "Home"
         }
@@ -40,6 +49,7 @@ struct TVKidsRootView: View {
         switch tab {
         case .movies: AppSymbol.movies
         case .series: AppSymbol.series
+        case .stories: AppSymbol.stories
         case .viewer: AppSymbol.viewers
         default: AppSymbol.library
         }
@@ -50,7 +60,9 @@ struct TVKidsRootView: View {
         // When and what: resting, listening or asking shows no films; the child's own page
         // stays, with the way out for grown-ups.
         let screen = app.kidsControl.screen
-        if !screen.showsFilms, tab != .viewer {
+        if tab == .stories {
+            TVKidsStack { TVKidsStories(onlyListening: !screen.showsFilms) }
+        } else if !screen.showsFilms, tab != .viewer {
             TVKidsControlPage(screen: screen)
         } else {
             library(tab)
@@ -103,7 +115,9 @@ private struct TVKidsStack<Root: View>: View {
     var body: some View {
         NavigationStack(path: $path) {
             root.navigationDestination(for: KidsRoute.self) { route in
-                if let category = route.categoryID {
+                if let story = route.storyID {
+                    TVKidsStory(storyID: story)
+                } else if let category = route.categoryID {
                     TVKidsPage(section: .home, categoryID: category)
                 } else {
                     TVKidsTitle(itemID: route.itemID)
@@ -259,7 +273,7 @@ private struct TVKidsPage: View {
         switch section {
         case .home: library.continueWatching
         case .series: library.seriesToContinue
-        case .movies, .onHere: []
+        case .stories, .movies, .onHere: []
         }
     }
 
@@ -278,7 +292,7 @@ private struct TVKidsPage: View {
         case .home: library.home
         case .movies: library.movies
         case .series: library.series
-        case .onHere: []
+        case .stories, .onHere: []
         }
     }
 
@@ -381,6 +395,14 @@ private struct TVKidsTitle: View {
                     }
                     .focused($playIsFocused)
                     .accessibilityIdentifier("kids.play")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .focusSection()
+                }
+                if let story = app.story(ofFilm: item) {
+                    NavigationLink(value: KidsRoute(storyID: story.id)) {
+                        Label("Listen to the story", systemImage: AppSymbol.stories)
+                    }
+                    .accessibilityIdentifier("kids.film.story")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .focusSection()
                 }

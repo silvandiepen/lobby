@@ -197,6 +197,7 @@ describe("remote.wake in the config", () => {
       kids: false,
       pickProfile: true,
       holdPlaySeconds: 180,
+      speakers: true,
     });
     expect(
       parse({

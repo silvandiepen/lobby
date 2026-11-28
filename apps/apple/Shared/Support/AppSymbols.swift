@@ -30,6 +30,8 @@ enum AppSymbol {
     static let albums = "square.stack.fill"
     static let songs = "music.note.list"
     static let audiobooks = "book.closed.fill"
+    /// Stories on the kids screens: something to listen to.
+    static let stories = "headphones"
     static let playlists = "list.bullet.rectangle.portrait.fill"
     static let favourite = "heart.fill"
 

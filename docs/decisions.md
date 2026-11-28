@@ -623,7 +623,7 @@ Context: grown-ups should set, from an admin's device, when a child may watch an
 
 **Music for kids.** Until now a kids device had none (D-027, D-044). Now music is on for every child unless a grown-up turns it off, wherever the mode allows listening, and limited to the music libraries chosen for the child (`musicSourceIds`, all by default; checked when a song is played, the listing itself is the household's); off, music is `404` as before. Per-album music limits stay a card of their own. A guest household with a part of the library still has no music (D-052).
 
-**Places never send where the child is.** The device tells the server only "inside place X", "inside none" or "cannot tell"; `PUT /v1/me/kids/place` refuses any other field. The server keeps only the last state per device, in memory, for six hours. Cannot tell, permission off or nothing said yet: the "location unknown" mode, by default the strictest place's.
+**Places never send where the child is.** The device tells the server only "inside place X", "inside none" or "cannot tell"; `PUT /v1/me/kids/place` refuses any other field. The server keeps only the last state per device, in memory, for six hours. Cannot tell, permission off or nothing said yet: the "location unknown" mode, by default the strictest place's (changed by D-069: by default the places then do not apply).
 
 **Who decides.** The child's household's admins and the server's admins, also for a guest household's child; never another guest household, never a viewer's device, never the child's own (the routes are `404` there). Optionally only chosen grown-ups (viewers with their devices) are asked, and the child's screen names them. Answering, overriding and ending are open from outside for them (`kids` in `OUTSIDE_ROUTES`); changing the plan is not.
 
@@ -686,6 +686,64 @@ Context: D-060 let any device of a household read any of its viewers' statistics
 **What it does and does not keep out.** It keeps one grown-up's page from another's device and screens: seeing someone else's means switching the device to them, as their Continue Watching and places already need, and that is visible to whoever uses the device next. It does not stop someone who switches to another grown-up, or who writes their own client and says another viewer is in front. That needs a lock per viewer, which Lobby does not have. Rejected: the viewer named in the request or a header (the same as the path, so no check at all); the viewer whose place the device moved last (nothing for a device that has not played yet, and wrong after a switch); binding each grown-up's device to one viewer, as kids devices are (it does not fit a shared TV or iPad, and needs a new setting on every device). Relying on the apps alone to hide the other pages was rejected too: the server refuses them.
 
 **Older apps.** `simple` stays in a viewer's page, always `false`, since older apps read it. An older app on a kids device gets `404` and shows that the server has no statistics. An older app on a regular user's device still shows a household's viewers' pages, which the server now refuses with `403`.
+
+## D-067 Stories: audiobooks for a child who listens, and beside their films
+
+Context: read-along stories (one file each, the cover inside, the reader in every name tag) in an `audiobooks` folder, for children who may only listen as much as for anyone else; and the films they were made from, in the same library.
+
+**One word: Stories.** The apps call the audiobooks Stories everywhere: the kids' place, the grown-ups' Music section, Home's row, the Apple TV. The server, the API and the folder hint keep "audiobooks". Rejected: Audiobooks for grown-ups and Stories for children, two words for one shelf.
+
+**A child's place.** While the plan lets the child listen, the kids bar has Stories after Home; in Only listening that page is the whole kids screens ("Time to listen"), with the way out for grown-ups at its foot, so a child who may not watch never lands on an empty page. Big covers with names to choose by, Keep listening (also on kids Home) that goes on at once, then Music, whose albums play at once. A story's page has the cover, the title, who reads it, its length and what is left, one Play, Resume or Play again, and Say it. The Apple TV has the same place and pages; in Only listening only the child's own page and Stories.
+
+**A player a small child can use alone.** Over the whole screen: the cover, the title, a bar of how far without a scrubber, back 15 seconds, a big play and pause, forward 30 seconds (previous and next for music), and a sleep timer of four choices in words: when the story ends, in 15 minutes, in 30 minutes, keep playing. No speed, queue or AirPlay: those are the grown-ups' player. A bar over the kids tabs shows what plays. It is the same `MusicPlayer`; only the screens differ.
+
+**The child's own place in each story.** Music's progress, favourites and listens are kept for the kids viewer as for anyone (the server allowed a kids device its own viewer's music already, `music_viewer`). The app used to keep none for a child, from when children had no music (D-044). Choosing a viewer now fetches their music at once, so a story resumes where it was left on another device.
+
+**A story and its film meet by title, in the apps** (`StoryFilms` in LobbyKit). Case, accents, punctuation, "&" against "and" and a leading article do not count; only films, never a series; of a film and its remake, the latest that came out by the story's year, else the first. Only from what the viewer has: a child's own films, so Watch the film never leads to one it may not see, and only while the kids screens show films. A film's page has Story (Listen to the story for a child) while the viewer may listen. Rejected: matching on the server (it would apply each child's limits a second time, and the apps hold both lists already); TMDB ids (audiobooks have none).
+
+**A reader is not the writer.** When the only names on a story are its reader's (artist, album artist and composer alike), the apps show "Read by …" and no author. The server still says what the files say.
+
+**Grown-ups.** Continue Listening under Continue Watching on Home and at the top of Music; a Stories row on Home; Stories in the Music section.
+
+**Not built.** Limits per story or album for a child (as for music, a card of its own); searching stories on the kids screens; Watch the Film on the Apple TV's grown-up story page.
+
+## D-068 Play on a speaker: the server streams music and stories to HomePods over AirPlay
+
+Context: "Can the Lobby app on iPad and iPhone also say Play on HomePod?" Play On listed Apple TVs and other Lobby devices, which play titles themselves (D-036, D-043). A HomePod runs no Lobby; the system's AirPlay sends what the phone plays, and stops when the phone goes. The phone should be only the remote, and be able to leave.
+
+**The server plays, through the helper of the Apple TVs.** pyatv speaks AirPlay's audio protocol (RAOP) too, to HomePods, AirPort Expresses and other AirPlay speakers, including the transient pairing HomePods ask for. `tools/wake.py` gets `speakers`, `stream`, `stream_stop`, `volume` and `speaker_password`; Lobby Server keeps the one helper it has. It needs `remote.wake` in the file (where pyatv is) and the setting `remote.wake.speakers` ("Play on HomePods and speakers", on). Rejected: AirPlay from the phone (it stops with the phone, and the app cannot choose the receiver, D-043); a second runtime or library for AirPlay in Node; the server playing through a Lobby device.
+
+**The server's own files, decoded by ffmpeg into FLAC, straight to the speaker.** The helper runs the server's ffmpeg on the file in the library folder, from the place asked, as 44.1 kHz 16-bit stereo FLAC, and hands that stream to pyatv's `stream_file`. Every file of the library plays that way, also those AVPlayer does not (Opus, Ogg), whatever pyatv's own decoder knows, and nothing goes through Cloudflare, a relay or anything outside the house. Rejected: the compact AAC copies (pyatv cannot decode AAC, and a copy may not be there yet), a URL of the server for pyatv to fetch (it would need a pass, and the server need not listen on loopback).
+
+**Paused by stopping, gone on by streaming again.** pyatv's RAOP client has no pause of its own; its pause stops. So the server keeps the place: pause stops the stream, resume, back 15 s, forward 30 s, previous, next and a jump stream again from the new place, a second or two of silence. The server keeps the queue (the tracks of an album, or the files of a story) and goes on to the next track when one ends. Back and forward cross from one file of a story to the next.
+
+**In memory, with the viewer's place written as the apps write it.** What plays on a speaker is in memory and gone when the server stops, like everything of Play On (D-036). It plays for a viewer: the place in a story is written for that viewer every 15 s and at pause, stop and the end (`music_progress`, the 5-second rule of the apps for finished), and every track that was heard is a listen (`music_play`, judged as `MusicPlay.judge`). So a story goes on at the place it stopped on the speaker, on any device, and the statistics count it.
+
+**Who may: the owner's household, at home, as on a TV.** The speakers are on the owner's network: only devices of the owner's household see them, like the Apple TVs that can be woken (D-046, D-052). Starting needs an address at home or in the tailnet; the outside entrance has no speaker routes and its sessions see none. A device needs `allowRemote`. A manager can rename and hide a speaker, and keep a password for one in pyatv's file, beside the Apple TVs' credentials and as unreadable to Lobby. PIN pairing is not built: a HomePod has no screen to show one, and its access is a setting of the Home app ("Allow Speaker & TV Access"). A speaker that lets only its Home play says so, before trying (the `acl` flag pyatv reads) and when it refuses ("speaker_refused" with the way out in words).
+
+**Children: as local playback.** A child (a bound kids device, or the kids screens of a grown-up's device, by its channel session) plays only as itself, only while its plan allows listening, and only from the music libraries it was given; music off for it is "not there" (`404`), as for its songs (D-062). The kids guard checks the start (`listen`) on a bound device; the service checks the same for every child, for the start and for going on. What plays as a child stops when its plan stops allowing listening (looked at every 5 s). A child sees speakers only while it may listen, sees another's music as "Playing", cannot control it, and cannot play over it (`409 speaker_busy`). The kids screens have one big "Play on Kitchen" on a story's page and a remote of big buttons: play and pause, back 15 and forward 30 (previous and next for music), quieter and louder, stop.
+
+**On the channel, not as devices.** The live channel gets a `speakers` event with the speakers a session may play on and what plays there, sent again when that changes, as with devices. Speakers are not `ShownDevice`s: they run no Lobby, have no session, and are not told commands; their routes answer at once with what plays now. An app that does not know the event ignores it.
+
+**Apple TVs and Macs are not speakers here.** They advertise AirPlay audio too, but are in Play On as themselves; as speakers they would be there twice.
+
+**Not built.** Several speakers at once (a group); shuffle and repeat on a speaker (the queue goes in order, as sent); a story's chapters and the sleep timer on the speaker's remote; PIN pairing for speakers with a screen; speakers of a guest household's network; Play On to a speaker from the Apple TV.
+
+## D-069 Where a device cannot tell, the schedule decides unless a grown-up chose otherwise
+
+Context: a child's plan had 07:00–14:00 Only listening and a place "School" with Nothing. Her device had no Location permission yet, so it could not tell where it was, and "where it cannot tell" was unset, which meant the strictest place's mode: Nothing beat the schedule, and the device rested all day. The owner's answer for such a case in the kids design review: it takes the last setting, or whatever is set for that time.
+
+**Unset is "as schedule".** `whenPlaceUnknown: null` now means the places do not apply while the device cannot tell (no permission yet, denied, Location off, no fix, nothing said for six hours, a place no longer in the plan): the schedule's block or the default decides, and that is the reason shown (`schedule` or `default`). The strictest place stays as an explicit choice, `"strictest"`; a mode can still be chosen too. Either of those is reason `placeUnknown` when it is what holds. Plans already stored with `null` get the new behaviour on purpose, so there is no migration. The signed copy for offline use carries the same value, and the apps work it out the same way.
+
+**A place can be "as schedule".** A place's `mode` may be `"schedule"`: inside it the place changes nothing, so a Home place can sit beside School without its own mode. The strictest place and the strictest mode a plan names pass such places by; with only such places there is no strictest place, and nothing holds from it.
+
+**New places start where the grown-up is.** The place editor asks the grown-up's own iPhone, iPad or Mac for one fix (permission when it was never asked, then at most eight seconds), and has Use My Location for later. While it waits there is no pin. Without a fix it shows the plan's first place or the country of the device's region settings, never a fixed city. Nothing of it is kept or sent beyond the place the grown-up saves.
+
+**The child is not asked about Location.** A grown-up who taps the avatar on a bound device reads in the "For Grown-ups" sheet that the plan has places and Lobby may not use Location, and where to allow it.
+
+**Older apps.** An app from before this reads `"strictest"` and `"schedule"` as modes it does not know, which count as Nothing: it fails closed until it is updated. It still reads `null` as the strictest place offline.
+
+**Rejected:** keeping the strictest place as the default (it rests a child all day for a missing permission, which a parent does not see); taking the last place the device said (the server keeps it six hours only, in memory, and an old place is a guess); a migration that set `"strictest"` on stored plans (it would keep exactly the case that went wrong).
 
 ## D-070 Lock to Lobby: Screen Time shields every other app while a child is in kids mode
 

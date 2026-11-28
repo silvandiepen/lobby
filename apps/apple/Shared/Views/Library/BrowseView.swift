@@ -47,8 +47,11 @@ struct BrowseView<Choices: View>: View {
                         if !page.sections.isEmpty {
                             SectionChips(sections: page.sections, selection: $section)
                         }
-                        BrowseRows(scope: scope, page: shown)
+                        BrowseRows(scope: scope, page: shown, listening: scope == .home)
                             .id(chosen)
+                        if scope == .home {
+                            StoryShelf()
+                        }
                         BrowseGrid(scope: scope, items: shown.all, hasRows: !shown.rows.isEmpty)
                             .id(chosen)
                     }
@@ -186,18 +189,24 @@ struct PictureToolbar: ViewModifier {
 struct BrowseRows: View {
     let scope: BrowseScope
     let page: BrowsePage
+    /// Home: the stories to go on with stand under the films to go on with.
+    var listening = false
 
     @Environment(AppModel.self) private var app
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.motion) private var motion
     private var metrics = TileMetrics()
+    private let musicMetrics = MusicShelfMetrics()
 
-    init(scope: BrowseScope, page: BrowsePage) {
+    init(scope: BrowseScope, page: BrowsePage, listening: Bool = false) {
         self.scope = scope
         self.page = page
+        self.listening = listening
     }
 
     var body: some View {
+        let listensAfter = listening ? page.rows.firstIndex { if case .continuing = $0.content { true } else { false } } ?? -1 : nil
+        if listensAfter == -1 { continueListening }
         ForEach(Array(page.rows.enumerated()), id: \.element.id) { index, row in
             Shelf(title: row.title, note: row.note, look: look(of: row), seeAll: row.seeAll) {
                 tiles(row)
@@ -205,7 +214,13 @@ struct BrowseRows: View {
             .animation(motion.animation(.list), value: row.titleIDs)
             .arrives(min(index, 5))
             .accessibilityIdentifier("shelf.\(row.id)")
+            if listensAfter == index { continueListening }
         }
+    }
+
+    private var continueListening: some View {
+        ContinueListeningShelf(width: musicMetrics.cover(sizeClass) * 0.85)
+            .accessibilityIdentifier("shelf.continueListening")
     }
 
     private func look(of row: BrowseRow) -> CategoryLook? {

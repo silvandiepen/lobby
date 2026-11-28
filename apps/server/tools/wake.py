@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
-"""Lobby's helper for waking Apple TVs (docs/operations.md, "Waking the Apple TV").
+"""Lobby's helper for Apple TVs and AirPlay speakers (docs/operations.md, "Waking the Apple TV"
+and "Playing on speakers").
 
 Lobby Server keeps this running with the Python of a virtual environment that has pyatv in it,
 and talks to it in JSON lines: one request per line on stdin, one answer per line on stdout.
@@ -18,6 +19,24 @@ Requests carry an "id" that comes back in the answer, and an "op":
   pick        {device, app}             -> {"front", "selected", "reason"}    presses select once, opens the app again
   unpair      {device}                  -> {"removed": bool}
 
+  speakers    {timeout?, hosts?}        -> {"speakers": [Speaker]}
+  stream      {speaker, stream, ffmpeg, file, startMs, volume?, title?, artist?, album?}
+                                        -> {"volume"}   once the speaker takes the sound
+  stream_stop {stream}                  -> {"stopped": bool}
+  volume      {stream, volume}          -> {"volume"}
+  speaker_password {speaker, password}  -> {}           null takes it away
+
+A stream decodes the file with ffmpeg from startMs into FLAC, which pyatv's RAOP client sends to
+the speaker. It goes on after its answer; when it ends, by itself or by stream_stop, the helper
+says {"event": "stream_ended", "stream", "reason": "ended" | "stopped" | "failed", "code"}.
+pyatv's RAOP client has no pause of its own (its pause stops), so Lobby Server pauses by
+stopping and resumes by streaming again from where it was. Volume is 0 to 1.
+
+Speaker: {"id", "name", "model", "kind": "homepod" | "speaker", "access", "hasPassword"};
+access: "open", "password" (one is needed and none is stored), or "home_only" (the speaker lets
+only people of its Home play; in the Home app: Allow Speaker & TV Access, Everyone on the Same
+Network). Apple TVs and Macs are left out: they are in Play On as themselves.
+
 "front" says whether the app is in front afterwards: true, false, or null when pyatv cannot tell
 (over Companion alone it cannot: Lobby Server then waits for Lobby on its live channel, and asks
 "pick" itself). When pyatv can tell and the app is not in front within FRONT_SECONDS, which is
@@ -27,7 +46,8 @@ false. "selected" says whether it did. Never more than one select per request.
 
 Television: {"id", "name", "model", "paired", "identifiers"}. A failure is
 {"id", "ok": false, "code", "message"}; codes: bad_request, not_found, not_paired,
-pairing_failed, timeout, failed.
+pairing_failed, timeout, failed; for speakers also refused (the speaker said no: its access,
+or a wrong password) and not_streaming.
 
 The credentials stay in pyatv's file (~/.pyatv.conf unless --storage says otherwise), which is
 kept readable by this user only. Nothing here writes a credential or a PIN to stdout or stderr.
@@ -44,7 +64,15 @@ import time
 try:
     import pyatv
     from pyatv import exceptions
-    from pyatv.const import FeatureName, FeatureState, OperatingSystem, Protocol
+    from pyatv.const import (
+        DeviceModel,
+        FeatureName,
+        FeatureState,
+        OperatingSystem,
+        PairingRequirement,
+        Protocol,
+    )
+    from pyatv.interface import MediaMetadata
     from pyatv.storage.file_storage import FileStorage
 except ImportError:  # pragma: no cover - said to Lobby, which shows it to the manager
     print(json.dumps({"event": "missing", "message": "pyatv is not installed for this Python"}), flush=True)
@@ -60,6 +88,13 @@ FRONT_SECONDS = 5
 FRONT_LOOK_SECONDS = 0.5
 
 CREDENTIAL_PROTOCOLS = ("airplay", "companion", "dmap", "mrp", "raop")
+# A speaker has this long to take the sound before a stream counts as refused.
+STREAM_START_SECONDS = 3
+MAX_STREAMS = 8
+
+# Apple TVs are in Play On as Lobby devices; as speakers they would be there twice.
+APPLE_TVS = ("Gen2", "Gen3", "Gen4", "Gen4K", "AppleTV4KGen2", "AppleTV4KGen3", "AppleTVGen1")
+HOMEPODS = ("HomePod", "HomePodMini", "HomePodGen2")
 
 
 class Refusal(Exception):
@@ -84,6 +119,7 @@ class Helper:
         self.storage_path = storage_path
         self.storage = FileStorage(storage_path, loop)
         self.pairings = {}
+        self.streams = {}
         self.out = sys.stdout
 
     async def start(self):
@@ -288,6 +324,198 @@ class Helper:
         await self.save()
         return {"removed": True}
 
+    # ---- Speakers ----
+
+    def speaker(self, conf):
+        """A speaker as Lobby Server sees it, or None for an Apple TV or a Mac."""
+        info = conf.device_info
+        model = getattr(info.model, "name", "Unknown")
+        if model in APPLE_TVS or info.operating_system == OperatingSystem.MacOS:
+            return None
+        service = conf.get_service(Protocol.RAOP)
+        if service is None:
+            return None
+        airplay = conf.get_service(Protocol.AirPlay)
+        properties = airplay.properties if airplay is not None else {}
+        if properties.get("acl", "0") == "1" or properties.get("act", "0") == "2":
+            access = "home_only"
+        elif service.pairing in (PairingRequirement.Disabled, PairingRequirement.Unsupported):
+            access = "home_only"
+        elif service.requires_password and not service.password:
+            access = "password"
+        else:
+            access = "open"
+        return {
+            "id": conf.identifier,
+            "name": conf.name,
+            "model": info.model_str,
+            "kind": "homepod" if model in HOMEPODS else "speaker",
+            "access": access,
+            "hasPassword": bool(service.password),
+        }
+
+    async def op_speakers(self, request):
+        timeout = request.get("timeout", SCAN_SECONDS)
+        if not isinstance(timeout, (int, float)) or not 1 <= timeout <= 15:
+            raise Refusal("bad_request", "timeout must be 1 to 15 seconds")
+        hosts = request.get("hosts")
+        if hosts is not None and (not isinstance(hosts, list) or not all(isinstance(h, str) for h in hosts)):
+            raise Refusal("bad_request", "hosts must be a list of addresses")
+        found = await pyatv.scan(
+            self.loop,
+            timeout=timeout,
+            hosts=hosts or None,
+            protocol={Protocol.RAOP, Protocol.AirPlay},
+            storage=self.storage,
+        )
+        speakers = [one for one in (self.speaker(conf) for conf in found) if one is not None]
+        return {"speakers": speakers}
+
+    async def find_speaker(self, speaker):
+        found = await pyatv.scan(
+            self.loop, timeout=SCAN_SECONDS, identifier=speaker, protocol=Protocol.RAOP, storage=self.storage
+        )
+        if not found:
+            raise Refusal("not_found", "That speaker was not found on the network.")
+        return found[0]
+
+    async def op_stream(self, request):
+        speaker = text(request, "speaker")
+        token = text(request, "stream")
+        ffmpeg = text(request, "ffmpeg")
+        path = request.get("file")
+        if not isinstance(path, str) or not os.path.isabs(path):
+            raise Refusal("bad_request", "file must be an absolute path.")
+        start_ms = request.get("startMs", 0)
+        if not isinstance(start_ms, (int, float)) or start_ms < 0:
+            raise Refusal("bad_request", "startMs must be 0 or more.")
+        volume = request.get("volume")
+        if volume is not None and (not isinstance(volume, (int, float)) or not 0 <= volume <= 1):
+            raise Refusal("bad_request", "volume must be 0 to 1.")
+        if token in self.streams:
+            raise Refusal("bad_request", "That stream is under way.")
+        if len(self.streams) >= MAX_STREAMS:
+            raise Refusal("bad_request", "Too many streams at once.")
+        conf = await self.find_speaker(speaker)
+        atv = await asyncio.wait_for(pyatv.connect(conf, self.loop, storage=self.storage), CONNECT_SECONDS)
+        decoder = None
+        try:
+            # Decoded here, as the speaker wants it (44.1 kHz, 16 bits, stereo), so that every
+            # file of the library plays, whatever pyatv's decoder knows.
+            decoder = await asyncio.create_subprocess_exec(
+                ffmpeg,
+                "-nostdin",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-ss",
+                f"{start_ms / 1000:.3f}",
+                "-i",
+                path,
+                "-map",
+                "0:a:0",
+                "-vn",
+                "-ac",
+                "2",
+                "-ar",
+                "44100",
+                "-sample_fmt",
+                "s16",
+                "-f",
+                "flac",
+                "pipe:1",
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+        except Exception:
+            await self.close(atv)
+            raise
+        metadata = MediaMetadata(
+            title=short(request.get("title")),
+            artist=short(request.get("artist")),
+            album=short(request.get("album")),
+        )
+        one = {"atv": atv, "decoder": decoder, "stopped": False, "speaker": speaker}
+        self.streams[token] = one
+
+        async def send():
+            if volume is not None:
+                await atv.audio.set_volume(volume * 100)
+            await atv.stream.stream_file(decoder.stdout, metadata=metadata)
+
+        task = self.loop.create_task(send())
+        one["task"] = task
+        done, _ = await asyncio.wait({task}, timeout=STREAM_START_SECONDS)
+        if done:
+            # Over before it began: refused, or a file of nothing.
+            error = task.exception()
+            if error is not None:
+                await self.end_stream(token, None)
+                raise error
+        task.add_done_callback(lambda finished: self.loop.create_task(self.end_stream(token, finished)))
+        return {"volume": round(atv.audio.volume / 100, 3)}
+
+    async def end_stream(self, token, task):
+        one = self.streams.pop(token, None)
+        if one is None:
+            return
+        decoder = one["decoder"]
+        if decoder.returncode is None:
+            decoder.kill()
+        try:
+            await asyncio.wait_for(decoder.wait(), 5)
+        except asyncio.TimeoutError:
+            pass
+        await self.close(one["atv"])
+        if task is None:
+            return
+        error = None if task.cancelled() else task.exception()
+        if one["stopped"]:
+            self.say({"event": "stream_ended", "stream": token, "reason": "stopped", "code": None})
+        elif error is None:
+            self.say({"event": "stream_ended", "stream": token, "reason": "ended", "code": None})
+        else:
+            self.say({"event": "stream_ended", "stream": token, "reason": "failed", "code": failure_code(error)})
+
+    async def op_stream_stop(self, request):
+        token = text(request, "stream")
+        one = self.streams.get(token)
+        if one is None:
+            return {"stopped": False}
+        one["stopped"] = True
+        try:
+            await asyncio.wait_for(one["atv"].remote_control.stop(), CONNECT_SECONDS)
+        finally:
+            task = one.get("task")
+            if task is not None:
+                await asyncio.wait({task}, timeout=CONNECT_SECONDS)
+            await self.end_stream(token, task)
+        return {"stopped": True}
+
+    async def op_volume(self, request):
+        token = text(request, "stream")
+        volume = request.get("volume")
+        if not isinstance(volume, (int, float)) or not 0 <= volume <= 1:
+            raise Refusal("bad_request", "volume must be 0 to 1.")
+        one = self.streams.get(token)
+        if one is None:
+            raise Refusal("not_streaming", "Nothing plays on that speaker now.")
+        atv = one["atv"]
+        await asyncio.wait_for(atv.audio.set_volume(volume * 100), CONNECT_SECONDS)
+        return {"volume": round(atv.audio.volume / 100, 3)}
+
+    async def op_speaker_password(self, request):
+        speaker = text(request, "speaker")
+        password = request.get("password")
+        if password is not None and (not isinstance(password, str) or not 1 <= len(password) <= 128):
+            raise Refusal("bad_request", "The password is 1 to 128 characters.")
+        conf = await self.find_speaker(speaker)
+        settings = await self.storage.get_settings(conf)
+        settings.protocols.raop.password = password
+        await self.save()
+        return {}
+
     def forget_stale(self):
         now = time.monotonic()
         for token, one in list(self.pairings.items()):
@@ -297,6 +525,7 @@ class Helper:
 
     async def handle(self, line):
         request_id = None
+        thing = "The Apple TV"
         try:
             if len(line) > MAX_LINE:
                 raise Refusal("bad_request", "That request is too long.")
@@ -305,6 +534,8 @@ class Helper:
                 raise Refusal("bad_request", "A request is a JSON object.")
             request_id = request.get("id")
             op = request.get("op")
+            if op in SPEAKER_OPS:
+                thing = "The speaker"
             method = getattr(self, f"op_{op}", None) if isinstance(op, str) and op.isidentifier() else None
             if method is None:
                 raise Refusal("bad_request", "There is no such request.")
@@ -315,12 +546,32 @@ class Helper:
         except json.JSONDecodeError:
             self.say({"id": None, "ok": False, "code": "bad_request", "message": "That is not JSON."})
         except asyncio.TimeoutError:
-            self.say({"id": request_id, "ok": False, "code": "timeout", "message": "The Apple TV did not answer in time."})
+            self.say({"id": request_id, "ok": False, "code": "timeout", "message": f"{thing} did not answer in time."})
         except exceptions.AuthenticationError:
-            self.say({"id": request_id, "ok": False, "code": "not_paired", "message": "The Apple TV no longer accepts Lobby Server. Connect it again."})
+            if thing == "The speaker":
+                self.say({"id": request_id, "ok": False, "code": "refused", "message": "The speaker did not let Lobby Server play."})
+            else:
+                self.say({"id": request_id, "ok": False, "code": "not_paired", "message": "The Apple TV no longer accepts Lobby Server. Connect it again."})
         except Exception as error:  # noqa: BLE001 - every request gets an answer
             # The kind only: a message from deep inside could carry more than it should.
-            self.say({"id": request_id, "ok": False, "code": "failed", "message": f"The Apple TV could not be reached ({type(error).__name__})."})
+            self.say({"id": request_id, "ok": False, "code": "failed", "message": f"{thing} could not be reached ({type(error).__name__})."})
+
+
+SPEAKER_OPS = ("speakers", "stream", "stream_stop", "volume", "speaker_password")
+
+
+def failure_code(error):
+    """What a stream that broke says of why: the speaker refused, or anything else."""
+    if isinstance(error, exceptions.AuthenticationError):
+        return "refused"
+    if isinstance(error, asyncio.TimeoutError):
+        return "timeout"
+    return "failed"
+
+
+def short(value):
+    """A title for the speaker's own display, or None."""
+    return value[:200] if isinstance(value, str) and value else None
 
 
 def opened(front, selected):
@@ -365,6 +616,8 @@ async def main():
         task.add_done_callback(tasks.discard)
     for one in list(helper.pairings.values()):
         await one["handler"].close()
+    for token in list(helper.streams):
+        await helper.op_stream_stop({"stream": token})
     if tasks:
         await asyncio.wait(tasks, timeout=5)
 

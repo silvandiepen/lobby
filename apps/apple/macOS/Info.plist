@@ -57,8 +57,8 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Lobby looks for your Lobby Server on your home network and connects to it, to browse and play your films and series.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>Lobby checks only whether this Mac is at a place a grown-up chose, such as school. It never sends where it is.</string>
+	<string>On a child's Mac, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Lobby checks only whether this device is at a place a grown-up chose, such as school. It never sends where it is.</string>
+	<string>On a child's device, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.</string>
 </dict>
 </plist>

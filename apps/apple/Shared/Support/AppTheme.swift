@@ -175,7 +175,7 @@ enum NavigationTint {
 /// their colours from the pictures on them (`ArtworkColors.Style.kids`); this is the rest.
 enum KidsTheme {
     enum Section: Hashable, Sendable {
-        case home, movies, series, onHere
+        case home, stories, movies, series, onHere
     }
 
     /// Behind everything while there is no picture.
@@ -189,6 +189,7 @@ enum KidsTheme {
     static func tab(_ section: Section) -> Color {
         switch section {
         case .home: Color(hex: 0xFFB27A)
+        case .stories: Color(hex: 0xFFD970)
         case .movies: Color(hex: 0xCDB0FF)
         case .series: Color(hex: 0x8CCBFF)
         case .onHere: Color(hex: 0x84E3AE)

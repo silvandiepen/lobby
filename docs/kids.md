@@ -190,7 +190,7 @@ In the order of strictness, strictest first: **Nothing**, **Only listening**, **
 | --- | --- | --- |
 | Everything | The kids screens | The kids screens |
 | Ask per title | The kids screens; a film's Play is **Ask to Watch** | The kids screens with Play; the server refuses the film (`403 kids_mode`). Ask to watch on the TV is **not built** |
-| Only listening | "Time to listen": Stories and Music, nothing to watch | "Time to listen", "Films and series come back later." No music on the TV: **not built** |
+| Only listening | "Time to listen": Stories and Music, nothing to watch | The child's page and Stories: "Time to listen", stories and music. Without music for the child: "Films and series come back later." |
 | Ask to open | Only the asking page: "Asking Mum and Dad…", with Try again after No or no answer | The same words, without Try again: after No or no answer the TV keeps saying so until the mode changes (`TVKidsControlPage`). Try again on the TV is **not built** |
 | Nothing | "Lobby is resting" and when it opens again | The same |
 
@@ -205,7 +205,7 @@ a grown-up's **override**, and **answers** to Ask first. How they combine is in
 | Order | Source | Wins when |
 | --- | --- | --- |
 | 1 | Override | Always, while it runs. It can itself be any mode, Ask first too |
-| 2 | The strictest of: schedule block (strictest of overlapping ones) or default, away rule when away, the place's mode or the "location unknown" mode, screen time when used up | No override runs |
+| 2 | The strictest of: schedule block (strictest of overlapping ones) or default, away rule when away, the place's mode (none for a place "As schedule") or, when chosen, the "where it cannot tell" mode, screen time when used up | No override runs |
 | 3 | Answer | Only where step 2 says Ask first. Never past a stricter mode: "Watch for 2 hours" at 19:00 ends when Bedtime begins |
 
 Only listening plus Ask first is Only listening, without asking.
@@ -233,7 +233,15 @@ On iPhone, iPad and Mac, the viewer's page → **When and What** (`KidsPlanPage.
   no location.
 - **Music:** on or off, and which music libraries (section 4).
 - **Places:** up to ten, each a name, a mode and a circle of 100 m to 10 km drawn on a map or found
-  by address, and the mode for "where it cannot tell" (by default the strictest place's).
+  by address. A place's mode can be **As schedule**: inside it the place changes nothing and the
+  week decides, which is what a "Home" place is for. A new place starts where the grown-up's own
+  device is (one fix, asked for when the editor opens; **Use My Location** asks again). While it
+  waits the map shows no pin; when this device cannot say, the map shows the plan's first place, or
+  else the country of the device's region settings, and the grown-up taps the map or finds an
+  address. Nothing of where the grown-up is is kept or sent.
+- **Where it cannot tell** (D-069): **As schedule** by default, so the places do not count and the
+  week or the default decides; or **The strictest place** (the strictest of the places' modes,
+  passing places "As schedule" by); or Everything, Ask first, Only listening or Nothing.
 
 On Devices and Viewers each kids viewer has a glance under its name: "Now: Nothing until 15:00"
 (`GET /v1/kids/now`, the strictest of the child's own devices).
@@ -306,20 +314,36 @@ about once a minute. Offline:
 - "Today's plan" in kid words on the child's own page ([kids-control.md
   §3](kids-control.md#3-what-the-child-sees)): **not built**.
 
-## 4. Kids music
+## 4. Kids music and stories
 
 Music for a kids viewer is **on unless a grown-up turns it off** (D-062, which replaced D-027 and
 D-044's "no music for kids"). It plays wherever the mode allows listening, from the music libraries
-chosen for the child (all by default). Off, music is `404` for a kids device as before.
+chosen for the child (all by default). Off, music is `404` for a kids device as before. The
+household's audiobooks are **Stories** in the apps (D-067).
 
-- In the apps the only place a child finds music is the **Only listening** page on iPhone, iPad and
-  Mac: "Time to listen", with **Stories** (audiobooks) and **Music** (albums), or "There is nothing
-  to listen to yet." The kids screens in Everything and Ask per title have no music place:
-  **not built**. Neither has the Apple TV in any mode: **not built**.
+- **Where a child finds them.** While the mode allows listening, the kids bar has **Stories**
+  (headphones) after Home, on iPhone, iPad and Mac, and a **Stories** place in the TV's sidebar. In
+  **Only listening** that page is all the kids screens are: "Time to listen", with the way out for
+  grown-ups at its foot; on the TV the child's own page and Stories. Kids Home shows **Keep
+  listening** too. "There is nothing to listen to yet." when there is nothing.
+- **The page:** Keep listening (the stories begun, a tap goes on at once), the stories as big
+  covers with their names and how far the child is, then Music, whose albums play at once
+  (`KidsStoriesViews.swift`, `tvOS/Views/TVStoriesViews.swift`).
+- **A story's page:** the cover large, the title, who reads it and how long it is, how much is
+  left, one **Play**, **Resume** or **Play again**, **Say it**, and **Watch the film** when the
+  library has a film of the same name that the child may see and the screens show films now. A
+  film's page has **Listen to the story** the other way, while the child may listen.
+- **The player** opens over everything when something starts: the cover, the title, "Read by …", a
+  thick bar of how far, back 15 seconds, a big play and pause, forward 30 seconds (previous and
+  next for music), and the moon: stop **when the story ends**, **in 15 minutes**, **in 30 minutes**,
+  or **keep playing**. No scrubber, speed or queue to touch by mistake. While something plays, a
+  bar over the kids tabs shows it, with play and pause.
+- **The child's own place in each story** is kept, as a grown-up's is (`/v1/music/profiles/{id}/
+  progress` of the child's own viewer), so it resumes on every device.
 - `musicSourceIds` is checked when a song plays; the listing itself is the household's.
 - A guest household with a part of the library has no music at all, kids included (D-052): no part
   of the library says what music is in it.
-- Limits per album or artist: **not built** (a card of its own).
+- Limits per album, story or artist: **not built** (a card of its own).
 
 ## 5. Play On and waking a TV
 
@@ -342,6 +366,7 @@ A child may play on an Apple TV, as itself (D-054; [api.md, Who may](api.md#who-
 - Play On and waking need **Everything** (or an answer that gives it), checked by the server on the
   target and on the child's own device. At a switch the TV is told as the child's device is.
 - Waking another household's Apple TV: **not built** (D-052).
+- **A HomePod or speaker** (D-068): a story's page has one big **Play on Kitchen** for each speaker that will play for the child, while the mode allows listening. The server plays it as the child, from the child's libraries, and stops it when the mode stops allowing listening. The kids remote has play and pause, back 15 and forward 30 (previous and next for music), quieter, louder and stop. Another's music on a speaker shows as "Playing" and is not the child's to touch or play over (`KidsSpeakers.swift`).
 
 ## 6. Up next, still watching, subtitles and skipping
 
@@ -461,15 +486,15 @@ rounded picture. It is decoration only: VoiceOver passes over it. It stands wher
 The kids screens are the regular app, simpler, larger and richer in colour (`KidsRootView.swift`,
 `TVKidsRootView`):
 
-- **Four places** on iPhone, iPad and Mac: **Home**, **Movies**, **Series** and **On here** (what is
-  on the device), in a large bar of dark glass at the bottom. On the Apple TV the same sidebar as
-  the regular app with the child's page, Home, Movies and Series. No search, no settings, no
-  way to other screens.
+- **The places** on iPhone, iPad and Mac: **Home**, **Movies**, **Series** and **On here** (what is
+  on the device), in a large bar of dark glass at the bottom, and **Stories** after Home while the
+  child may listen (section 4). On the Apple TV the same sidebar as the regular app with the
+  child's page, Home, Stories, Movies and Series. No search, no settings, no way to other screens.
 - Always **dark**. Pages take their colours from the pictures on them (`ArtworkColors.Style.kids`),
   brighter than the regular app's (D-031). Where there is no picture: a purple gradient,
   `KidsTheme.page`, deeper with Increase Contrast.
 - `KidsTheme` (`Shared/Support/AppTheme.swift`) holds the rest: each place's colour on the bar
-  (Home orange, Movies lilac, Series blue, On here green), white words, rounder corners (posters 16,
+  (Home orange, Stories yellow, Movies lilac, Series blue, On here green), white words, rounder corners (posters 16,
   cards 20, the bar 30), and a soft shadow on every picture. Words straight on a kids page are large
   and heavy, never under 19 points bold, so those pages are held to 3:1 contrast (D-031).
 - A title page: the picture from edge to edge, one **Play** (or **Resume**), a **Say it** button that
@@ -487,8 +512,9 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
   home network.
 - **Places are watched only on the child's device** (`KidsPlaceWatcher.swift`), with the system's
   region monitoring (`CLMonitor`), no continuous tracking. iPhone and iPad need "While Using"; on
-  the Mac the app counts only `authorizedAlways` as allowed. The permission text says: "Lobby checks only whether this device is at a
-  place a grown-up chose, such as school. It never sends where it is."
+  the Mac the app counts only `authorizedAlways` as allowed. The permission text says: "On a
+  child's device, Lobby checks only whether it is at a place a grown-up chose, such as school. On a
+  grown-up's, it starts a new place where you are. It never sends where it is."
 - **What is sent:** only "inside place X" (the strictest place it is in), "inside no place" or
   "cannot tell". `PUT /v1/me/kids/place` refuses any other field, coordinates above all (`400`).
   Until every place has answered, "inside none" is not said: it is "cannot tell".
@@ -498,9 +524,11 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
 - **What is stored:** each place's centre and radius as a grown-up chose them, on the server and
   sent to the child's device to watch. That is a place the grown-ups named, not the child's location.
   Finding a place by address asks Apple Maps from the grown-up's device.
-- **Fail closed:** permission denied, off, restricted or not answered yet, Location off, or nothing
-  heard for six hours: "cannot tell", and the "location unknown" mode applies (by default the
-  strictest place's).
+- **Cannot tell:** permission denied, off, restricted or not answered yet, Location off, or nothing
+  heard for six hours: "cannot tell". Then the places do not count and the week decides, unless a
+  grown-up chose a mode or The strictest place for "Where it cannot tell" (D-069). The child is
+  never asked about Location: a grown-up who taps the avatar on a bound device reads, in the "For
+  Grown-ups" sheet, that the plan has places and Lobby may not use Location, and where to allow it.
 - **The Apple TV** stays in the house: it always reports "inside no place".
 - The When and What page says: "Lobby on *name*'s device checks only whether it is inside these
   places. It never sends where it is, and keeps no history."
@@ -514,7 +542,7 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
 | --- | --- |
 | A child's device shows nothing | Nothing is allowed, or the device is bound to a viewer that is gone or no longer a kids viewer. Open the viewer's page and allow something, or bind the device to the right viewer. |
 | A title is missing for the child | It is not allowed, it is blocked (a block wins), it came back as a new file the server was not sure about (look in the blocked titles), or it is in a category only by a studio rule and only the group is allowed. |
-| "Lobby is resting" when it should not be | Read the first line of When and What: it says the mode and why. A place rule with Location off, or a device that said nothing for six hours, is "cannot tell" and takes the strictest place's mode. After a server restart, places are "cannot tell" until the app reports again. |
+| "Lobby is resting" when it should not be | Read the first line of When and What: it says the mode and why. A place rule with Location off, or a device that said nothing for six hours, is "cannot tell": the week decides, unless "Where it cannot tell" names a mode or The strictest place. After a server restart, places are "cannot tell" until the app reports again. |
 | Resting offline | No signed copy yet, or it is more than seven days old: open the app once where it reaches the server. |
 | Grown-ups get no question | The child must be in Ask first (Only listening beats it, without asking). Push needs the team's key in the config (`GET /v1/settings/push` says whether it is there). Check who is asked under Ask First. The TV is never asked. |
 | "No answer yet" and Try again does nothing | Six questions an hour at most; Try again waits until the server allows the next. |
@@ -523,7 +551,8 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
 | The TV does not take the code | No code is chosen yet (Code for Grown-ups), five wrong codes locked it for ten minutes, or the server is out of reach. A TV bound to a child has no way out. |
 | A category change keeps asking | Something else would now appear for a child; the sheet shows what. Allow again. |
 | No Play on TV | The mode must allow video, the device needs `allowRemote`, and an Apple TV must have Lobby open. A sleeping TV is offered only at home and only with Kids can turn on the TV. |
-| No music for the child | Music is off in the plan, its libraries are not chosen, the household sees only a part of the library, or the mode is not Only listening (the only music page there is). The Apple TV has none for kids. |
+| No music or stories for the child | Music is off in the plan, its libraries are not chosen, the household sees only a part of the library, or the mode allows no listening now (Nothing, Ask to open). |
+| No Watch the film on a story | The film's title is not the story's, the child may not see that film, or the mode shows no films now (Only listening). |
 | A child's iPad is not locked to Lobby | The device must be in kids mode with the child in front, the lock on (When and What → Lock to Lobby, for the child or that device), and set up on that device once (Settings → Kids Mode, or after For Grown-ups on a bound device). "Lock not set up on this device" means the last. A development build only: the App Store app needs Apple's approval first. |
 | The kids icon did not change | The setting is off; or it waits for 20 seconds with the app in front and no film playing. The system's alert when it changes is expected. On a Mac only the Dock changes, while the app runs. |
 
@@ -535,7 +564,7 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
   `kids-plan.test.ts` and `kids-control.test.ts`.
 - LobbyKit: `Kids/KidsPlanCache.swift` and `Kids/KidsPlanResolver.swift` (offline),
   `Client/KidsControlClient.swift`.
-- Apps: `Shared/State/AppModel.swift` (MARK: Kids mode), `Shared/State/Kids*.swift`,
+- Apps: `Shared/State/AppModel.swift` (MARK: Kids mode), `AppModel+Stories.swift`, `Shared/State/Kids*.swift`,
   `Shared/Views/Kids/`, `Shared/Views/Manage/KidsPlanPage.swift`,
   `Shared/Views/KidsQuestions/KidsAskSheet.swift`, `Shared/Services/GrownUpGate.swift`,
   `KidsPlaceWatcher.swift`, `KidsIcon.swift`, `KidsLock.swift`, `PushCenter.swift`,

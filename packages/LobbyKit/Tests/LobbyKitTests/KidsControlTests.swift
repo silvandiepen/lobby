@@ -62,12 +62,52 @@ import Testing
         #expect(KidsPlanResolver.modeAt(asking, Self.context(), at: seven).waiting)
     }
 
-    @Test func failsClosedForPlaces() {
+    @Test func followsTheScheduleWhereItCannotTellUnlessAsked() {
         var plan = KidsPlan(music: true)
-        plan.places = [KidsPlace(id: "school", name: "School", latitude: 52.37, longitude: 4.89, radiusMeters: 300, mode: .nothing)]
-        #expect(KidsPlanResolver.modeAt(plan, Self.context { $0.place = .unknown }, at: Self.tuesday4pm).mode == .nothing)
+        plan.places = [
+            KidsPlace(id: "school", name: "School", latitude: 1, longitude: 1, radiusMeters: 300, mode: .nothing),
+            KidsPlace(id: "home", name: "Home", latitude: 2, longitude: 2, radiusMeters: 300, mode: .asSchedule),
+        ]
+        let unknown = Self.context { $0.place = .unknown }
+        // Nothing chosen: the places do not apply.
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).mode == .everything)
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).reason == .default)
         #expect(KidsPlanResolver.modeAt(plan, Self.context { $0.place = .inside(placeID: "school") }, at: Self.tuesday4pm).detail == "School")
+        // A place as schedule changes nothing.
+        #expect(KidsPlanResolver.modeAt(plan, Self.context { $0.place = .inside(placeID: "home") }, at: Self.tuesday4pm).reason == .default)
         #expect(KidsPlanResolver.modeAt(plan, Self.context(), at: Self.tuesday4pm).mode == .everything)
+        // Asked for the strictest place, which passes a place as schedule by.
+        plan.whenPlaceUnknown = .strictestPlace
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).mode == .nothing)
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).reason == .placeUnknown)
+        plan.whenPlaceUnknown = .listening
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).mode == .listening)
+        #expect(plan.strictest == .nothing)
+        plan.places.removeFirst()
+        plan.whenPlaceUnknown = .strictestPlace
+        #expect(plan.strictestPlace == nil)
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).reason == .default)
+    }
+
+    @Test func decodesWhatHoldsWhereItCannotTell() throws {
+        func decode(_ json: String) throws -> KidsPlan {
+            try LobbyJSON.decoder().decode(KidsPlan.self, from: Data(json.utf8))
+        }
+        #expect(try decode(#"{}"#).whenPlaceUnknown == nil)
+        #expect(try decode(#"{"whenPlaceUnknown":null}"#).whenPlaceUnknown == nil)
+        #expect(try decode(#"{"whenPlaceUnknown":"strictest"}"#).whenPlaceUnknown == .strictestPlace)
+        #expect(try decode(#"{"whenPlaceUnknown":"listening"}"#).whenPlaceUnknown == .listening)
+        // A newer value: kept, and as strict as Nothing.
+        let newer = try decode(#"{"whenPlaceUnknown":"sometimes"}"#)
+        #expect(newer.whenPlaceUnknown == .unknown("sometimes"))
+        #expect(newer.whenPlaceUnknown?.mode?.strictness == KidsMode.nothing.strictness)
+        let place = #"{"id":"home","name":"Home","latitude":1,"longitude":1,"radiusMeters":300,"mode":"schedule"}"#
+        let plan = try decode(#"{"places":[\#(place)]}"#)
+        #expect(plan.places.first?.mode == .asSchedule)
+        #expect(plan.places.first?.mode.mode == nil)
+        // It goes back to the server as it came.
+        let again = try decode(String(decoding: try LobbyJSON.encoder().encode(plan), as: UTF8.self))
+        #expect(again.places.first?.mode == .asSchedule)
     }
 
     @Test func endsVideoWhenScreenTimeIsUsed() {

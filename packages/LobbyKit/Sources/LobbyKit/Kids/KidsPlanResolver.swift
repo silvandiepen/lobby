@@ -106,10 +106,13 @@ public enum KidsPlanResolver {
             var inside: KidsPlace?
             if case .inside(let id) = context.place { inside = plan.places.first { $0.id == id } }
             if let inside {
-                consider(Source(mode: inside.mode, reason: .place, detail: inside.name))
-            } else if context.place != .outside {
-                let unknown = plan.whenPlaceUnknown ?? plan.places.reduce(KidsMode.everything) { $0.stricter($1.mode) }
-                consider(Source(mode: unknown, reason: .placeUnknown))
+                // A place as schedule changes nothing.
+                if let mode = inside.mode.mode { consider(Source(mode: mode, reason: .place, detail: inside.name)) }
+            } else if context.place != .outside, let rule = plan.whenPlaceUnknown {
+                // Nothing chosen: the places do not apply, the schedule or the default decides (D-069).
+                if let unknown = rule == .strictestPlace ? plan.strictestPlace : rule.mode {
+                    consider(Source(mode: unknown, reason: .placeUnknown))
+                }
             }
         }
         if let screenTime = plan.screenTime, let limit = screenLimit(plan, weekday: now.weekday),
