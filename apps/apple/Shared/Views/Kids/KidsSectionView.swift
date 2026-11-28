@@ -2,7 +2,8 @@
 import LobbyKit
 import SwiftUI
 
-/// One of the four places: the banner on Home, what to go on with, the categories, and posters.
+/// One of the places of films and series: the banner on Home, what to go on with (the stories
+/// too, on Home), the categories, and posters.
 struct KidsSectionView: View {
     let section: KidsSection
     @Environment(AppModel.self) private var app
@@ -44,6 +45,10 @@ struct KidsSectionView: View {
                         .padding(.bottom, isWide ? -KidsTheme.gap : 0)
                 }
                 if !cards.isEmpty { continuing(cards, room: room) }
+                if section == .home {
+                    let begun = app.continueListening
+                    if !begun.isEmpty { KidsKeepListeningRow(books: begun, room: room, isWide: isWide) }
+                }
                 KidsCategories(categories: categories(library), isWide: isWide)
                 if section == .home, hasRows(library) {
                     if library.new.count >= BrowseBuilder.least {
@@ -161,7 +166,7 @@ struct KidsSectionView: View {
         case .home: Shelves.topLevelKinds
         case .movies: [.movie, .personal]
         case .series: [.show]
-        case .onHere: []
+        case .stories, .onHere: []
         }
         let fitting = library.categories.filter { $0.items.contains { kinds.contains($0.kind) } }
         return fitting.count > 1 ? fitting : []
@@ -176,18 +181,19 @@ struct KidsSectionView: View {
         switch section {
         case .home: library.continueWatching
         case .series: library.seriesToContinue
-        case .movies, .onHere: []
+        case .stories, .movies, .onHere: []
         }
     }
 
     /// The posters, without what already stands above them as a card.
     private func items(_ library: KidsLibrary, below cards: [ContinueCard]) -> [Item] {
         let shown = Set(cards.map(\.id))
-        let all = switch section {
+        let all: [Item] = switch section {
         case .home: library.home
         case .movies: library.movies
         case .series: library.series
         case .onHere: library.onHere
+        case .stories: []
         }
         return all.filter { !shown.contains($0.id) }
     }

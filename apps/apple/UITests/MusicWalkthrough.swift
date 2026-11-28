@@ -77,7 +77,7 @@ final class MusicWalkthrough: LobbyUITestCase {
             app.buttons["music.player.close"].tap()
             if !isPad { back() }
 
-            openMusic(isPad ? "Audiobooks" : "books")
+            openMusic(isPad ? "Stories" : "books")
             waitFor(element("music.book.The Lighthouse Keeper's Cat"), "The book").tap()
             waitFor(element("music.chapter.0"), "The chapters")
             try await shoot("book")

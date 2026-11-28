@@ -28,6 +28,7 @@ struct MovieDetailView: View {
                     }
                 }
                 TrailerCircle(item: item)
+                StoryCircle(item: item)
             }
             if case .inProgress(let fraction) = detail.watch {
                 ResumeLine(fraction: fraction, remaining: detail.remaining)

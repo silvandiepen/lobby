@@ -1571,4 +1571,25 @@ export const migrations: Migration[] = [
       ) strict;
     `,
   },
+  {
+    version: 30,
+    name: "speakers",
+    sql: `
+      -- HomePods and other AirPlay speakers that were seen on the server's network
+      -- (docs/decisions.md, "Play on a speaker"). The server's own id for each, so that pyatv's
+      -- identifier stays on the server; what a manager named it, and whether it is hidden.
+      -- What plays on one is in memory only.
+      create table speaker (
+        id text primary key,
+        pyatv_id text not null unique,
+        found_name text not null,
+        name text,
+        model text not null,
+        kind text not null check (kind in ('homepod', 'speaker')),
+        hidden integer not null default 0 check (hidden in (0, 1)),
+        first_seen_at integer not null,
+        last_seen_at integer not null
+      ) strict;
+    `,
+  },
 ];

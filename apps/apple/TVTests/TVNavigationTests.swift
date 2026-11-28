@@ -57,6 +57,16 @@ import Testing
         #expect(!TVTab.kids(for: .empty).contains(.search))
     }
 
+    @Test func aChildWhoMayListenHasStoriesAndOnlyThemInOnlyListening() {
+        #expect(TVTab.kids(for: .empty, listens: true) == [.viewer, .home, .stories])
+        #expect(TVTab.kids(for: .empty, listens: true, onlyListening: true) == [.viewer, .stories])
+        // Music off: Only listening has nothing to listen to, and the child's page stays.
+        #expect(TVTab.kids(for: .empty, listens: false, onlyListening: true) == [.viewer, .home])
+        #expect(TVTab.kidsStart(in: [.viewer, .home, .stories]) == .home)
+        #expect(TVTab.kidsStart(in: [.viewer, .stories]) == .stories)
+        #expect(TVTab.kidsStart(in: [.viewer]) == .viewer)
+    }
+
     @Test func theCodeIsFourDigits() {
         var entry = CodeEntry()
         for digit in [1, 2, 12, -1, 3] { entry.add(digit) }

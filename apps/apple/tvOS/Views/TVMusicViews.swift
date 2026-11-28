@@ -40,6 +40,12 @@ struct TVMusicPage: View {
                         .buttonStyle(.card)
                         .accessibilityIdentifier("tv.music.nowPlaying")
                     }
+                    let begun = app.continueListening
+                    if !begun.isEmpty {
+                        TVShelf(title: "Continue Listening") {
+                            ForEach(begun) { bookLink($0) }
+                        }
+                    }
                     let recent = music.recentlyPlayed
                     if !recent.isEmpty {
                         TVShelf(title: "Recently Played") {
@@ -58,7 +64,7 @@ struct TVMusicPage: View {
                         ForEach(catalogue.sortedAlbums) { albumLink($0) }
                     }
                     if !catalogue.books.isEmpty {
-                        TVShelf(title: "Audiobooks") {
+                        TVShelf(title: "Stories") {
                             ForEach(catalogue.sortedBooks) { bookLink($0) }
                         }
                     }
@@ -94,7 +100,7 @@ struct TVMusicPage: View {
 
     private func bookLink(_ book: MusicBook) -> some View {
         NavigationLink(value: TVMusicRoute.book(book.id)) {
-            TVMusicTile(title: book.title, subtitle: book.authors.joined(separator: ", "), coverID: book.coverId)
+            TVMusicTile(title: book.title, subtitle: book.credit ?? "", coverID: book.coverId)
         }
         .buttonStyle(.borderless)
     }
@@ -198,7 +204,11 @@ private struct TVMusicBook: View {
                 VStack(alignment: .leading, spacing: AppTheme.Space.l) {
                     MusicCoverTV(coverID: book.coverId, size: 460)
                     Text(book.title).font(.title2.weight(.bold))
-                    Text(book.authors.joined(separator: ", ")).font(.headline).foregroundStyle(.lobbySecondary)
+                    if !book.writers.isEmpty {
+                        Text(book.writers.joined(separator: ", ")).font(.headline).foregroundStyle(.lobbySecondary)
+                    }
+                    Text([book.readBy, MusicTime.long(book.durationMs)].compactMap { $0 }.joined(separator: " · "))
+                        .font(.callout).foregroundStyle(.lobbySecondary)
                     Button((music.fractionHeard(of: book) ?? 0) > 0 ? "Resume" : "Play", systemImage: AppSymbol.play) {
                         music.player.play(book: book)
                         showsPlayer = true
@@ -243,7 +253,8 @@ private struct TVNowPlaying: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.l) {
                 if let track = player.currentTrack {
                     Text(track.title).font(.title.weight(.bold)).lineLimit(2)
-                    Text(player.book?.title ?? [track.artistCredit, player.currentCollection].compactMap { $0 }.joined(separator: " · "))
+                    Text(player.book.map { [$0.title, $0.credit].compactMap { $0 }.joined(separator: " · ") }
+                        ?? [track.artistCredit, player.currentCollection].compactMap { $0 }.joined(separator: " · "))
                         .font(.headline).foregroundStyle(.lobbySecondary)
                 }
                 ProgressBar(
@@ -257,10 +268,18 @@ private struct TVNowPlaying: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.lobbySecondary)
                 HStack(spacing: AppTheme.Space.l) {
+                    if player.book != nil {
+                        Button { player.skip(by: -15) } label: { Image(systemName: "gobackward.15") }
+                            .accessibilityLabel("Back 15 seconds")
+                    }
                     Button { player.previous() } label: { Image(systemName: "backward.fill") }
                     Button { player.togglePlay() } label: { Image(systemName: player.isPlaying ? "pause.fill" : "play.fill") }
                         .accessibilityIdentifier("tv.music.toggle")
                     Button { player.next() } label: { Image(systemName: "forward.fill") }
+                    if player.book != nil {
+                        Button { player.skip(by: 30) } label: { Image(systemName: "goforward.30") }
+                            .accessibilityLabel("Forward 30 seconds")
+                    }
                 }
                 .font(.title2)
             }

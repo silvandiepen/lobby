@@ -86,65 +86,8 @@ struct KidsCountdown: View {
     }
 }
 
-
-/// Only listening: the household's music and audiobooks in the kids look, nothing to watch.
-struct KidsListeningHome: View {
-    @Environment(AppModel.self) private var app
-    @Environment(\.colorSchemeContrast) private var contrast
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: AppTheme.Space.l)]
-
-    var body: some View {
-        let music = app.music
-        let catalogue = music.catalogue
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.Space.l) {
-                HStack(spacing: AppTheme.Space.m) {
-                    KidsDoorMark(size: 44)
-                    Text("Time to listen")
-                        .font(.largeTitle.weight(.heavy))
-                }
-                if !music.isAvailable {
-                    Text("There is nothing to listen to yet.")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                if !catalogue.sortedBooks.isEmpty {
-                    Text("Stories").font(.title2.weight(.bold))
-                    LazyVGrid(columns: columns, spacing: AppTheme.Space.l) {
-                        ForEach(catalogue.sortedBooks) { book in
-                            Button {
-                                music.player.play(book: book)
-                            } label: {
-                                MusicTile(title: book.title, subtitle: book.authors.first, coverID: book.coverId, width: 150, symbol: AppSymbol.music)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                if !catalogue.sortedAlbums.isEmpty {
-                    Text("Music").font(.title2.weight(.bold))
-                    LazyVGrid(columns: columns, spacing: AppTheme.Space.l) {
-                        ForEach(catalogue.sortedAlbums) { album in
-                            Button {
-                                music.play(album: album)
-                            } label: {
-                                MusicTile(title: album.title, subtitle: album.artistCredit, coverID: album.coverId, width: 150)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-            .padding(AppTheme.Space.xl)
-        }
-        .safeAreaInset(edge: .bottom) { KidsGrownUpsButton() }
-        .background(KidsTheme.page(contrast).ignoresSafeArea())
-        .foregroundStyle(.white)
-    }
-}
-
 /// The way out for a grown-up, as on the child's own page: it asks for Face ID or the passcode.
-private struct KidsGrownUpsButton: View {
+struct KidsGrownUpsButton: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {

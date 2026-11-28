@@ -88,7 +88,7 @@ extension MusicTile {
 
     init(book: MusicBook, width: CGFloat, music: MusicModel) {
         self.init(
-            title: book.title, subtitle: book.authors.joined(separator: ", "), coverID: book.coverId, width: width,
+            title: book.title, subtitle: book.credit, coverID: book.coverId, width: width,
             symbol: AppSymbol.audiobooks, fraction: music.fractionHeard(of: book),
             isDownloaded: music.downloadState(of: book.id) == .done)
     }
@@ -421,7 +421,8 @@ struct MiniPlayer: View {
                             Text(track.title)
                                 .font(.subheadline.weight(.semibold))
                                 .lineLimit(1)
-                            Text(player.book.map { $0.title } ?? track.artistCredit)
+                            // A story of one file is its own title: who reads it says more.
+                            Text(player.book.map { $0.title == track.title ? $0.credit ?? $0.title : $0.title } ?? track.artistCredit)
                                 .font(.caption)
                                 .foregroundStyle(.lobbySecondary)
                                 .lineLimit(1)
@@ -490,9 +491,17 @@ private struct MiniPlayerInset: ViewModifier {
     func body(content: Content) -> some View {
         content
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                MiniPlayer()
-                    .frame(maxWidth: AppTheme.listWidth)
-                    .animation(motion.animation(.open), value: app.music.player.isActive)
+                Group {
+                    if !app.music.player.isActive, let speaker = app.remote.speakerPlaying {
+                        // Lobby Server plays it on a speaker: the same bar, as its remote.
+                        SpeakerMiniPlayer(speaker: speaker)
+                    } else {
+                        MiniPlayer()
+                    }
+                }
+                .frame(maxWidth: AppTheme.listWidth)
+                .animation(motion.animation(.open), value: app.music.player.isActive)
+                .animation(motion.animation(.open), value: app.remote.speakerPlaying?.id)
             }
     }
 }
@@ -508,15 +517,33 @@ private struct MusicPlayerSheet: ViewModifier {
     @Environment(AppModel.self) private var app
 
     func body(content: Content) -> some View {
-        @Bindable var player = app.music.player
+        let player = app.music.player
+        // A child gets its own player, over the whole screen.
+        let forKids = app.showsKidsScreens
+        let grownUps = Binding(get: { player.showsNowPlaying && !forKids }, set: { player.showsNowPlaying = $0 })
+        let kids = Binding(get: { player.showsNowPlaying && forKids }, set: { player.showsNowPlaying = $0 })
         content
-            .sheet(isPresented: $player.showsNowPlaying) {
+            .sheet(isPresented: grownUps) {
                 NowPlayingView()
                     .environment(app)
                     #if os(iOS)
                     .presentationDragIndicator(.visible)
                     #endif
             }
+            #if os(iOS)
+            .fullScreenCover(isPresented: kids) {
+                KidsNowPlaying()
+                    .environment(app)
+            }
+            #else
+            .background {
+                // One view holds one sheet here: the kids player hangs on a view of its own.
+                Color.clear.sheet(isPresented: kids) {
+                    KidsNowPlaying()
+                        .environment(app)
+                }
+            }
+            #endif
             .alert(
                 "Music",
                 isPresented: Binding(

@@ -6,6 +6,7 @@ class _Protocol:
     def __init__(self, identifier=None, credentials=None):
         self.identifier = identifier
         self.credentials = credentials
+        self.password = None
 
 
 class _Protocols:
@@ -34,3 +35,13 @@ class FileStorage:
 
     async def remove_settings(self, settings):
         self.settings.remove(settings)
+
+    async def get_settings(self, conf):
+        for one in self.settings:
+            if one.protocols.raop.identifier == conf.identifier:
+                return one
+        made = _Settings()
+        made.protocols.companion = _Protocol()
+        made.protocols.raop = _Protocol(conf.identifier)
+        self.settings.append(made)
+        return made

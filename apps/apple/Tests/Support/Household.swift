@@ -23,6 +23,10 @@ final class Household: Sendable {
         var householdChanges: [Data] = []
         /// Who waits at a guest household's window, as `GET /v1/pairing/requests` lists them.
         var outsideRequests = "[]"
+        /// `GET /v1/speakers` as JSON; nil: a server without speakers.
+        var speakers: String? = nil
+        /// What the app asked of the speakers: "PATCH s1 {…}".
+        var speakerRequests: [String] = []
         /// `GET /v1/settings` as the server says it. nil: a server without it.
         var settings: String? = nil
         /// What `PATCH /v1/settings` answers. A change that restarts gives the settings a new boot id.
@@ -256,6 +260,29 @@ final class Household: Sendable {
                 guard state.device.level != .viewer else { return .error(403, "forbidden", "Only a manager can.") }
                 state.kidsCode = request.json()["code"] as? String
                 return .json(200, #"{ "set": \#(state.kidsCode != nil) }"#)
+            case ("GET", ["speakers"]):
+                guard let speakers = state.speakers else { return .error(404, "not_found", "No such route.") }
+                return .json(200, speakers)
+            case ("PATCH", _) where route.count == 2 && route[0] == "speakers",
+                 ("PUT", _) where route.count == 3 && route[0] == "speakers" && route[2] == "password":
+                let id = route[1]
+                guard let text = state.speakers, var all = try JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any],
+                    var list = all["speakers"] as? [[String: Any]], let index = list.firstIndex(where: { $0["id"] as? String == id })
+                else { return .error(404, "not_found", "There is no such speaker.") }
+                state.speakerRequests.append("\(request.method) \(id) \(String(decoding: request.body, as: UTF8.self))")
+                let body = request.json()
+                var one = list[index]
+                if body.keys.contains("name") {
+                    let name = body["name"] as? String
+                    one["customName"] = name ?? NSNull()
+                    one["name"] = name ?? one["foundName"]
+                }
+                if let hidden = body["hidden"] as? Bool { one["hidden"] = hidden }
+                if body.keys.contains("password") { one["hasPassword"] = body["password"] is String }
+                list[index] = one
+                all["speakers"] = list
+                state.speakers = String(decoding: try JSONSerialization.data(withJSONObject: all), as: UTF8.self)
+                return .json(200, String(decoding: try JSONSerialization.data(withJSONObject: one), as: UTF8.self))
             case ("GET", ["me", "wanted"]):
                 // nil: a server from before managers could put downloads on a device.
                 guard let wanted = state.wanted else { return .error(404, "not_found", "No such route.") }

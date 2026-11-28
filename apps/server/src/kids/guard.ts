@@ -66,6 +66,14 @@ export const KIDS_ROUTES: Readonly<Record<string, KidsDecision>> = {
   "DELETE /v1/wake/pairings/:id": "none",
   "PUT /v1/wake/televisions/:id": "none",
   "DELETE /v1/wake/televisions/:id": "none",
+  // Speakers: a manager's. Playing on one only as the child itself, which the service checks.
+  "GET /v1/speakers": "none",
+  "PATCH /v1/speakers": "none",
+  "POST /v1/speakers/scan": "none",
+  "PATCH /v1/speakers/:id": "none",
+  "PUT /v1/speakers/:id/password": "none",
+  "POST /v1/speakers/:id/play": "limited",
+  "POST /v1/speakers/:id/control": "limited",
   // Kids control: its own plan, what it says of the places, its screen time, its questions.
   "GET /v1/me/kids": "limited",
   "PUT /v1/me/kids/place": "limited",
@@ -317,6 +325,10 @@ export const KIDS_MODE_ROUTES: Readonly<Record<string, ModeNeed>> = {
   "POST /v1/remote/wake": "watch",
   // Taking back its own play for a woken TV is stopping, which is always allowed.
   "DELETE /v1/remote/wake/:deviceId/plays/:id": "always",
+  // Music on a speaker: starting is listening. Pausing and stopping are always allowed, going
+  // on only while the child may listen, which the service checks per action.
+  "POST /v1/speakers/:id/play": "listen",
+  "POST /v1/speakers/:id/control": "always",
   "GET /v1/me/kids": "always",
   "PUT /v1/me/kids/place": "always",
   "POST /v1/me/kids/screen-time": "always",

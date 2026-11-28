@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // A stand-in for tools/wake.py in the tests: it speaks the same JSON lines, and keeps its Apple
-// TVs in `<state>/tvs.json`. Every request it took goes to `<state>/log.jsonl`, so a test can see
-// whether a TV was woken. It reaches no network.
+// TVs and its speakers in `<state>/tvs.json`. Every request it took goes to `<state>/log.jsonl`,
+// so a test can see whether a TV was woken. It reaches no network. A stream to a speaker runs the
+// real ffmpeg on the real file, as the helper does, and logs how much FLAC came out.
 //
 //   node test/support/fake-wake.ts --state <dir>
+import { spawn, type ChildProcess } from "node:child_process";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
@@ -15,8 +17,24 @@ interface Tv {
   paired: boolean;
 }
 
+interface Speaker {
+  id: string;
+  name: string;
+  model: string;
+  kind: "homepod" | "speaker";
+  access: "open" | "password" | "home_only";
+  hasPassword?: boolean;
+}
+
 interface State {
   televisions: Tv[];
+  speakers?: Speaker[];
+  /** A stream to a speaker says this code, as a speaker that lets only its Home play says "refused". */
+  streamFails?: string;
+  /** A stream ends by itself after this long, as at the end of the track; otherwise when stopped. */
+  streamMs?: number;
+  /** A stream breaks after this long with this code. */
+  streamBreaks?: { ms: number; code: string };
   /** Waking says this code. */
   wakeFails?: string;
   /** Waking takes this long. */
@@ -41,6 +59,13 @@ if (read().crash === true) {
 appendFileSync(join(dir, "starts"), "x");
 
 const pairings = new Map<string, { device: string; pin: string | null }>();
+const streams = new Map<
+  string,
+  { decoder: ChildProcess; timer: NodeJS.Timeout | null; volume: number; stopped: boolean }
+>();
+const log = (entry: object): void => {
+  appendFileSync(join(dir, "log.jsonl"), `${JSON.stringify(entry)}\n`);
+};
 let next = 0;
 
 const say = (message: object): void => {
@@ -103,6 +128,106 @@ const ops: Record<string, (request: Request) => Promise<object> | object> = {
     const tv = read().televisions.find((one) => one.id === request["device"]);
     if (!tv) return no("not_found", "That Apple TV was not found on the network.");
     return { front: null, selected: true, reason: null };
+  },
+  speakers: () => ({ speakers: read().speakers ?? [] }),
+  stream: async (request) => {
+    const state = read();
+    const speaker = (state.speakers ?? []).find((one) => one.id === request["speaker"]);
+    if (!speaker) return no("not_found", "That speaker was not found on the network.");
+    if (state.streamFails)
+      return no(state.streamFails, "The speaker did not let Lobby Server play.");
+    const token = String(request["stream"]);
+    const start = Number(request["startMs"] ?? 0) / 1000;
+    // As tools/wake.py decodes it.
+    const decoder = spawn(
+      String(request["ffmpeg"]),
+      [
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-ss",
+        start.toFixed(3),
+        "-i",
+        String(request["file"]),
+        "-map",
+        "0:a:0",
+        "-vn",
+        "-ac",
+        "2",
+        "-ar",
+        "44100",
+        "-sample_fmt",
+        "s16",
+        "-f",
+        "flac",
+        "pipe:1",
+      ],
+      { stdio: ["ignore", "pipe", "ignore"] },
+    );
+    let bytes = 0;
+    let head = Buffer.alloc(0);
+    decoder.stdout.on("data", (chunk: Buffer) => {
+      if (head.length < 4) head = Buffer.concat([head, chunk]).subarray(0, 4);
+      bytes += chunk.length;
+    });
+    const volume = typeof request["volume"] === "number" ? request["volume"] : 0.4;
+    const one = { decoder, timer: null as NodeJS.Timeout | null, volume, stopped: false };
+    streams.set(token, one);
+    decoder.on("close", () => {
+      log({ op: "sent", stream: token, bytes, flac: head.toString("latin1") === "fLaC" });
+    });
+    const end = (reason: string, code: string | null): void => {
+      if (streams.get(token) !== one) return;
+      streams.delete(token);
+      decoder.kill();
+      say({ event: "stream_ended", stream: token, reason, code });
+    };
+    // As the helper, it answers once the speaker takes the sound: once the decoder gave some.
+    await new Promise<void>((done) => {
+      decoder.stdout.once("data", () => {
+        done();
+      });
+      decoder.once("close", () => {
+        done();
+      });
+    });
+    if (state.streamBreaks) {
+      const { ms, code } = state.streamBreaks;
+      one.timer = setTimeout(() => {
+        end("failed", code);
+      }, ms);
+    } else if (state.streamMs !== undefined) {
+      one.timer = setTimeout(() => {
+        end("ended", null);
+      }, state.streamMs);
+    }
+    return { volume };
+  },
+  stream_stop: (request) => {
+    const token = String(request["stream"]);
+    const one = streams.get(token);
+    if (!one) return { stopped: false };
+    streams.delete(token);
+    if (one.timer) clearTimeout(one.timer);
+    one.decoder.kill();
+    say({ event: "stream_ended", stream: token, reason: "stopped", code: null });
+    return { stopped: true };
+  },
+  volume: (request) => {
+    const one = streams.get(String(request["stream"]));
+    if (!one) return no("not_streaming", "Nothing plays on that speaker now.");
+    one.volume = Number(request["volume"]);
+    return { volume: one.volume };
+  },
+  speaker_password: (request) => {
+    const state = read();
+    const speaker = (state.speakers ?? []).find((one) => one.id === request["speaker"]);
+    if (!speaker) return no("not_found", "That speaker was not found on the network.");
+    speaker.hasPassword = request["password"] !== null;
+    if (speaker.access === "password" && speaker.hasPassword) speaker.access = "open";
+    write(state);
+    return {};
   },
   unpair: (request) => {
     const state = read();

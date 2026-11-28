@@ -128,6 +128,21 @@ In Docker, pyatv is not in the image, which has no Python ([release.md](release.
 | Woke, but stopped at "who is watching" | With `remote.wake.pickProfile` on, Lobby presses select after about 6 s; the log says "Pressed select on a woken Apple TV". Off, or still there: pick a profile on the TV, and the film starts within `holdPlaySeconds`. |
 | Woke, but the film did not start | The log says "Lobby did not come up on a woken Apple TV" (it never opened), "A play for a woken Apple TV was not taken in time", or "…was not allowed any more" with the reason. An Apple TV with a Lobby from before D-056 opens on what it showed before. |
 
+## Playing on speakers
+
+**Built (server and apps).** Play On offers the HomePods and other AirPlay speakers on the server's network for music and stories; Lobby Server plays to them itself, so the phone can be closed or leave ([api.md](api.md#playing-on-a-speaker), D-068). It uses the same pyatv and helper as waking the Apple TV: with `remote.wake` in `lobby.config.json` (above), speakers are found by themselves every minute. The setting `remote.wake.speakers` ("Play on HomePods and speakers", on by default, under Settings → Server → Speakers) turns it off; `"speakers": false` in `remote.wake` starts with it off.
+
+- **HomePods** play for Lobby Server when the Home app lets them: the HomePod's settings → Allow Speaker & TV Access → **Everyone on the Same Network** (or Anyone). With "Only People Sharing This Home" it refuses, and the app says so.
+- **A speaker with a password** (some AirPlay receivers, an AirPort Express): Settings → Server → Speakers → the speaker → Enter Password. It is kept in pyatv's credentials file, as the Apple TVs' are.
+- **Names**: a speaker is called what it calls itself; rename or hide it on the same page.
+- The sound is the library's own files, decoded by the server's ffmpeg: nothing goes outside the house. The server needs to reach the speakers on the network (multicast for finding them, or `hosts`), as for the Apple TVs; in Docker that means the host network.
+
+| Symptom | First checks |
+| --- | --- |
+| No speakers in Play On | Settings → Server → Speakers says why: `remote.wake` missing, the helper not running, or nothing found. The phone must be at home, and of the owner's household. |
+| "did not let Lobby Server play" | The HomePod's access in the Home app (above), or a password. |
+| Plays a second late after pause | Expected: a pause stops the stream and going on starts it again from the same place. |
+
 ## Music and audiobooks
 
 **Built (the server's part).** Add the folders to `roots` with the hint `music` or `audiobooks`, for example `{ "path": "/srv/media/Music", "name": "Music", "hint": "music" }`, and restart. `group` and `logo` do not apply to them, and two audio folders may not lie inside each other. Files are only read. Covers come from the files or from `cover`, `folder` or `front` (`.jpg`, `.jpeg`, `.png`) beside them.

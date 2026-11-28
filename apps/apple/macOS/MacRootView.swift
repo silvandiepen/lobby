@@ -56,6 +56,7 @@ struct MacRootView: View {
         .offersUpdates()
         .answersKidsQuestions()
         .musicPlayerSheet()
+        .speakerRemoteSheet()
         .animation(motion.animation(.section), value: app.phase)
         .animation(motion.animation(.section), value: app.showsKidsScreens)
         .animation(motion.animation(.open), value: app.player == nil)
