@@ -52,6 +52,8 @@ targets:
       - package: LobbyKit
       # Opens what servers seal for the lock screen, pushed through the relay.
       - target: LobbyNotificationService
+      # What a child sees over another app while the device is locked to Lobby.
+      - target: LobbyShieldConfiguration
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby
@@ -78,7 +80,7 @@ targets:
         NSCameraUsageDescription: Lobby scans the code on another screen when a device is paired from outside.
         NSFaceIDUsageDescription: Lobby asks for a grown-up before it leaves the kids screens.
         # Only for a kids viewer's places a grown-up chose (docs/kids-control.md, §7).
-        NSLocationWhenInUseUsageDescription: Lobby checks only whether this device is at a place a grown-up chose, such as school. It never sends where it is.
+        NSLocationWhenInUseUsageDescription: On a child's device, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: LaunchBackground
@@ -122,6 +124,39 @@ targets:
         keychain-access-groups:
           - $(AppIdentifierPrefix)mt.sil.lobby
           - $(LOBBY_PUSH_KEYCHAIN_GROUP)
+        # Lock to Lobby: Screen Time's FamilyControls and ManagedSettings shield every other app
+        # in kids mode (docs/decisions.md, "Lock to Lobby"). Development builds sign with it under
+        # automatic provisioning; the App Store needs Apple's approval of the distribution
+        # entitlement first (docs/apple-apps.md, "Lock to Lobby").
+        com.apple.developer.family-controls: true
+
+  # The shield a child sees over another app while the device is locked to Lobby: the sparkle
+  # door and "Ask a grown-up" instead of the system's own. Screen Time loads it from the app.
+  LobbyShieldConfiguration:
+    type: app-extension
+    platform: iOS
+    sources:
+      - ShieldConfiguration
+      # The sparkle door.
+      - Shared/Brand.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mt.sil.lobby.shield
+        PRODUCT_NAME: LobbyShieldConfiguration
+        TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: ShieldConfiguration/Info.plist
+      properties:
+        CFBundleDisplayName: Lobby
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldConfigurationExtension
+    entitlements:
+      path: ShieldConfiguration/LobbyShieldConfiguration.entitlements
+      properties:
+        com.apple.developer.family-controls: true
 
   # Opens what a server sealed through the push relay, so the lock screen shows "Robin wants to
   # watch" with Watch, Listen and No, while the relay and Apple see only "A request is waiting"
@@ -211,8 +246,8 @@ targets:
             CFBundleURLSchemes: [lobby]
         LSApplicationCategoryType: public.app-category.entertainment
         # Only for a kids viewer's places a grown-up chose (docs/kids-control.md, §7).
-        NSLocationUsageDescription: Lobby checks only whether this Mac is at a place a grown-up chose, such as school. It never sends where it is.
-        NSLocationWhenInUseUsageDescription: Lobby checks only whether this device is at a place a grown-up chose, such as school. It never sends where it is.
+        NSLocationUsageDescription: On a child's Mac, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.
+        NSLocationWhenInUseUsageDescription: On a child's device, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.
         ITSAppUsesNonExemptEncryption: false
         NSLocalNetworkUsageDescription: Lobby looks for your Lobby Server on your home network and connects to it, to browse and play your films and series.
         # What the app looks for on the network (Bonjour). Without this entry iOS shows nothing

@@ -62,12 +62,52 @@ import Testing
         #expect(KidsPlanResolver.modeAt(asking, Self.context(), at: seven).waiting)
     }
 
-    @Test func failsClosedForPlaces() {
+    @Test func followsTheScheduleWhereItCannotTellUnlessAsked() {
         var plan = KidsPlan(music: true)
-        plan.places = [KidsPlace(id: "school", name: "School", latitude: 52.37, longitude: 4.89, radiusMeters: 300, mode: .nothing)]
-        #expect(KidsPlanResolver.modeAt(plan, Self.context { $0.place = .unknown }, at: Self.tuesday4pm).mode == .nothing)
+        plan.places = [
+            KidsPlace(id: "school", name: "School", latitude: 1, longitude: 1, radiusMeters: 300, mode: .nothing),
+            KidsPlace(id: "home", name: "Home", latitude: 2, longitude: 2, radiusMeters: 300, mode: .asSchedule),
+        ]
+        let unknown = Self.context { $0.place = .unknown }
+        // Nothing chosen: the places do not apply.
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).mode == .everything)
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).reason == .default)
         #expect(KidsPlanResolver.modeAt(plan, Self.context { $0.place = .inside(placeID: "school") }, at: Self.tuesday4pm).detail == "School")
+        // A place as schedule changes nothing.
+        #expect(KidsPlanResolver.modeAt(plan, Self.context { $0.place = .inside(placeID: "home") }, at: Self.tuesday4pm).reason == .default)
         #expect(KidsPlanResolver.modeAt(plan, Self.context(), at: Self.tuesday4pm).mode == .everything)
+        // Asked for the strictest place, which passes a place as schedule by.
+        plan.whenPlaceUnknown = .strictestPlace
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).mode == .nothing)
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).reason == .placeUnknown)
+        plan.whenPlaceUnknown = .listening
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).mode == .listening)
+        #expect(plan.strictest == .nothing)
+        plan.places.removeFirst()
+        plan.whenPlaceUnknown = .strictestPlace
+        #expect(plan.strictestPlace == nil)
+        #expect(KidsPlanResolver.modeAt(plan, unknown, at: Self.tuesday4pm).reason == .default)
+    }
+
+    @Test func decodesWhatHoldsWhereItCannotTell() throws {
+        func decode(_ json: String) throws -> KidsPlan {
+            try LobbyJSON.decoder().decode(KidsPlan.self, from: Data(json.utf8))
+        }
+        #expect(try decode(#"{}"#).whenPlaceUnknown == nil)
+        #expect(try decode(#"{"whenPlaceUnknown":null}"#).whenPlaceUnknown == nil)
+        #expect(try decode(#"{"whenPlaceUnknown":"strictest"}"#).whenPlaceUnknown == .strictestPlace)
+        #expect(try decode(#"{"whenPlaceUnknown":"listening"}"#).whenPlaceUnknown == .listening)
+        // A newer value: kept, and as strict as Nothing.
+        let newer = try decode(#"{"whenPlaceUnknown":"sometimes"}"#)
+        #expect(newer.whenPlaceUnknown == .unknown("sometimes"))
+        #expect(newer.whenPlaceUnknown?.mode?.strictness == KidsMode.nothing.strictness)
+        let place = #"{"id":"home","name":"Home","latitude":1,"longitude":1,"radiusMeters":300,"mode":"schedule"}"#
+        let plan = try decode(#"{"places":[\#(place)]}"#)
+        #expect(plan.places.first?.mode == .asSchedule)
+        #expect(plan.places.first?.mode.mode == nil)
+        // It goes back to the server as it came.
+        let again = try decode(String(decoding: try LobbyJSON.encoder().encode(plan), as: UTF8.self))
+        #expect(again.places.first?.mode == .asSchedule)
     }
 
     @Test func endsVideoWhenScreenTimeIsUsed() {
@@ -250,12 +290,47 @@ import Testing
         #expect(now.at.waiting)
         #expect(now.next?.detail == "Bedtime")
         let event = LiveEventParser.decode(.init(id: nil, event: "kidsMode", data: #"{"profileId":"yeva","now":\#(json)}"#))
-        guard case .kidsMode(let profile, let decoded)? = event else {
+        guard case .kidsMode(let profile, let decoded, let lock)? = event else {
             Issue.record("not a kids mode event")
             return
         }
         #expect(profile == "yeva")
         #expect(decoded == now)
+        // A server from before the lock says nothing of it.
+        #expect(lock == nil)
+        let locking = LiveEventParser.decode(.init(id: nil, event: "kidsMode", data: #"{"profileId":"yeva","now":\#(json),"lock":true}"#))
+        guard case .kidsMode(_, _, let lock)? = locking else {
+            Issue.record("not a kids mode event")
+            return
+        }
+        #expect(lock == true)
+    }
+
+    @Test func reportsTheLockAndSwitchesItForOneDevice() async throws {
+        let view = #"{"profileId":"yeva","plan":{"lockToLobby":true},"planned":true,"timeZone":"Europe/Amsterdam","now":{"mode":"everything","reason":"default","detail":null,"browse":true,"video":"all","titles":[],"listening":true,"waiting":false,"grantId":null,"until":null,"next":null,"screenTime":null},"lockDevices":[{"deviceId":"tablet","name":"Tablet","platform":"ipados","wanted":false,"source":"device","choice":false,"status":"notSetUp","locked":false,"reportedAt":5}]}"#
+        let server = StubServer { request in
+            request.path == "/v1/me/kids/lock"
+                ? .json(200, #"{"lock":{"wanted":true,"source":"viewer"}}"#) : .json(200, view)
+        }
+        let client = try server.client()
+        let wish = try await client.reportKidsLock(.notSetUp, locked: false, profileID: "yeva")
+        #expect(wish == KidsLockWish(wanted: true, source: .viewer))
+        let answer = try await client.setKidsLock(nil, deviceID: "tablet", profileID: "yeva")
+        #expect(answer.plan.lockToLobby)
+        #expect(answer.lockDevices == [
+            KidsLockDevice(deviceId: "tablet", name: "Tablet", wanted: false, source: .device, choice: false, status: .notSetUp, reportedAt: 5)
+        ])
+        _ = try await client.setKidsLock(true, deviceID: "tablet", profileID: "yeva")
+        let bodies = try server.recorded.map { try $0.json() }
+        #expect(bodies[0]["status"] as? String == "notSetUp")
+        #expect(bodies[0]["locked"] as? Bool == false)
+        #expect(bodies[0]["profileId"] as? String == "yeva")
+        // "As the plan says" is sent as null, not left out.
+        #expect(bodies[1].keys.sorted() == ["lock"])
+        #expect(bodies[1]["lock"] is NSNull)
+        #expect(bodies[2]["lock"] as? Bool == true)
+        #expect(server.recorded.map(\.path) == ["/v1/me/kids/lock", "/v1/profiles/yeva/kids/lock/tablet", "/v1/profiles/yeva/kids/lock/tablet"])
+        #expect(server.recorded.allSatisfy { $0.method == "PUT" })
     }
 
     @Test func tellsThePlaceAndNeverWhereTheDeviceIs() async throws {

@@ -34,7 +34,9 @@ final class KidsPlaceWatcher {
     /// cannot tell. Without permission, or with Location off, it cannot tell (fail closed).
     nonisolated static func report(isAllowed: Bool, inside: Set<String>, places: [KidsPlace]) -> KidsPlaceReport {
         guard isAllowed else { return .unknown }
-        let strictest = places.filter { inside.contains($0.id) }.max { $0.mode.strictness < $1.mode.strictness }
+        // A place as schedule changes nothing: any place with a mode of its own goes first.
+        let rank = { (place: KidsPlace) in place.mode.mode?.strictness ?? -1 }
+        let strictest = places.filter { inside.contains($0.id) }.max { rank($0) < rank($1) }
         return strictest.map { .inside(placeID: $0.id) } ?? .outside
     }
 
@@ -44,6 +46,17 @@ final class KidsPlaceWatcher {
         servicesOn && status == .authorizedAlways
         #else
         servicesOn && (status == .authorizedWhenInUse || status == .authorizedAlways)
+        #endif
+    }
+
+    /// Places are watched, and Location may not be used (denied, or not asked yet): for the
+    /// grown-ups' notice, never for the child.
+    var lacksLocation: Bool {
+        guard isWatching, follow == nil else { return false }
+        #if os(iOS) || os(macOS)
+        return !Self.isAllowed(manager.authorizationStatus, servicesOn: true)
+        #else
+        return false
         #endif
     }
 

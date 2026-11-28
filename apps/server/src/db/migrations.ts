@@ -1592,4 +1592,23 @@ export const migrations: Migration[] = [
       ) strict;
     `,
   },
+  {
+    version: 31,
+    name: "kids lock",
+    sql: `
+      -- Lock to Lobby (docs/decisions.md, "Lock to Lobby"), per child and device: what a grown-up
+      -- chose for this device (null: as the child's plan says), and what the device said of its
+      -- lock: whether Screen Time was set up there, and whether it shields the other apps now.
+      create table kids_lock (
+        profile_id text not null,
+        device_id text not null,
+        wanted integer check (wanted in (0, 1)),
+        status text check (status in ('ready', 'notSetUp', 'unsupported')),
+        locked integer not null default 0 check (locked in (0, 1)),
+        reported_at integer,
+        updated_at integer not null,
+        primary key (profile_id, device_id)
+      ) strict;
+    `,
+  },
 ];

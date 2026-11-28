@@ -240,6 +240,17 @@ private struct KidsGrownUpNotice: View {
                         .accessibilityAddTraits(.isHeader)
                     Text(text)
                         .foregroundStyle(.lobbySecondary)
+                    // Only here, behind the grown-up check: the child is never asked about it.
+                    if notice == .bound, app.places.lacksLocation {
+                        Text(Self.noLocation)
+                            .foregroundStyle(.lobbySecondary)
+                            .accessibilityIdentifier("kids.notice.noLocation")
+                    }
+                    // A device for a child never reaches Settings: its lock is set up here, past
+                    // the grown-up's check.
+                    if notice == .bound, let lock = app.environment.kidsLock {
+                        KidsLockSetUp(lock: lock)
+                    }
                 }
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: AppTheme.readableWidth)
@@ -258,6 +269,12 @@ private struct KidsGrownUpNotice: View {
         case .noPasscode: Self.hasNoPasscode
         }
     }
+
+    #if os(macOS)
+    private static let noLocation = "The plan has places, but Lobby may not use this Mac's location, so it cannot tell where it is. The places do not count until it may, unless the plan says what holds then. Allow it in System Settings, Privacy & Security, Location Services."
+    #else
+    private static let noLocation = "The plan has places, but Lobby may not use this device's location, so it cannot tell where it is. The places do not count until it may, unless the plan says what holds then. Allow it in the Settings app, Privacy & Security, Location Services, Lobby: While Using the App."
+    #endif
 
     #if os(macOS)
     private static let hasNoPasscode = "This Mac has no password"

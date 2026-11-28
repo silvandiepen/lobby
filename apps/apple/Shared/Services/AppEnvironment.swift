@@ -58,6 +58,9 @@ struct AppEnvironment: Sendable {
     var confirmGrownUp: @Sendable () async -> GrownUpCheck = { .unavailable }
     /// How a kids viewer's places are followed. nil: the device's Location.
     var followPlaces: KidsPlaceWatcher.Follow?
+    /// Locks the device to Lobby in kids mode (docs/decisions.md, "Lock to Lobby"). One for the
+    /// app, whichever server. nil: this device cannot be locked (the Mac, the Apple TV).
+    var kidsLock: KidsLock?
     /// Asks who is watching when the app opens, as `LocalSettings.viewerQuestion` says: a TV
     /// is everybody's.
     var asksWhoIsWatching = false
@@ -148,6 +151,11 @@ struct AppEnvironment: Sendable {
     }
     #endif
 
+    #if os(iOS)
+    /// The one lock of the app: the shield is the device's, not a server's.
+    @MainActor private static let liveKidsLock = KidsLock(surface: ScreenTimeLock())
+    #endif
+
     /// The environment of the real app, for one of its servers.
     @MainActor
     static func live(
@@ -199,6 +207,9 @@ struct AppEnvironment: Sendable {
         environment.hasKidsScreens = true
         #if !os(tvOS)
         environment.confirmGrownUp = { await GrownUpGate.ask() }
+        #endif
+        #if os(iOS)
+        environment.kidsLock = liveKidsLock
         #endif
         #if os(tvOS)
         environment.keepsDownloads = false

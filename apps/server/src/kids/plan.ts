@@ -38,8 +38,32 @@ export interface PlanPlace {
   latitude: number;
   longitude: number;
   radiusMeters: number;
-  mode: Mode;
+  /** "schedule": the place changes nothing, inside it the schedule or the default decides. */
+  mode: PlaceMode;
 }
+
+/** A place that changes nothing, such as home (docs/decisions.md, D-069). */
+export const AS_SCHEDULE = "schedule";
+export type PlaceMode = Mode | typeof AS_SCHEDULE;
+export const PLACE_MODES = [...MODES, AS_SCHEDULE] as const;
+
+/** The mode a place names; null for one that changes nothing. */
+const modeOfPlace = (place: PlanPlace): Mode | null =>
+  place.mode === AS_SCHEDULE ? null : place.mode;
+
+/** The strictest mode the places name; null when none names one. */
+function strictestPlace(plan: KidsPlan): Mode | null {
+  let mode: Mode | null = null;
+  for (const place of plan.places) {
+    const one = modeOfPlace(place);
+    if (one) mode = mode ? stricter(mode, one) : one;
+  }
+  return mode;
+}
+
+/** What holds where a device cannot tell which place it is in (docs/decisions.md, D-069). */
+export const STRICTEST_PLACE = "strictest";
+export type WhenPlaceUnknown = Mode | typeof STRICTEST_PLACE | null;
 
 export interface ScreenTime {
   /** Minutes of video a day, Monday to Friday; null: no limit. */
@@ -59,14 +83,22 @@ export interface KidsPlan {
   /** The mode away from the home network; null: no rule. */
   away: Mode | null;
   places: PlanPlace[];
-  /** When the device cannot tell where it is; null: the strictest of the places' modes. */
-  whenPlaceUnknown: Mode | null;
+  /**
+   * When the device cannot tell where it is: a mode, or "strictest" for the strictest of the
+   * places' modes; null: the places do not apply, the schedule or the default decides.
+   */
+  whenPlaceUnknown: WhenPlaceUnknown;
   /** Devices of grown-ups who are asked; empty: all who may decide. Made from `askers`. */
   askDevices: string[];
   /** The grown-ups who are asked, as viewers with their devices; empty: all who may decide. */
   askers: Asker[];
   /** The music libraries (music sources) the child hears; null: all of them. */
   musicSourceIds: string[] | null;
+  /**
+   * Lock the child's iPhone or iPad to Lobby while it is in kids mode: every other app shielded
+   * (docs/decisions.md, "Lock to Lobby"). A device of the child's can say otherwise.
+   */
+  lockToLobby: boolean;
 }
 
 export interface Asker {
@@ -88,6 +120,7 @@ export const NO_PLAN: KidsPlan = {
   askDevices: [],
   askers: [],
   musicSourceIds: null,
+  lockToLobby: false,
 };
 
 export interface Override {
@@ -274,9 +307,13 @@ export function screenLimit(plan: KidsPlan, weekday: number): number | null {
 export function strictestOf(plan: KidsPlan): Mode {
   let mode = plan.defaultMode;
   for (const block of plan.blocks) mode = stricter(mode, block.mode);
-  for (const place of plan.places) mode = stricter(mode, place.mode);
+  const place = strictestPlace(plan);
+  if (place) mode = stricter(mode, place);
   if (plan.away) mode = stricter(mode, plan.away);
-  if (plan.whenPlaceUnknown) mode = stricter(mode, plan.whenPlaceUnknown);
+  // "strictest" names no mode of its own: the places are counted already.
+  if (plan.whenPlaceUnknown && plan.whenPlaceUnknown !== STRICTEST_PLACE) {
+    mode = stricter(mode, plan.whenPlaceUnknown);
+  }
   if (plan.screenTime) mode = stricter(mode, plan.screenTime.whenOut);
   return mode;
 }
@@ -312,13 +349,15 @@ export function planModeAt(plan: KidsPlan, context: PlanContext, at: number): So
     const inside =
       place.state === "inside" ? plan.places.find((one) => one.id === place.placeId) : undefined;
     if (inside) {
-      consider({ mode: inside.mode, reason: "place", detail: inside.name });
-    } else if (place.state !== "outside") {
-      // Cannot tell, or a place that is no longer in the plan: as strict as asked.
+      // A place "as schedule" changes nothing.
+      const mode = modeOfPlace(inside);
+      if (mode) consider({ mode, reason: "place", detail: inside.name });
+    } else if (place.state !== "outside" && plan.whenPlaceUnknown !== null) {
+      // Cannot tell, or a place that is no longer in the plan: as strict as asked. Nothing asked:
+      // the places do not apply, and the schedule or the default decides (D-069).
       const unknown =
-        plan.whenPlaceUnknown ??
-        plan.places.reduce<Mode>((mode, one) => stricter(mode, one.mode), "everything");
-      consider({ mode: unknown, reason: "placeUnknown", detail: null });
+        plan.whenPlaceUnknown === STRICTEST_PLACE ? strictestPlace(plan) : plan.whenPlaceUnknown;
+      if (unknown) consider({ mode: unknown, reason: "placeUnknown", detail: null });
     }
   }
   const limit = screenLimit(plan, local.weekday);
@@ -562,7 +601,7 @@ function readPlace(value: unknown, index: number): PlanPlace {
     latitude: number("latitude", -90, 90),
     longitude: number("longitude", -180, 180),
     radiusMeters: Math.round(number("radiusMeters", PLACE_RADIUS.min, PLACE_RADIUS.max)),
-    mode: oneOf(one["mode"], MODES, `${key}.mode`),
+    mode: oneOf(one["mode"], PLACE_MODES, `${key}.mode`),
   };
 }
 
@@ -625,6 +664,10 @@ export function readPlan(value: unknown): KidsPlan {
   const sources = body["musicSourceIds"];
   const music = body["music"] ?? true;
   if (typeof music !== "boolean") throw new PlanError(`"music" must be true or false.`);
+  const lockToLobby = body["lockToLobby"] ?? false;
+  if (typeof lockToLobby !== "boolean") {
+    throw new PlanError(`"lockToLobby" must be true or false.`);
+  }
   return {
     defaultMode: oneOf(body["defaultMode"] ?? "everything", MODES, "defaultMode"),
     blocks: list("blocks", MAX_BLOCKS).map(readBlock),
@@ -634,12 +677,13 @@ export function readPlan(value: unknown): KidsPlan {
     away: orNull(body["away"], (mode) => oneOf(mode, MODES, "away")),
     places,
     whenPlaceUnknown: orNull(body["whenPlaceUnknown"], (mode) =>
-      oneOf(mode, MODES, "whenPlaceUnknown"),
+      oneOf(mode, [...MODES, STRICTEST_PLACE], "whenPlaceUnknown"),
     ),
     askDevices: asked,
     askers,
     musicSourceIds:
       sources === null || sources === undefined ? null : ids(sources, "musicSourceIds"),
+    lockToLobby,
   };
 }
 

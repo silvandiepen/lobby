@@ -29,6 +29,7 @@ struct KidsPlanPage: View {
                 awaySection
                 musicSection(view)
                 placesSection
+                lockSection(view)
             } else {
                 ProgressView()
             }
@@ -53,7 +54,7 @@ struct KidsPlanPage: View {
             }
         }
         .sheet(item: $editingPlace) { place in
-            PlaceEditor(place: place, isNew: !editor.plan.places.contains { $0.id == place.id }) { changed in
+            PlaceEditor(place: place, isNew: !editor.plan.places.contains { $0.id == place.id }, nearby: editor.plan.places.first) { changed in
                 if let index = editor.plan.places.firstIndex(where: { $0.id == changed.id }) {
                     editor.plan.places[index] = changed
                 } else {
@@ -228,6 +229,41 @@ struct KidsPlanPage: View {
         }
     }
 
+    // MARK: Lock to Lobby
+
+    private func lockSection(_ view: KidsPlanView) -> some View {
+        @Bindable var editor = editor
+        return Section {
+            Toggle("Lock this device to Lobby in kids mode", isOn: $editor.plan.lockToLobby)
+                .accessibilityIdentifier("kidsPlan.lockToLobby")
+            ForEach(view.lockDevices) { device in
+                Toggle(
+                    isOn: Binding(get: { device.wanted }, set: { on in Task { await editor.setLock(on, device: device.deviceId) } })
+                ) {
+                    VStack(alignment: .leading) {
+                        Text(device.name)
+                        if device.status == .ready || device.status == .unsupported {
+                            Text(KidsLockText.status(device))
+                                .font(.footnote)
+                                .foregroundStyle(.lobbySecondary)
+                        } else {
+                            // Turned on, and it would not lock: the grown-ups need to see that.
+                            Text(KidsLockText.status(device))
+                                .font(.footnote)
+                                .foregroundStyle(device.wanted ? Color.lobbyFailure : Color.secondary)
+                        }
+                    }
+                }
+                .disabled(device.status == .unsupported)
+                .accessibilityIdentifier("kidsPlan.lock.\(device.deviceId)")
+            }
+        } header: {
+            Text("Lock to Lobby")
+        } footer: {
+            Text("While \(name) is in kids mode, every other app on an iPhone or iPad is closed. For Grown-ups leaves kids mode and lifts it; back in kids mode it is on again. Each device is set up once, on that device: in Lobby's Settings, or after For Grown-ups on a device that is \(name)'s. A switch here acts at once, also from away.")
+        }
+    }
+
     // MARK: Places
 
     private var placesSection: some View {
@@ -242,20 +278,23 @@ struct KidsPlanPage: View {
             }
             if editor.plan.places.count < 10 {
                 Button("Add a Place…", systemImage: AppSymbol.add) {
+                    // Where it is comes from this device when the editor opens (PlaceEditor).
                     editingPlace = KidsPlace(
-                        id: UUID().uuidString.lowercased(), name: "School", latitude: 52.37, longitude: 4.89, radiusMeters: 300, mode: .nothing)
+                        id: UUID().uuidString.lowercased(), name: "School", latitude: 0, longitude: 0, radiusMeters: 300, mode: .nothing)
                 }
             }
             if !editor.plan.places.isEmpty {
                 Picker("Where it cannot tell", selection: $editor.plan.whenPlaceUnknown) {
-                    Text("The strictest place").tag(KidsMode?.none)
-                    ForEach([KidsMode.everything, .ask, .listening, .nothing], id: \.self) { Text(KidsModeText.name($0)).tag(KidsMode?.some($0)) }
+                    Text(KidsModeText.asSchedule).tag(KidsPlaceUnknown?.none)
+                    ForEach(KidsPlaceUnknown.knownCases, id: \.self) { Text(KidsModeText.name($0)).tag(KidsPlaceUnknown?.some($0)) }
                 }
             }
         } header: {
             Text("Places")
         } footer: {
-            Text("Lobby on \(name)'s device checks only whether it is inside these places. It never sends where it is, and keeps no history.")
+            Text(
+                "Lobby on \(name)'s device checks only whether it is inside these places. It never sends where it is, and keeps no history. Where it cannot tell, without Location or before it knows, the places do not count unless you choose otherwise."
+            )
         }
     }
 }
@@ -269,6 +308,18 @@ enum KidsModeText {
         case .listening: "Only listening"
         case .nothing, .unknown: "Nothing"
         }
+    }
+
+    static let asSchedule = "As schedule"
+
+    /// A place's mode: "as schedule" changes nothing there.
+    static func name(_ mode: KidsPlaceMode) -> String {
+        mode.mode.map { name($0) } ?? asSchedule
+    }
+
+    /// What holds where the device cannot tell, when a grown-up chose it.
+    static func name(_ rule: KidsPlaceUnknown) -> String {
+        rule.mode.map { name($0) } ?? "The strictest place"
     }
 
     static func override(_ mode: KidsMode) -> String {
@@ -428,54 +479,111 @@ private struct BlockEditor: View {
 /// A place on the map: its centre, how far around it, its name and what holds there.
 private struct PlaceEditor: View {
     let isNew: Bool
+    /// A place of the plan to look at while this device cannot say where it is.
+    let nearby: KidsPlace?
     let save: (KidsPlace) -> Void
     let remove: () -> Void
     @State private var place: KidsPlace
     @State private var camera: MapCameraPosition
     @State private var search = ""
+    /// A new place has no centre until this device says where it is, or the grown-up taps or finds one.
+    @State private var hasCentre: Bool
+    @State private var isLocating = false
+    @State private var cannotLocate = false
+    @State private var locator = PlaceLocator()
     @Environment(\.dismiss) private var dismiss
 
-    init(place: KidsPlace, isNew: Bool, save: @escaping (KidsPlace) -> Void, remove: @escaping () -> Void) {
+    init(place: KidsPlace, isNew: Bool, nearby: KidsPlace? = nil, save: @escaping (KidsPlace) -> Void, remove: @escaping () -> Void) {
         self.isNew = isNew
+        self.nearby = nearby
         self.save = save
         self.remove = remove
         _place = State(initialValue: place)
-        _camera = State(
-            initialValue: .region(
-                MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude),
-                    latitudinalMeters: place.radiusMeters * 4, longitudinalMeters: place.radiusMeters * 4)))
+        _hasCentre = State(initialValue: !isNew)
+        // A new place: the map waits without a pin, at a place of the plan or the whole world.
+        let shown = isNew ? nearby : place
+        _camera = State(initialValue: shown.map { .region(Self.region(around: $0)) } ?? .region(MKCoordinateRegion(.world)))
     }
 
     private var centre: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude) }
+
+    private static func region(around place: KidsPlace) -> MKCoordinateRegion {
+        region(CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude), radius: place.radiusMeters)
+    }
+
+    private static func region(_ centre: CLLocationCoordinate2D, radius: Double) -> MKCoordinateRegion {
+        MKCoordinateRegion(center: centre, latitudinalMeters: radius * 4, longitudinalMeters: radius * 4)
+    }
+
+    private func move(to coordinate: CLLocationCoordinate2D) {
+        place.latitude = coordinate.latitude
+        place.longitude = coordinate.longitude
+        hasCentre = true
+        cannotLocate = false
+        camera = .region(Self.region(coordinate, radius: place.radiusMeters))
+    }
+
+    /// Starts the place where this device is now.
+    private func useMyLocation() async {
+        isLocating = true
+        defer { isLocating = false }
+        if let here = await locator.locate() {
+            move(to: here)
+        } else {
+            cannotLocate = true
+        }
+    }
+
+    /// A new place: where this device is, else a place of the plan, else the country its
+    /// region settings name. Never a city of its own.
+    private func start() async {
+        guard isNew else { return }
+        if nearby == nil {
+            Task {
+                if let country = await PlaceLocator.homeRegion(), !hasCentre { camera = .region(country) }
+            }
+        }
+        await useMyLocation()
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 TextField("Name", text: $place.name)
                 Picker("What", selection: $place.mode) {
-                    ForEach([KidsMode.everything, .ask, .listening, .nothing], id: \.self) { Text(KidsModeText.name($0)).tag($0) }
+                    ForEach(KidsPlaceMode.knownCases, id: \.self) { Text(KidsModeText.name($0)).tag($0) }
                 }
                 HStack {
                     TextField("Find an address", text: $search)
                         .onSubmit { Task { await find() } }
                     Button("Find") { Task { await find() } }
                 }
+                Button("Use My Location", systemImage: "location") { Task { await useMyLocation() } }
+                    .disabled(isLocating)
+                    .accessibilityIdentifier("kidsPlace.useMyLocation")
                 MapReader { proxy in
                     Map(position: $camera) {
-                        MapCircle(center: centre, radius: place.radiusMeters)
-                            .foregroundStyle(.orange.opacity(0.25))
-                            .stroke(.orange, lineWidth: 2)
-                        Marker(place.name, coordinate: centre)
+                        if hasCentre {
+                            MapCircle(center: centre, radius: place.radiusMeters)
+                                .foregroundStyle(.orange.opacity(0.25))
+                                .stroke(.orange, lineWidth: 2)
+                            Marker(place.name, coordinate: centre)
+                        }
                     }
                     .onTapGesture { point in
                         if let coordinate = proxy.convert(point, from: .local) {
                             place.latitude = coordinate.latitude
                             place.longitude = coordinate.longitude
+                            hasCentre = true
                         }
                     }
                 }
                 .frame(height: 280)
+                if isLocating && !hasCentre {
+                    Text("Looking where this device is…").foregroundStyle(.secondary)
+                } else if cannotLocate {
+                    Text("This device cannot say where it is. Tap the map or find an address.").foregroundStyle(.secondary)
+                }
                 VStack(alignment: .leading) {
                     Text("Around it: \(KidsModeText.distance(place.radiusMeters))")
                     Slider(value: $place.radiusMeters, in: 100...10_000, step: 50)
@@ -496,19 +604,17 @@ private struct PlaceEditor: View {
                         save(place)
                         dismiss()
                     }
-                    .disabled(place.name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(place.name.trimmingCharacters(in: .whitespaces).isEmpty || !hasCentre)
                 }
             }
         }
+        .task { await start() }
     }
 
     private func find() async {
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = search
         guard let item = try? await MKLocalSearch(request: request).start().mapItems.first else { return }
-        let coordinate = item.placemark.coordinate
-        place.latitude = coordinate.latitude
-        place.longitude = coordinate.longitude
-        camera = .region(MKCoordinateRegion(center: coordinate, latitudinalMeters: place.radiusMeters * 4, longitudinalMeters: place.radiusMeters * 4))
+        move(to: item.placemark.coordinate)
     }
 }

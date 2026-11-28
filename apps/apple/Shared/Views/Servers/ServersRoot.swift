@@ -30,6 +30,12 @@ struct ServersRoot<Content: View>: View {
             .onOpenURL { servers.open($0) }
             .task { await servers.start() }
             .onChange(of: kidsIconState, initial: true) { kidsIcon.update(kidsIconState) }
+            // Lock to Lobby follows kids mode of the server in use, like the icon.
+            .onChange(of: servers.active.kidsLockState, initial: true) { Task { await servers.active.applyKidsLock() } }
+            .onChange(of: scenePhase) { _, phase in
+                // Screen Time may have been taken away in Settings meanwhile.
+                if phase == .active { Task { await servers.active.applyKidsLock() } }
+            }
             .alert(
                 "Servers",
                 isPresented: Binding(get: { servers.problem != nil }, set: { if !$0 { servers.problem = nil } })

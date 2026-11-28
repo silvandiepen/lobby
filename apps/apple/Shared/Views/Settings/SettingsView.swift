@@ -654,8 +654,13 @@ private struct KidsModePage: View {
                     "Trailers in Kids Mode",
                     isOn: Binding(get: { app.kidsTrailers }, set: { app.kidsTrailers = $0 }))
                     .accessibilityIdentifier("settings.kidsTrailers")
+                if let lock = app.environment.kidsLock {
+                    KidsLockSetUp(lock: lock)
+                }
             } footer: {
-                Text("Trailers are those of titles the child may watch, played inside Lobby.")
+                Text(app.environment.kidsLock == nil
+                    ? "Trailers are those of titles the child may watch, played inside Lobby."
+                    : "Trailers are those of titles the child may watch, played inside Lobby. Lock to Lobby: when a manager turns it on for a child, every other app is closed to them in kids mode here; a grown-up allows it once on this device.")
             }
             SettingsPageNote(page: .kidsMode)
         }

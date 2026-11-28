@@ -39,7 +39,7 @@ plugins/
 
 - `lobby`: which versions of the plugin interface it works with. A Lobby that does not match does not start it, and says so.
 - `permissions`: everything it may do. A manager sees them in plain words before turning it on, and again when an update asks for more.
-- `settings`: shown as a form in Server Settings → Plugins. `secret` values are kept like the TMDB key: never shown again, never in a backup meant for sharing.
+- `settings`: shown as a form on a Plugins page in the Server group of Settings. `secret` values are kept like the TMDB key: never shown again, never in a backup meant for sharing.
 
 ## How it runs
 
@@ -57,7 +57,7 @@ Each plugin runs **as its own process**, never inside the server:
 | **Events** | Played, finished, added, removed, a device paired (never who, unless a permission asks for the viewer's name) | Nothing | A light dims when a film starts |
 | **Information** | A title Lobby could not match, or asks about | Title, year, summary, pictures, a match | A source for home videos, or for a country TMDB knows little of |
 | **Import** | A file the import folders found | Where it belongs, its name, its kind | A rule for a household's own naming |
-| **Actions** | A button a manager presses in Server Settings → Plugins | A message, a result | Rebuild something on demand |
+| **Actions** | A button a server admin presses on that Plugins page | A message, a result | Rebuild something on demand |
 
 What it cannot do: change files on the media drive, read other households' data, see secrets other than its own, add screens or code to the apps, or reach the internet beyond its listed addresses.
 

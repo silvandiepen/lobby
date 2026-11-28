@@ -11,6 +11,7 @@ import { invitesOf } from "../src/households/invites.ts";
 import { kidsControl, REQUESTS_PER_HOUR, type KidsControl } from "../src/kids/control.ts";
 import { KIDS_MODE_ROUTES, KIDS_ROUTES } from "../src/kids/guard.ts";
 import { OUTSIDE_ROUTES } from "../src/outside/guard.ts";
+import { HOUSEHOLD_LEVELS, HOUSEHOLD_ROUTES } from "../src/households/guard.ts";
 import type { KidsPlan, PlanBlock } from "../src/kids/plan.ts";
 import { Catalogue } from "../src/library/catalogue.ts";
 import { ItemReader, type ApiItem } from "../src/library/items.ts";
@@ -409,8 +410,14 @@ describe("places", () => {
     },
   ] as const;
 
-  it("fails closed until the device says, and when it cannot tell", async () => {
+  it("follows the schedule while the device cannot tell, unless asked otherwise", async () => {
     await setPlan({ places: [...places] });
+    // Nothing said yet, and nothing chosen for that: the places do not apply.
+    expect(await reach()).toEqual({ library: 200, play: 200, music: 200 });
+  });
+
+  it("fails closed until the device says, and when it cannot tell, when asked to", async () => {
+    await setPlan({ places: [...places], whenPlaceUnknown: "strictest" });
     // Nothing said yet: the strictest place.
     expect((await reach()).library).toBe(403);
     const say = (body: unknown) =>
@@ -910,6 +917,177 @@ describe("the grown-ups' answers", () => {
   });
 });
 
+describe("Lock to Lobby", () => {
+  interface Wish {
+    wanted: boolean;
+    source: string;
+  }
+  interface LockDevice extends Wish {
+    deviceId: string;
+    name: string;
+    choice: boolean | null;
+    status: string | null;
+    locked: boolean;
+  }
+  const wish = async (token = tablet.token, profileId?: string): Promise<Wish> =>
+    (
+      await call<{ lock: Wish }>(
+        token,
+        "GET",
+        `/v1/me/kids${profileId === undefined ? "" : `?profileId=${profileId}`}`,
+      )
+    ).body.lock;
+  const lockDevices = async (token = admin.token): Promise<LockDevice[]> =>
+    (await call<{ lockDevices: LockDevice[] }>(token, "GET", `/v1/profiles/${kid}/kids/plan`)).body
+      .lockDevices;
+  const switchLock = (deviceId: string, lock: unknown, token = admin.token) =>
+    call(token, "PUT", `/v1/profiles/${kid}/kids/lock/${deviceId}`, { lock });
+
+  it("is off until a grown-up turns it on for the child, and a device can differ", async () => {
+    expect(await wish()).toEqual({ wanted: false, source: "viewer" });
+    await setPlan({ lockToLobby: true });
+    expect(await wish()).toEqual({ wanted: true, source: "viewer" });
+    // The device it is bound to is there for the grown-ups before it said anything.
+    expect(await lockDevices()).toEqual([
+      expect.objectContaining({
+        deviceId: tablet.id,
+        name: "Tablet",
+        wanted: true,
+        source: "viewer",
+        choice: null,
+        status: null,
+        locked: false,
+      }),
+    ]);
+    // Off for this device alone, then back to what the plan says.
+    expect((await switchLock(tablet.id, false)).status).toBe(200);
+    expect(await wish()).toEqual({ wanted: false, source: "device" });
+    expect((await lockDevices())[0]).toMatchObject({ wanted: false, choice: false });
+    await setPlan({ lockToLobby: false });
+    expect((await switchLock(tablet.id, true)).status).toBe(200);
+    expect(await wish()).toEqual({ wanted: true, source: "device" });
+    expect((await switchLock(tablet.id, null)).status).toBe(200);
+    expect(await wish()).toEqual({ wanted: false, source: "viewer" });
+    // Only true or false.
+    expect(
+      (
+        await call(admin.token, "PUT", `/v1/profiles/${kid}/kids/plan`, {
+          plan: { lockToLobby: "yes" },
+        })
+      ).status,
+    ).toBe(400);
+    expect((await switchLock(tablet.id, "yes")).status).toBe(400);
+  });
+
+  it("is in the signed copy, so that it holds offline", async () => {
+    await setPlan({ lockToLobby: true });
+    const reply = await call<{ signed: { payload: string } }>(tablet.token, "GET", "/v1/me/kids");
+    const copy = JSON.parse(
+      Buffer.from(reply.body.signed.payload, "base64url").toString("utf8"),
+    ) as {
+      lock: boolean;
+      plan: KidsPlan;
+    };
+    expect(copy.lock).toBe(true);
+    expect(copy.plan.lockToLobby).toBe(true);
+  });
+
+  it("shows the grown-ups what the device said: not set up, locked, or no iPad", async () => {
+    await setPlan({ lockToLobby: true });
+    const told = await call<{ lock: Wish }>(tablet.token, "PUT", "/v1/me/kids/lock", {
+      status: "notSetUp",
+      locked: false,
+    });
+    expect(told.status).toBe(200);
+    expect(told.body.lock).toEqual({ wanted: true, source: "viewer" });
+    expect((await lockDevices())[0]).toMatchObject({ status: "notSetUp", locked: false });
+    await call(tablet.token, "PUT", "/v1/me/kids/lock", { status: "ready", locked: true });
+    expect((await lockDevices())[0]).toMatchObject({ status: "ready", locked: true });
+    // What it says is checked.
+    for (const body of [
+      { status: "broken", locked: true },
+      { status: "ready" },
+      { status: "ready", locked: "no" },
+    ]) {
+      expect((await call(tablet.token, "PUT", "/v1/me/kids/lock", body)).status).toBe(400);
+    }
+    // Kept over a restart of the server: it is in the catalogue, not in memory.
+    const stored = db.get<{ status: string }>("select status from kids_lock where device_id = ?", [
+      tablet.id,
+    ]);
+    expect(stored?.status).toBe("ready");
+  });
+
+  it("lists a grown-up's device in kids mode once it said something for the child", async () => {
+    await setPlan({ lockToLobby: true });
+    // Not the child's device: nothing to switch.
+    expect((await switchLock(viewer.id, true)).status).toBe(404);
+    expect((await switchLock("no-such-device", true)).status).toBe(404);
+    // The phone shows the kids screens for the child and says how its lock is.
+    expect(await wish(viewer.token, kid)).toEqual({ wanted: true, source: "viewer" });
+    expect(
+      (
+        await call(viewer.token, "PUT", "/v1/me/kids/lock", {
+          profileId: kid,
+          status: "ready",
+          locked: true,
+        })
+      ).status,
+    ).toBe(200);
+    expect((await lockDevices()).map((one) => one.deviceId).sort()).toEqual(
+      [tablet.id, viewer.id].sort(),
+    );
+    expect((await switchLock(viewer.id, false)).status).toBe(200);
+    expect(await wish(viewer.token, kid)).toEqual({ wanted: false, source: "device" });
+    // The bound tablet still follows the plan.
+    expect(await wish()).toEqual({ wanted: true, source: "viewer" });
+    // A device that is removed is not listed any more.
+    devices.revoke(viewer.id);
+    expect((await lockDevices()).map((one) => one.deviceId)).toEqual([tablet.id]);
+  });
+
+  it("is switched only by the child's household's admins, also from outside", async () => {
+    // A viewer's device may read the plan, not switch the lock.
+    expect((await switchLock(tablet.id, true, viewer.token)).status).toBe(403);
+    // The child's own device does not even see the route.
+    expect((await switchLock(tablet.id, false, tablet.token)).status).toBe(404);
+    // Another household's admin does not see the child.
+    const households = new Households(
+      db,
+      devices,
+      invitesOf(db, () => clock.now),
+      () => clock.now,
+    );
+    const guest = households.create("Neighbours", { requiresAdminApproval: false });
+    const neighbour = pair("Neighbour", "householdAdmin");
+    db.run("update device set household_id = ?, access = 'household_admin' where id = ?", [
+      guest.id,
+      neighbour.id,
+    ]);
+    expect((await switchLock(tablet.id, true, neighbour.token)).status).toBe(404);
+    // A household admin of the child's household may.
+    const mum = pair("Mum's phone", "householdAdmin");
+    expect((await switchLock(tablet.id, true, mum.token)).status).toBe(200);
+    expect(await wish()).toEqual({ wanted: true, source: "device" });
+    // The tables say so too: a household admin's, of a kids viewer of the household, from anywhere.
+    const key = "PUT /v1/profiles/:id/kids/lock/:deviceId";
+    expect(HOUSEHOLD_LEVELS[key]).toBe("householdAdmin");
+    expect(HOUSEHOLD_ROUTES[key]).toBe("kids_profile");
+    expect(OUTSIDE_ROUTES[key]).toBe("kids");
+    expect(KIDS_ROUTES[key]).toBe("none");
+    expect(KIDS_MODE_ROUTES["PUT /v1/me/kids/lock"]).toBe("always");
+  });
+
+  it("is told in every mode, Nothing too", async () => {
+    await setPlan({ defaultMode: "nothing", lockToLobby: true });
+    expect((await call(tablet.token, "GET", "/v1/me/kids")).status).toBe(200);
+    expect(
+      (await call(tablet.token, "PUT", "/v1/me/kids/lock", { status: "ready", locked: true }))
+        .status,
+    ).toBe(200);
+  });
+});
+
 describe("the live channel and Play On", () => {
   /** The events a session is sent, as they come. */
   function listen(deviceId: string, session: string) {
@@ -950,6 +1128,21 @@ describe("the live channel and Play On", () => {
     await settle();
     const after = events.filter((one) => one.event === "kidsMode").at(-1);
     expect(after?.data["now"]).toMatchObject({ mode: "listening", video: "none", listening: true });
+  });
+
+  it("tells the child's device when its lock is switched, and a device that was away when it is back", async () => {
+    const events = listen(tablet.id, "tablet-1");
+    await settle();
+    expect(events.filter((one) => one.event === "kidsMode").at(-1)?.data["lock"]).toBe(false);
+    // From a parent's phone: the tablet hears it at once.
+    await call(admin.token, "PUT", `/v1/profiles/${kid}/kids/lock/${tablet.id}`, { lock: true });
+    await settle();
+    expect(events.filter((one) => one.event === "kidsMode").at(-1)?.data["lock"]).toBe(true);
+    // Switched while the tablet's app was not running: what it opens next says so at once.
+    await call(admin.token, "PUT", `/v1/profiles/${kid}/kids/lock/${tablet.id}`, { lock: false });
+    const again = listen(tablet.id, "tablet-2");
+    await settle();
+    expect(again.filter((one) => one.event === "kidsMode").at(-1)?.data["lock"]).toBe(false);
   });
 
   it("tells the grown-ups of a question at once", async () => {

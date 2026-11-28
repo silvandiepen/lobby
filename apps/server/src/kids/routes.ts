@@ -5,6 +5,7 @@ import type { Database } from "../db/database.ts";
 import { ApiError, readBody, type AppEnv, type Ctx } from "../http/app.ts";
 import {
   ControlError,
+  LOCK_STATUSES,
   type Answer,
   type KidsControl,
   type KidsRequest,
@@ -186,6 +187,7 @@ export function registerKidsControlRoutes(app: Hono<AppEnv>, deps: KidsRouteDeps
         .deciders(profileId, true)
         .filter((one) => one.householdId === profile?.household_id)
         .map((one) => ({ id: one.id, name: one.name })),
+      lockDevices: control.lockDevices(profileId),
     };
   };
 
@@ -213,6 +215,7 @@ export function registerKidsControlRoutes(app: Hono<AppEnv>, deps: KidsRouteDeps
       request,
       askNames: control.askNames(profileId),
       musicLibraries: musicLibraries(db),
+      lock: control.lockWish(profileId, device.id),
       signed: control.signed(profileId, device.id),
       publicKey: control.publicKey(),
       serverTime: Date.now(),
@@ -239,6 +242,20 @@ export function registerKidsControlRoutes(app: Hono<AppEnv>, deps: KidsRouteDeps
     } else place = { state };
     control.reportPlace(c.get("device").id, profileId, place);
     return c.json({ now: control.state(profileId, c.get("device").id, deps.isAway(c)) });
+  });
+
+  // What the device says of its lock to Lobby: whether Screen Time lets it, and whether it does.
+  app.put("/v1/me/kids/lock", async (c) => {
+    const body = await readBody(c, MAX_SMALL_BODY);
+    const profileId = childOf(c, body["profileId"]);
+    const status = oneOf(body["status"], LOCK_STATUSES, "status");
+    const locked = body["locked"];
+    if (typeof locked !== "boolean") {
+      throw new ApiError("invalid_request", `"locked" must be true or false.`);
+    }
+    const deviceId = c.get("device").id;
+    control.reportLock(profileId, deviceId, status, locked);
+    return c.json({ lock: control.lockWish(profileId, deviceId) });
   });
 
   // What was watched offline, counted on the device.
@@ -360,6 +377,22 @@ export function registerKidsControlRoutes(app: Hono<AppEnv>, deps: KidsRouteDeps
     const { device, profileId } = decided(c);
     const plan = attempt(() => readPlan(body["plan"]));
     control.setPlan(profileId, plan, device.id);
+    return c.json(view(profileId));
+  });
+
+  // A grown-up switches the lock of one of the child's devices: on, off, or as the plan says.
+  app.put("/v1/profiles/:id/kids/lock/:deviceId", async (c) => {
+    const body = await readBody(c, MAX_SMALL_BODY);
+    const { profileId } = decided(c);
+    const deviceId = c.req.param("deviceId");
+    if (!control.isLockDevice(profileId, deviceId)) {
+      throw new ApiError("not_found", "There is no such device of this child.");
+    }
+    const lock = body["lock"];
+    if (lock !== null && typeof lock !== "boolean") {
+      throw new ApiError("invalid_request", `"lock" must be true, false or null.`);
+    }
+    control.setLock(profileId, deviceId, lock);
     return c.json(view(profileId));
   });
 

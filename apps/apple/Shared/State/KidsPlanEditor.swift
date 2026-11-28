@@ -170,6 +170,14 @@ final class KidsPlanEditor {
         await run(keepingPlan: true) { try await client.endKidsAnswer(profileID: self.profileID) }
     }
 
+    /// The quick switch for one of the child's devices. What the saved plan says is sent as
+    /// "as the plan says", so that the device follows the plan again from then on.
+    func setLock(_ locked: Bool, device deviceID: String) async {
+        guard let client = app.liveClient else { return }
+        let choice: Bool? = locked == view?.plan.lockToLobby ? nil : locked
+        await run(keepingPlan: true) { try await client.setKidsLock(choice, deviceID: deviceID, profileID: self.profileID) }
+    }
+
     // MARK: Changing the plan here
 
     func apply(_ preset: KidsPlanBlock) { plan = KidsWeek.applying(preset, to: plan) }

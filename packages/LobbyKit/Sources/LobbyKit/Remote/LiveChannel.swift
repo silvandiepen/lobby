@@ -16,8 +16,9 @@ public enum LiveEvent: Hashable, Sendable {
     /// How waking a TV for this device goes.
     case wake(WakeProgress)
     case heartbeat(serverTime: Int64)
-    /// What a child this session plays for may do now (docs/api.md, Kids control).
-    case kidsMode(profileID: String, now: KidsNow)
+    /// What a child this session plays for may do now (docs/api.md, Kids control), and whether
+    /// this device is to lock itself to Lobby for it (nil from a server from before the lock).
+    case kidsMode(profileID: String, now: KidsNow, lock: Bool?)
     /// A child's question for this grown-up, or (on the child's device) what came of it.
     case kidsRequest(KidsRequest)
     /// A question this grown-up was asked was answered, taken back or expired.
@@ -112,9 +113,10 @@ public struct LiveEventParser: Sendable {
                 struct Body: Decodable {
                     var profileId: String
                     var now: KidsNow
+                    var lock: Bool?
                 }
                 let body = try decoder.decode(Body.self, from: data)
-                return .kidsMode(profileID: body.profileId, now: body.now)
+                return .kidsMode(profileID: body.profileId, now: body.now, lock: body.lock)
             case "speakers":
                 struct Body: Decodable { var speakers: [ShownSpeaker] }
                 return .speakers(try decoder.decode(Body.self, from: data).speakers, serverTime: time)
