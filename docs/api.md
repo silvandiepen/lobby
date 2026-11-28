@@ -747,9 +747,11 @@ interface KidsPlan {
   /** The mode away from the home network (outside entrance, direct road, tailnet). */
   away: Mode | null;
   /** At most 10; radius 100…10000 m. Watched only on the child's device. */
-  places: { id: string; name: string; latitude: number; longitude: number; radiusMeters: number; mode: Mode }[];
-  /** When the device cannot tell where it is; null: the strictest place's mode. */
-  whenPlaceUnknown: Mode | null;
+  /** "schedule": the place changes nothing, inside it the schedule or the default decides. */
+  places: { id: string; name: string; latitude: number; longitude: number; radiusMeters: number; mode: Mode | "schedule" }[];
+  /** When the device cannot tell where it is: a mode, or "strictest" for the strictest of the
+   * places' modes (places "schedule" passed by); null: the places do not apply (D-069). */
+  whenPlaceUnknown: Mode | "strictest" | null;
   /** Who is asked: grown-up viewers with their devices; []: every admin device of the child's
    * household, named by all its grown-up viewers. */
   askers: { profileId: string; deviceIds: string[] }[];
@@ -774,7 +776,7 @@ interface KidsNow {
 }
 ```
 
-**How the mode is worked out.** An override wins while it runs. Otherwise the strictest of: the schedule's block (the strictest of overlapping ones) or the default; the away rule when away; the place the device is in, or `whenPlaceUnknown` when it cannot tell (also when it said nothing for six hours, or since the server started); screen time when the day's minutes are used. Ask first is lifted only by an answer, and never past a stricter mode. A viewer without a plan: Everything, with music.
+**How the mode is worked out.** An override wins while it runs. Otherwise the strictest of: the schedule's block (the strictest of overlapping ones) or the default; the away rule when away; the place the device is in (none for a place `"schedule"`), or `whenPlaceUnknown` when it cannot tell (also when it said nothing for six hours, or since the server started) and that is not null; screen time when the day's minutes are used. Ask first is lifted only by an answer, and never past a stricter mode. A viewer without a plan: Everything, with music.
 
 **Enforcement.** For a device bound to a kids viewer, every route it may use has a need (`KIDS_MODE_ROUTES` in `src/kids/guard.ts`, tested to be there for every route): its own `GET /v1/me`, `/v1/me/kids…`, `/v1/me/direct`, `/v1/household`, `/v1/profiles`, the live channel and `POST /v1/remote/commands` always (the hub checks each play), `PUT …/progress/{item}` always (where a film stopped at a switch), the avatar unless Nothing, library, items, categories, logos, artwork, popular, progress and `/v1/me/wanted` when `browse`, `/v1/assets/…` and `POST /v1/remote/wake` when `video` allows that file, music when `listening`. Otherwise `403 kids_mode`, with `now: KidsNow`; an app keeps what it has (downloads, the catalogue) and shows the mode. What is being sent stops within a second of a switch. Play On as a kids viewer needs video allowed on the target and, when the child sends it, on its own device: otherwise `403` with `reason: "kids_mode"`. A grown-up's device in kids mode is limited by the app, as for kids limits; the server checks its Play On, wake and questions by the `profileId` it names.
 

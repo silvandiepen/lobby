@@ -409,8 +409,14 @@ describe("places", () => {
     },
   ] as const;
 
-  it("fails closed until the device says, and when it cannot tell", async () => {
+  it("follows the schedule while the device cannot tell, unless asked otherwise", async () => {
     await setPlan({ places: [...places] });
+    // Nothing said yet, and nothing chosen for that: the places do not apply.
+    expect(await reach()).toEqual({ library: 200, play: 200, music: 200 });
+  });
+
+  it("fails closed until the device says, and when it cannot tell, when asked to", async () => {
+    await setPlan({ places: [...places], whenPlaceUnknown: "strictest" });
     // Nothing said yet: the strictest place.
     expect((await reach()).library).toBe(403);
     const say = (body: unknown) =>

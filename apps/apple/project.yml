@@ -78,7 +78,7 @@ targets:
         NSCameraUsageDescription: Lobby scans the code on another screen when a device is paired from outside.
         NSFaceIDUsageDescription: Lobby asks for a grown-up before it leaves the kids screens.
         # Only for a kids viewer's places a grown-up chose (docs/kids-control.md, §7).
-        NSLocationWhenInUseUsageDescription: Lobby checks only whether this device is at a place a grown-up chose, such as school. It never sends where it is.
+        NSLocationWhenInUseUsageDescription: On a child's device, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: LaunchBackground
@@ -211,8 +211,8 @@ targets:
             CFBundleURLSchemes: [lobby]
         LSApplicationCategoryType: public.app-category.entertainment
         # Only for a kids viewer's places a grown-up chose (docs/kids-control.md, §7).
-        NSLocationUsageDescription: Lobby checks only whether this Mac is at a place a grown-up chose, such as school. It never sends where it is.
-        NSLocationWhenInUseUsageDescription: Lobby checks only whether this device is at a place a grown-up chose, such as school. It never sends where it is.
+        NSLocationUsageDescription: On a child's Mac, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.
+        NSLocationWhenInUseUsageDescription: On a child's device, Lobby checks only whether it is at a place a grown-up chose, such as school. On a grown-up's, it starts a new place where you are. It never sends where it is.
         ITSAppUsesNonExemptEncryption: false
         NSLocalNetworkUsageDescription: Lobby looks for your Lobby Server on your home network and connects to it, to browse and play your films and series.
         # What the app looks for on the network (Bonjour). Without this entry iOS shows nothing

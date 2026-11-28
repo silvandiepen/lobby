@@ -12,6 +12,7 @@ import {
   type Grant,
   type KidsPlan,
   type PlanContext,
+  type PlanPlace,
 } from "../src/kids/plan.ts";
 
 const ZONE = "Europe/Amsterdam";
@@ -135,7 +136,7 @@ describe("the mode at a moment", () => {
     );
   });
 
-  it("applies the away rule and named places, failing closed", () => {
+  it("applies the away rule and named places", () => {
     const rules = plan({
       away: "ask",
       places: [place("school", "nothing"), place("gran", "listening")],
@@ -148,20 +149,86 @@ describe("the mode at a moment", () => {
     expect(
       modeAt(rules, context({ place: { state: "inside", placeId: "gran" } }), sat),
     ).toMatchObject({ mode: "listening", reason: "place", detail: "Grandma's" });
-    // Cannot tell: the strictest place.
-    expect(modeAt(rules, context({ place: { state: "unknown" } }), sat)).toMatchObject({
+    // Outside every place: the places say nothing.
+    expect(modeAt(rules, context(), sat)).toMatchObject({ mode: "everything", reason: "default" });
+    // Without place rules, where the device is does not matter.
+    expect(modeAt(plan(), context({ place: { state: "unknown" } }), sat).mode).toBe("everything");
+  });
+
+  it("follows the schedule where the device cannot tell, unless asked otherwise", () => {
+    const rules = plan({
+      blocks: [{ days: [6], start: "07:00", end: "14:00", mode: "listening", label: "Morning" }],
+      places: [place("school", "nothing"), place("gran", "listening")],
+    });
+    const unknown = context({ place: { state: "unknown" } });
+    // Nothing chosen: the places do not apply, the schedule's block decides.
+    expect(modeAt(rules, unknown, at("2026-11-28T10:00"))).toMatchObject({
+      mode: "listening",
+      reason: "schedule",
+      detail: "Morning",
+    });
+    // Outside the block: the default.
+    expect(modeAt(rules, unknown, at("2026-11-28T16:00"))).toMatchObject({
+      mode: "everything",
+      reason: "default",
+    });
+    // A place that is no longer in the plan is as good as not knowing.
+    const gone = context({ place: { state: "inside", placeId: "gone" } });
+    expect(modeAt(rules, gone, at("2026-11-28T10:00")).reason).toBe("schedule");
+    // Inside a place, its mode still holds where it is stricter.
+    const inside = context({ place: { state: "inside", placeId: "school" } });
+    expect(modeAt(rules, inside, at("2026-11-28T10:00"))).toMatchObject({
+      mode: "nothing",
+      reason: "place",
+      detail: "School",
+    });
+
+    // Asked for the strictest place: it beats the schedule.
+    const strictest = { ...rules, whenPlaceUnknown: "strictest" as const };
+    expect(modeAt(strictest, unknown, at("2026-11-28T10:00"))).toMatchObject({
       mode: "nothing",
       reason: "placeUnknown",
     });
-    // Or what was chosen for that.
-    const chosen = { ...rules, whenPlaceUnknown: "listening" as const };
-    expect(modeAt(chosen, context({ place: { state: "unknown" } }), sat).mode).toBe("listening");
-    // A place that is no longer in the plan is as good as not knowing.
-    expect(
-      modeAt(rules, context({ place: { state: "inside", placeId: "gone" } }), sat).reason,
-    ).toBe("placeUnknown");
-    // Without place rules, where the device is does not matter.
-    expect(modeAt(plan(), context({ place: { state: "unknown" } }), sat).mode).toBe("everything");
+    expect(modeAt(strictest, gone, at("2026-11-28T10:00")).reason).toBe("placeUnknown");
+    // Outside every place, it does not apply.
+    expect(modeAt(strictest, context(), at("2026-11-28T10:00")).reason).toBe("schedule");
+
+    // A chosen mode: where stricter than the schedule, it is the reason.
+    const chosen = { ...rules, whenPlaceUnknown: "nothing" as const };
+    expect(modeAt(chosen, unknown, at("2026-11-28T10:00"))).toMatchObject({
+      mode: "nothing",
+      reason: "placeUnknown",
+    });
+    // Where not stricter, the schedule stays the reason.
+    const mild = { ...rules, whenPlaceUnknown: "everything" as const };
+    expect(modeAt(mild, unknown, at("2026-11-28T10:00")).reason).toBe("schedule");
+  });
+
+  it("lets a place as schedule change nothing", () => {
+    const rules = plan({
+      blocks: [{ days: [6], start: "07:00", end: "14:00", mode: "listening", label: "Morning" }],
+      places: [place("home", "schedule"), place("gran", "nothing")],
+    });
+    const home = context({ place: { state: "inside", placeId: "home" } });
+    expect(modeAt(rules, home, at("2026-11-28T10:00"))).toMatchObject({
+      mode: "listening",
+      reason: "schedule",
+    });
+    expect(modeAt(rules, home, at("2026-11-28T16:00"))).toMatchObject({
+      mode: "everything",
+      reason: "default",
+    });
+    // The strictest place passes it by; with only such places there is none.
+    const unknown = context({ place: { state: "unknown" } });
+    const strictest = { ...rules, whenPlaceUnknown: "strictest" as const };
+    expect(modeAt(strictest, unknown, at("2026-11-28T16:00"))).toMatchObject({
+      mode: "nothing",
+      reason: "placeUnknown",
+    });
+    const onlyHome = { ...strictest, places: [place("home", "schedule")] };
+    expect(modeAt(onlyHome, unknown, at("2026-11-28T16:00")).reason).toBe("default");
+    expect(strictestOf({ ...onlyHome, blocks: [] })).toBe("everything");
+    expect(readPlan({ places: [place("home", "schedule")] }).places[0]?.mode).toBe("schedule");
   });
 
   it("ends video when the day's screen time is used", () => {
@@ -385,6 +452,7 @@ describe("reading a plan", () => {
       { places: [place("a", "nothing"), place("a", "nothing")] },
       { screenTime: { weekdayMinutes: -1 } },
       { music: "yes" },
+      { whenPlaceUnknown: "strictestPlace" },
     ]) {
       expect(() => readPlan(bad), JSON.stringify(bad)).toThrow(PlanError);
     }
@@ -394,13 +462,24 @@ describe("reading a plan", () => {
     expect(strictestOf(NO_PLAN)).toBe("everything");
     expect(strictestOf(plan())).toBe("nothing");
     expect(strictestOf(plan({ blocks: [], away: "listening" }))).toBe("listening");
+    // "strictest" names no mode of its own; a chosen mode counts.
+    const somewhere = { blocks: [], places: [place("gran", "listening")] };
+    expect(strictestOf(plan({ ...somewhere, whenPlaceUnknown: "strictest" }))).toBe("listening");
+    expect(strictestOf(plan({ ...somewhere, whenPlaceUnknown: "nothing" }))).toBe("nothing");
+  });
+
+  it("reads what holds where the device cannot tell", () => {
+    expect(readPlan({}).whenPlaceUnknown).toBeNull();
+    expect(readPlan({ whenPlaceUnknown: null }).whenPlaceUnknown).toBeNull();
+    expect(readPlan({ whenPlaceUnknown: "strictest" }).whenPlaceUnknown).toBe("strictest");
+    expect(readPlan({ whenPlaceUnknown: "listening" }).whenPlaceUnknown).toBe("listening");
   });
 });
 
-function place(id: string, mode: KidsPlan["defaultMode"]) {
+function place(id: string, mode: PlanPlace["mode"]) {
   return {
     id,
-    name: id === "gran" ? "Grandma's" : "School",
+    name: id === "gran" ? "Grandma's" : id === "home" ? "Home" : "School",
     latitude: 52.37,
     longitude: 4.89,
     radiusMeters: 300,

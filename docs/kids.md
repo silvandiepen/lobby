@@ -173,7 +173,7 @@ a grown-up's **override**, and **answers** to Ask first. How they combine is in
 | Order | Source | Wins when |
 | --- | --- | --- |
 | 1 | Override | Always, while it runs. It can itself be any mode, Ask first too |
-| 2 | The strictest of: schedule block (strictest of overlapping ones) or default, away rule when away, the place's mode or the "location unknown" mode, screen time when used up | No override runs |
+| 2 | The strictest of: schedule block (strictest of overlapping ones) or default, away rule when away, the place's mode (none for a place "As schedule") or, when chosen, the "where it cannot tell" mode, screen time when used up | No override runs |
 | 3 | Answer | Only where step 2 says Ask first. Never past a stricter mode: "Watch for 2 hours" at 19:00 ends when Bedtime begins |
 
 Only listening plus Ask first is Only listening, without asking.
@@ -201,7 +201,15 @@ On iPhone, iPad and Mac, the viewer's page → **When and What** (`KidsPlanPage.
   no location.
 - **Music:** on or off, and which music libraries (section 4).
 - **Places:** up to ten, each a name, a mode and a circle of 100 m to 10 km drawn on a map or found
-  by address, and the mode for "where it cannot tell" (by default the strictest place's).
+  by address. A place's mode can be **As schedule**: inside it the place changes nothing and the
+  week decides, which is what a "Home" place is for. A new place starts where the grown-up's own
+  device is (one fix, asked for when the editor opens; **Use My Location** asks again). While it
+  waits the map shows no pin; when this device cannot say, the map shows the plan's first place, or
+  else the country of the device's region settings, and the grown-up taps the map or finds an
+  address. Nothing of where the grown-up is is kept or sent.
+- **Where it cannot tell** (D-069): **As schedule** by default, so the places do not count and the
+  week or the default decides; or **The strictest place** (the strictest of the places' modes,
+  passing places "As schedule" by); or Everything, Ask first, Only listening or Nothing.
 
 On Devices and Viewers each kids viewer has a glance under its name: "Now: Nothing until 15:00"
 (`GET /v1/kids/now`, the strictest of the child's own devices).
@@ -455,8 +463,9 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
   home network.
 - **Places are watched only on the child's device** (`KidsPlaceWatcher.swift`), with the system's
   region monitoring (`CLMonitor`), no continuous tracking. iPhone and iPad need "While Using"; on
-  the Mac the app counts only `authorizedAlways` as allowed. The permission text says: "Lobby checks only whether this device is at a
-  place a grown-up chose, such as school. It never sends where it is."
+  the Mac the app counts only `authorizedAlways` as allowed. The permission text says: "On a
+  child's device, Lobby checks only whether it is at a place a grown-up chose, such as school. On a
+  grown-up's, it starts a new place where you are. It never sends where it is."
 - **What is sent:** only "inside place X" (the strictest place it is in), "inside no place" or
   "cannot tell". `PUT /v1/me/kids/place` refuses any other field, coordinates above all (`400`).
   Until every place has answered, "inside none" is not said: it is "cannot tell".
@@ -466,9 +475,11 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
 - **What is stored:** each place's centre and radius as a grown-up chose them, on the server and
   sent to the child's device to watch. That is a place the grown-ups named, not the child's location.
   Finding a place by address asks Apple Maps from the grown-up's device.
-- **Fail closed:** permission denied, off, restricted or not answered yet, Location off, or nothing
-  heard for six hours: "cannot tell", and the "location unknown" mode applies (by default the
-  strictest place's).
+- **Cannot tell:** permission denied, off, restricted or not answered yet, Location off, or nothing
+  heard for six hours: "cannot tell". Then the places do not count and the week decides, unless a
+  grown-up chose a mode or The strictest place for "Where it cannot tell" (D-069). The child is
+  never asked about Location: a grown-up who taps the avatar on a bound device reads, in the "For
+  Grown-ups" sheet, that the plan has places and Lobby may not use Location, and where to allow it.
 - **The Apple TV** stays in the house: it always reports "inside no place".
 - The When and What page says: "Lobby on *name*'s device checks only whether it is inside these
   places. It never sends where it is, and keeps no history."
@@ -482,7 +493,7 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
 | --- | --- |
 | A child's device shows nothing | Nothing is allowed, or the device is bound to a viewer that is gone or no longer a kids viewer. Open the viewer's page and allow something, or bind the device to the right viewer. |
 | A title is missing for the child | It is not allowed, it is blocked (a block wins), it came back as a new file the server was not sure about (look in the blocked titles), or it is in a category only by a studio rule and only the group is allowed. |
-| "Lobby is resting" when it should not be | Read the first line of When and What: it says the mode and why. A place rule with Location off, or a device that said nothing for six hours, is "cannot tell" and takes the strictest place's mode. After a server restart, places are "cannot tell" until the app reports again. |
+| "Lobby is resting" when it should not be | Read the first line of When and What: it says the mode and why. A place rule with Location off, or a device that said nothing for six hours, is "cannot tell": the week decides, unless "Where it cannot tell" names a mode or The strictest place. After a server restart, places are "cannot tell" until the app reports again. |
 | Resting offline | No signed copy yet, or it is more than seven days old: open the app once where it reaches the server. |
 | Grown-ups get no question | The child must be in Ask first (Only listening beats it, without asking). Push needs the team's key in the config (`GET /v1/settings/push` says whether it is there). Check who is asked under Ask First. The TV is never asked. |
 | "No answer yet" and Try again does nothing | Six questions an hour at most; Try again waits until the server allows the next. |

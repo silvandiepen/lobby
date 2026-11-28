@@ -45,7 +45,7 @@ Six sources. Each one either says nothing right now or names a mode.
 | --- | --- | --- |
 | **Schedule** | always | the mode of the time block the moment is in, or the viewer's default mode when none |
 | **Away rule** | the device is not on the home network | the away mode (e.g. Only listening) |
-| **Place rule** | the kid's device says it is inside a named place, or cannot say | the place's mode; when it cannot say, the "location unknown" mode |
+| **Place rule** | the kid's device says it is inside a named place that has a mode (not "As schedule"), or cannot say and a grown-up chose what holds then | the place's mode; when it cannot say, the chosen mode or the strictest place's (D-069) |
 | **Screen time** | today's video minutes are used up | Only listening or Nothing (chosen) |
 | **Override** | a grown-up set one and it has not ended | its mode, and it beats everything else |
 | **Answer** (grant) | a grown-up answered Ask first, and it has not ended | what was answered, but only where Ask first is the mode |
@@ -84,7 +84,9 @@ on weekdays, then Only listening; music on.
 | … Mum answers Watch at 19:30 for 2 hours | schedule Only listening from 20:00 | **Everything** until 20:00, then **Only listening** |
 | Sat 10:00, Dad sets "Nothing until 12:00" | override | **Nothing** until 12:00 |
 | Tue 10:00, Mum sets "Everything for 1 hour" (sick day) | override beats school | **Everything** until 11:00 |
-| Tue 10:00 at school, Location off | place unknown → strictest place mode Nothing | **Nothing** |
+| Tue 10:00 at school, Location off | place unknown, nothing chosen → schedule School Nothing | **Nothing** |
+| Sat 10:00, Location off, places School (Nothing) and Home (As schedule) | place unknown, nothing chosen → schedule Everything | **Everything** |
+| Sat 10:00, Location off, "Where it cannot tell": The strictest place | place unknown → strictest place School Nothing | **Nothing** |
 
 ## 3. What the child sees
 
@@ -121,8 +123,9 @@ On iPhone, iPad and Mac, per kids viewer, a page **When and what** (beside the k
 - **Screen time**: off, or minutes on weekdays and on weekends, and what happens after (Only
   listening or Nothing). Today's minutes so far.
 - **Away from home**: off, or a mode.
-- **Places**: a list; add one on a map (centre and radius, 100 m to 10 km) with a name and a mode,
-  and the "location unknown" mode. With the privacy line from §7.
+- **Places**: a list; add one on a map (centre and radius, 100 m to 10 km) with a name and a mode
+  (or As schedule, which changes nothing), and "Where it cannot tell": As schedule (the default),
+  The strictest place, or a mode. With the privacy line from §7.
 - **Music and audiobooks**: on or off.
 
 On the viewer list, a glance per kids viewer: "Now: Only listening until 19:30".
@@ -195,10 +198,10 @@ Downloaded films on a child's iPad follow the same plan without the server:
   the current state per device, in memory, and nothing of where the child was. The page says so:
   "Lobby on Robin's iPad checks only whether it is inside these places. It never sends where it
   is, and keeps no history." The App Store privacy text says the same.
-- **Fail closed**: with place rules and location permission denied, off, restricted or not
-  answered yet, the device says "cannot tell", and the "location unknown" mode applies: by
-  default the strictest of the places' modes. A device that said nothing for six hours counts as
-  "cannot tell" too.
+- **Cannot tell**: with place rules and location permission denied, off, restricted or not
+  answered yet, the device says "cannot tell". By default the places then do not count and the
+  schedule decides; a grown-up can choose a mode or "The strictest place" instead (D-069). A
+  device that said nothing for six hours counts as "cannot tell" too.
 - The place's own centre and radius are what a grown-up chose; they are stored on the server and
   sent to the child's device to watch. That is a place the grown-ups named, not the child's location.
 
@@ -217,7 +220,7 @@ Downloaded films on a child's iPad follow the same plan without the server:
 | Clock changes on the device | §6. |
 | Time zone and summer time | The household's time zone (a setting; the server's when not set). A block 19:30–07:00 is local time on both sides of a change; a block that starts in the hour that does not exist starts when that hour ends. |
 | Server restarts | Plans, overrides, answers and screen time are in the catalogue. Place states are in memory: until a device reports again, it is "cannot tell" (fail closed); the app reports on every start and every change. |
-| Location permission revoked while inside | The device says "cannot tell"; the unknown mode applies. |
+| Location permission revoked while inside | The device says "cannot tell"; the schedule decides, or the mode chosen for that. |
 | A grown-up changes the plan | Every device of the child is told at once; the copy is fetched again. |
 | Kids mode on a grown-up's device | The same plan for that child, from the same copy, with that device's road and place. The server enforces what passes through it (Play On, waking, answers, screen time); the rest is the app, as for kids limits on a shared device. A bound device is the real limit, as everywhere (D-027). |
 
