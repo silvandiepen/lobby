@@ -142,6 +142,7 @@ struct BannerBackdrop: View {
             .parallaxHeader(height: size.height)
             // Over the picture's movement: its foot runs into the page wherever it is.
             .mask { fade }
+            .extendsUnderSidebar()
     }
 
     @ViewBuilder
@@ -306,6 +307,18 @@ extension View {
     func clearTop(_ isClear: Bool) -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
             scrollEdgeEffectHidden(isClear, for: .top)
+        } else {
+            self
+        }
+    }
+
+    /// A picture at the top of a page carries on, mirrored and blurred, under the floating
+    /// sidebar and above it, as on Apple's own pages: without it the picture stops at the
+    /// sidebar's edge, and the strip over the sidebar is the page's plain colour beside it.
+    @ViewBuilder
+    func extendsUnderSidebar() -> some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            backgroundExtensionEffect()
         } else {
             self
         }
