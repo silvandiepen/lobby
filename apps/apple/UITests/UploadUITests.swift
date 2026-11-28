@@ -27,7 +27,7 @@ final class UploadUITests: LobbyUITestCase {
         attachScreenshot("upload-destination")
         app.buttons["sheet.confirm"].tap()
         let arrived = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == %@ AND label CONTAINS 'Arrived.'", "upload.state.\(name)")).firstMatch
+            NSPredicate(format: "identifier IN %@ AND label CONTAINS 'Arrived.'", ["upload.state.\(name)", "upload.row.\(name)"])).firstMatch
         waitFor(arrived, "The upload to arrive", timeout: 60)
         attachScreenshot("upload-arrived")
 
