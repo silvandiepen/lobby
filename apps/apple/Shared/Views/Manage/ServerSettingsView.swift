@@ -2,87 +2,33 @@
 import LobbyKit
 import SwiftUI
 
-/// Settings → Server, for a manager at home or over Tailscale: what the server is set to, in plain
-/// words, changed here and explained before it is made.
-struct ServerSettingsView: View {
+/// One page of the server's settings, for a server admin at home or over Tailscale: the few
+/// settings of one subject, in plain words, changed here and explained before they are made.
+/// Each page reviews and saves its own changes (docs/decisions.md, "Settings, one page per
+/// subject").
+struct ServerSettingsPage: View {
+    let page: SettingsPage
     @State private var model: ServerSettingsModel
-    @State private var showsReview = false
     /// The folder being picked. Held here, outside the list: a sheet on a section or a row of
     /// the lazy list closed again at once, and took Settings with it.
     @State private var picking: FolderPick?
-    @Environment(\.motion) private var motion
+    @Environment(AppModel.self) private var app
 
-    init(app: AppModel) {
+    init(app: AppModel, page: SettingsPage) {
+        self.page = page
         _model = State(initialValue: app.serverSettings())
     }
 
     var body: some View {
         LobbyForm {
-            if let settings = model.settings {
+            if model.settings != nil {
                 RestartNotice(model: model)
-                ForEach(settings.sections) { section in
-                    switch section.id {
-                    case "library":
-                        FoldersSection(model: model) { picking = .library }
-                        SettingsSection(model: model, section: section, skipping: ["roots"]) { picking = $0 }
-                        TMDBKeySection(model: model)
-                    case "imports":
-                        ImportFoldersSection(model: model) { picking = .importFolder }
-                        SettingsSection(model: model, section: section, skipping: ["import.folders"]) { picking = $0 }
-                    case "advanced":
-                        SettingsSection(model: model, section: section) { picking = $0 }
-                        Section {
-                            NavigationLink("All Settings, as Stored") { RawSettingsView(model: model) }
-                                .accessibilityIdentifier("serverSettings.raw")
-                            NavigationLink("Earlier Versions") { SettingsHistoryView(model: model) }
-                                .accessibilityIdentifier("serverSettings.history")
-                        } footer: {
-                            Text("Where the server listens, its data folder and the programs it runs are set in its own file, lobby.config.json, on the server.")
-                        }
-                    case "general":
-                        // Waking is switched on its own page, beside the TVs it is for.
-                        SettingsSection(model: model, section: section, skipping: ["remote.wake.enabled", "remote.wake.speakers"]) { picking = $0 }
-                        Section {
-                            NavigationLink(value: Route.appleTVs) {
-                                Label("Apple TVs", systemImage: AppSymbol.television)
-                            }
-                            .accessibilityIdentifier("serverSettings.appleTVs")
-                            NavigationLink(value: Route.speakers) {
-                                Label("Speakers", systemImage: "homepod.and.homepodmini")
-                            }
-                            .accessibilityIdentifier("serverSettings.speakers")
-                        } footer: {
-                            Text("The Apple TVs Lobby Server turns on for Play On, and the HomePods and speakers it plays music and stories to.")
-                        }
-                    default:
-                        SettingsSection(model: model, section: section) { picking = $0 }
-                    }
-                }
+                content
+                SettingsPageNote(page: page)
             }
         }
-        .overlay {
-            if model.settings == nil {
-                if let problem = model.problem {
-                    ContentUnavailableView(
-                        "The settings cannot be shown", systemImage: AppSymbol.server, description: Text(problem))
-                } else {
-                    ProgressView()
-                }
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            if model.hasChanges {
-                ChangesBar(model: model) { showsReview = true }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(motion.animation(.change), value: model.hasChanges)
-        .navigationTitle("Server")
-        .task { await model.load() }
-        .refreshable { await model.load() }
-        .sheet(isPresented: $showsReview) {
-            ReviewSheet(model: model)
-        }
+        .serverSettingsChanges(model: model, page: page)
+        .navigationTitle(page.title)
         .sheet(item: $picking) { pick in
             FolderPickerSheet(app: model.appForPicker, purpose: pick.purpose) { path, hint, kids in
                 switch pick {
@@ -92,14 +38,140 @@ struct ServerSettingsView: View {
                 }
             }
         }
-        .alert(
-            "That did not work",
-            isPresented: Binding(get: { model.problem != nil && model.settings != nil }, set: { if !$0 { model.problem = nil } })
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(model.problem ?? "")
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch page {
+        case .libraryFolders:
+            FoldersSection(model: model) { picking = .library }
+            ServerSettingRows(model: model, page: page) { picking = $0 }
+        case .imports:
+            ImportFoldersSection(model: model) { picking = .importFolder }
+            ServerSettingRows(model: model, page: page) { picking = $0 }
+            if app.uploads().isAvailable {
+                Section {
+                    NavigationLink(value: Route.uploads) {
+                        Label("Upload", systemImage: AppSymbol.upload)
+                    }
+                    .accessibilityIdentifier("manage.uploads")
+                } footer: {
+                    Text("Films and episodes from this device.")
+                }
+            }
+        case .matching:
+            TMDBKeySection(model: model)
+        case .away:
+            ServerSettingRows(model: model, page: page) { picking = $0 }
+            Section {
+                NavigationLink(value: Route.outside) {
+                    Label("Access From Outside", systemImage: AppSymbol.outside)
+                }
+                .accessibilityIdentifier("manage.outside")
+            } footer: {
+                Text("For devices that are neither at home nor on Tailscale.")
+            }
+        case .statistics:
+            Section {
+                NavigationLink(value: Route.serverStats) {
+                    Label("What Is Watched", systemImage: "chart.bar.xaxis")
+                }
+                .accessibilityIdentifier("serverSettings.statistics")
+            }
+            ServerSettingRows(model: model, page: page) { picking = $0 }
+        case .advanced:
+            ServerSettingRows(model: model, page: page) { picking = $0 }
+            Section {
+                NavigationLink("All Settings, as Stored") { RawSettingsView(model: model) }
+                    .accessibilityIdentifier("serverSettings.raw")
+                NavigationLink("Earlier Versions") { SettingsHistoryView(model: model) }
+                    .accessibilityIdentifier("serverSettings.history")
+            } footer: {
+                Text("Where the server listens, its data folder and the programs it runs are set in its own file, lobby.config.json, on the server.")
+            }
+        default:
+            ServerSettingRows(model: model, page: page) { picking = $0 }
         }
+    }
+}
+
+/// The settings of a page that pages of their own (the Apple TVs) show below their controls:
+/// what the restart is doing, then the rows.
+struct ServerSettingsExtra: View {
+    let model: ServerSettingsModel
+    let page: SettingsPage
+
+    var body: some View {
+        if model.settings != nil {
+            RestartNotice(model: model)
+            ServerSettingRows(model: model, page: page) { _ in }
+        }
+    }
+}
+
+/// The one line under a page that says what it is for.
+struct SettingsPageNote: View {
+    let page: SettingsPage
+
+    var body: some View {
+        Section {
+        } footer: {
+            Text(page.summary)
+                .accessibilityIdentifier("settings.note.\(page.rawValue)")
+        }
+    }
+}
+
+extension View {
+    /// The changes of a page of server settings: the bar to undo or review them, the review,
+    /// loading, and what went wrong. `waits`: shows that the settings are loading.
+    func serverSettingsChanges(model: ServerSettingsModel, page: SettingsPage, waits: Bool = true) -> some View {
+        modifier(ServerSettingsChanges(model: model, page: page, waits: waits))
+    }
+}
+
+private struct ServerSettingsChanges: ViewModifier {
+    let model: ServerSettingsModel
+    let page: SettingsPage
+    let waits: Bool
+    @State private var showsReview = false
+    @Environment(\.motion) private var motion
+
+    private var keys: Set<String> { page.draftKeys(among: model.settings?.settings.map(\.key) ?? []) }
+
+    func body(content: Content) -> some View {
+        let changed = model.hasChanges(in: keys)
+        content
+            .overlay {
+                if waits, model.settings == nil {
+                    if let problem = model.problem {
+                        ContentUnavailableView(
+                            "The settings cannot be shown", systemImage: AppSymbol.server, description: Text(problem))
+                    } else {
+                        ProgressView()
+                    }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if changed {
+                    ChangesBar(model: model, keys: keys) { showsReview = true }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(motion.animation(.change), value: changed)
+            .task { await model.load() }
+            .refreshable { await model.load() }
+            .sheet(isPresented: $showsReview, onDismiss: { if model.review != nil { model.cancelReview() } }) {
+                ReviewSheet(model: model)
+            }
+            .alert(
+                "That did not work",
+                isPresented: Binding(get: { model.problem != nil && model.settings != nil }, set: { if !$0 { model.problem = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(model.problem ?? "")
+            }
     }
 }
 
@@ -123,23 +195,24 @@ enum FolderPick: Identifiable, Hashable {
     }
 }
 
-/// The changes that are not sent yet, and the way to look at what they do.
+/// The changes of a page that are not sent yet, and the way to look at what they do.
 private struct ChangesBar: View {
     let model: ServerSettingsModel
+    let keys: Set<String>
     let review: () -> Void
 
     var body: some View {
         HStack(spacing: AppTheme.Space.m) {
-            Button("Undo Changes") { model.discard() }
+            Button("Undo Changes") { model.discard(keys) }
                 .buttonStyle(QuietButtonStyle())
                 .accessibilityIdentifier("serverSettings.discard")
             Button {
                 Task {
-                    await model.prepareReview()
+                    await model.prepareReview(of: keys)
                     if model.review != nil { review() }
                 }
             } label: {
-                Text(model.changesRestart ? "Review and Restart…" : "Review…")
+                Text(model.changesRestart(in: keys) ? "Review and Restart…" : "Review…")
             }
             .buttonStyle(ProminentButtonStyle())
             .busy(model.isWorking)
@@ -233,22 +306,20 @@ private struct RestartNotice: View {
     }
 }
 
-/// The settings of one section, one row each.
-private struct SettingsSection: View {
+/// The plain settings of a page, one row each.
+private struct ServerSettingRows: View {
     let model: ServerSettingsModel
-    let section: ServerSettings.Section
-    var skipping: Set<String> = []
+    let page: SettingsPage
     let pick: (FolderPick) -> Void
 
     var body: some View {
-        let rows = model.settings(in: section.id).filter { !skipping.contains($0.key) }
+        let keys = page.rowKeys(among: model.settings?.settings.map(\.key) ?? [])
+        let rows = keys.compactMap { model.descriptor($0) }
         if !rows.isEmpty {
             Section {
                 ForEach(rows) { descriptor in
                     SettingRow(model: model, descriptor: descriptor) { pick(.setting(descriptor.key)) }
                 }
-            } header: {
-                Text(section.title)
             }
         }
     }

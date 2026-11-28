@@ -67,6 +67,39 @@ import Testing
         #expect(model.saved != nil)
     }
 
+    /// Each page reviews and saves its own changes; another page's wait for theirs.
+    @Test func aPageSendsOnlyItsOwnChanges() async throws {
+        let test = try test()
+        let app = try await test.launchPaired(as: "alex")
+        let model = ServerSettingsModel(app: app)
+        await model.load()
+        let keys = model.settings?.settings.map(\.key) ?? []
+        let general = SettingsPage.serverGeneral.draftKeys(among: keys)
+        let library = SettingsPage.libraryFolders.draftKeys(among: keys)
+
+        model.set("serverName", .string("Attic"))
+        model.set("rescanMinutes", .number(60))
+        #expect(model.hasChanges(in: general))
+        #expect(model.hasChanges(in: library))
+        #expect(!model.changesRestart(in: library))
+
+        await model.prepareReview(of: library)
+        let dry = try #require(test.household.stub.requests("PATCH", "/v1/settings").last)
+        let changes = try #require(dry.json()["changes"] as? [String: Any])
+        #expect(Array(changes.keys) == ["rescanMinutes"])
+
+        #expect(await model.apply())
+        let sent = try #require(test.household.stub.requests("PATCH", "/v1/settings").last)
+        #expect(Array(try #require(sent.json()["changes"] as? [String: Any]).keys) == ["rescanMinutes"])
+        // The General page's change is still there, to be reviewed on its page.
+        #expect(!model.hasChanges(in: library))
+        #expect(model.hasChanges(in: general))
+        #expect(model.value("serverName") == .string("Attic"))
+
+        model.discard(general)
+        #expect(!model.hasChanges)
+    }
+
     @Test func waitsForTheServerToComeBackAfterARestart() async throws {
         let test = try test()
         test.household.change {

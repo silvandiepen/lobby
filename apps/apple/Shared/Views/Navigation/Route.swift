@@ -13,17 +13,12 @@ enum Route: Hashable, Sendable {
     case category(String)
     /// A named part of the library, by its id.
     case group(String)
-    /// The manager's tools: devices and viewers.
-    case manage
     /// The household's categories, for a manager.
     case categories
     /// Access from outside, for a manager.
     case outside
-    /// The server's own settings, for a manager.
-    case serverSettings
-    /// The Apple TVs the server can wake, for a manager.
-    case appleTVs
-    case speakers
+    /// A page of Settings.
+    case settings(SettingsPage)
     /// Uploading files to the server, for a manager.
     case uploads
     /// The files of import folders and uploads that wait for a manager.
@@ -115,18 +110,12 @@ struct RouteView: View {
             CategoryPage(id: id)
         case .group(let id):
             GroupView(id: id)
-        case .manage:
-            ManagerView(model: app.manager())
         case .categories:
             CategoriesView(app: app)
         case .outside:
             OutsideView(app: app)
-        case .serverSettings:
-            ServerSettingsView(app: app)
-        case .appleTVs:
-            AppleTVsView(app: app)
-        case .speakers:
-            SpeakersView(app: app)
+        case .settings(let page):
+            SettingsPageView(page: page)
         case .uploads:
             UploadsView(app: app)
         case .inbox:

@@ -130,12 +130,8 @@ private struct ViewerCommands: View {
     let state: MenuState
 
     var body: some View {
-        if state.isKids {
-            Button("For Grown-ups…") {
-                Task { await app.askToLeaveKidsMode() }
-            }
-            .disabled(!state.showsLibrary || state.hasPlayer)
-        } else {
+        // In kids mode the way out is only in the child's own menu, behind its picture.
+        if !state.isKids {
             ForEach(state.profiles) { profile in
                 Toggle(isOn: Binding(
                     get: { state.activeProfileID == profile.id },

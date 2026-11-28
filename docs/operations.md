@@ -179,7 +179,7 @@ What it does to files, how to read the queue, and what to do after a power cut a
 1. **Lobby's folder** (`conversion.dir`, above), on the media drive and with its marker: moves are journalled there and uploads are received there. Without it files of import folders wait in the Inbox and uploads are refused.
 2. **Write access** for the user Lobby runs as: to the library folders that receive imports (Films, Series), to the import folders (a move takes a file out of them; clean-up removes leftovers), and to Lobby's folder.
 
-Then, in the app, Server Settings → Import folders → Add, and pick the folder with the browser, for example a Downloads folder on the media drive. It starts as *listed where it is*: its finished files appear in the library under a category named after it, and nothing there is moved. Switch it to *move into the library* only when nothing needs its files where they are; otherwise move single files from the Inbox. Or in the file, before the first start with the settings store:
+Then, in the app, Settings → Imports and Uploads → Add an Import Folder, and pick the folder with the browser, for example a Downloads folder on the media drive. It starts as *listed where it is*: its finished files appear in the library under a category named after it, and nothing there is moved. Switch it to *move into the library* only when nothing needs its files where they are; otherwise move single files from the Inbox. Or in the file, before the first start with the settings store:
 
 ```json
 { "import": { "folders": [{ "path": "/media/<drive>/Downloads", "mode": "index" }], "waitMinutes": 10, "copyAcrossDrives": false },

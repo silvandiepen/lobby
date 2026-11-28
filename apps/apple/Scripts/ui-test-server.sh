@@ -114,7 +114,7 @@ start_server() { # name port [server name]
   "stabilityMs": 100,
   "ffmpegPath": "${FFMPEG}",
   "ffprobePath": "${FFPROBE}",
-  "conversion": { "dir": "${WORK}/$1-lobby", "server": false },
+  "conversion": { "dir": "${WORK}/$1-lobby", "server": false, "minFreeGb": 1 },
   "roots": [
     { "path": "${WORK}/media/Movies", "name": "Test Films", "hint": "movies" },
     { "path": "${WORK}/media/Series", "name": "Test Series", "hint": "series" },

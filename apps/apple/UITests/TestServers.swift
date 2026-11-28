@@ -64,7 +64,9 @@ struct ManagerAPI {
 
     /// Types the code a new device shows.
     func approve(code: String, role: String = "viewer") async throws {
-        _ = try await request("POST", "pairing/approve", body: ["code": code, "role": role])
+        // "manager" and "viewer" are the roles of older apps; a household admin is an access.
+        let grant = role == "householdAdmin" ? ["access": role] : ["role": role]
+        _ = try await request("POST", "pairing/approve", body: ["code": code].merging(grant) { $1 })
     }
 
     /// Removes every paired device that is not the manager itself.

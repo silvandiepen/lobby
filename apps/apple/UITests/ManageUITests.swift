@@ -146,12 +146,14 @@ final class ManageUITests: LobbyUITestCase {
     func testTheFolderPickersOfServerSettingsStayOpen() async throws {
         _ = try await pairAsManager()
         openSettings()
-        scrolledTo(app.buttons["settings.server"], "Server Settings").tap()
+        scrolledTo(app.buttons["settings.libraryFolders"], "Library Folders").tap()
 
         let add = app.buttons["serverSettings.addFolder"]
         scrolledTo(add, "Add a Folder").tap()
         waitFor(app.navigationBars["Add a Folder"], "The Add a Folder sheet")
-        waitFor(app.buttons["browse.folder"].firstMatch, "The server's places, in the sheet")
+        // The server counts the videos of every place it lists. A network drive mounted on the Mac
+        // that runs it (an SMB share under /Volumes) makes that take half a minute.
+        waitFor(app.buttons["browse.folder"].firstMatch, "The server's places, in the sheet", timeout: 90)
         // Long enough for the settings around it to have loaded and been shown again.
         sleep(3)
         attachScreenshot("add-a-folder")
@@ -162,6 +164,8 @@ final class ManageUITests: LobbyUITestCase {
         app.navigationBars["Add a Folder"].buttons["Cancel"].tap()
         XCTAssertTrue(app.navigationBars["Add a Folder"].waitForNonExistence(timeout: 5))
 
+        app.navigationBars.buttons.firstMatch.tap()
+        scrolledTo(app.buttons["settings.imports"], "Imports and Uploads").tap()
         let addImport = app.buttons["serverSettings.addImportFolder"]
         scrolledTo(addImport, "Add an Import Folder").tap()
         waitFor(app.navigationBars["Add an Import Folder"], "The Add an Import Folder sheet")

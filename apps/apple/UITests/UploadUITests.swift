@@ -17,7 +17,7 @@ final class UploadUITests: LobbyUITestCase {
 
         app.buttons["profile.menu"].firstMatch.tap()
         waitFor(app.buttons["Settings…"], "Settings in the viewer menu").tap()
-        scrolledTo(app.buttons["settings.manage"], "Devices and Viewers").tap()
+        scrolledTo(app.buttons["settings.imports"], "Imports and Uploads").tap()
         let uploads = element("manage.uploads")
         for _ in 0..<4 where !(uploads.exists && uploads.isHittable) { app.swipeUp() }
         waitFor(uploads, "Upload, for a manager").tap()
@@ -27,7 +27,7 @@ final class UploadUITests: LobbyUITestCase {
         attachScreenshot("upload-destination")
         app.buttons["sheet.confirm"].tap()
         let arrived = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == %@ AND label CONTAINS 'Arrived.'", "upload.state.\(name)")).firstMatch
+            NSPredicate(format: "identifier IN %@ AND label CONTAINS 'Arrived.'", ["upload.state.\(name)", "upload.row.\(name)"])).firstMatch
         waitFor(arrived, "The upload to arrive", timeout: 60)
         attachScreenshot("upload-arrived")
 

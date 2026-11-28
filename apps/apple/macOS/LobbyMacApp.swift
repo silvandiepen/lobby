@@ -41,7 +41,8 @@ struct LobbyMacApp: App {
                     .environment(servers.active)
                     .environment(servers)
                     .tint(Color("AccentColor"))
-                    .frame(width: 480)
+                    // A sidebar of the subjects beside one page, as the system's own Settings.
+                    .frame(width: 780, height: 560)
                     .background(SolidWindow())
             }
         }

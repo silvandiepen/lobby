@@ -22,7 +22,7 @@ There are two ways a child uses Lobby.
 
 | | A device bound to a kids viewer | Kids mode on a grown-up's device |
 | --- | --- | --- |
-| How | A manager sets **This Device Is For** on the device's page (Devices and Viewers) | Someone chooses a kids viewer on Who is watching |
+| How | A manager sets **This Device Is For** on the device's page (Settings → Devices) | Someone chooses a kids viewer on Who is watching |
 | `kidsProfileId` | Set on the server | Not set |
 | Who enforces the limits | The server, on every request | The app; the server checks only Play On, waking, questions and screen time by the `profileId` the app names |
 | Way out | None on the device. Only a manager, from another device | The grown-up gate (below) |
@@ -48,9 +48,10 @@ Details that hold for both:
 
 ### Leaving kids mode: the grown-up gate
 
-On **iPhone, iPad and Mac** the way out is **For Grown-ups**: on the child's picture page (tap the
-picture on Home), on the resting, listening and asking pages, and as the picture itself with a
-server that knows no avatars. It asks for Face ID, Touch ID or the device passcode
+On **iPhone, iPad and Mac** the way out is **For Grown-ups**, and only there: in the child's own
+menu, behind its picture at the top of every kids page (also on the resting, listening and asking
+pages), or as the picture itself with a server that knows no avatars. No page, toolbar or menu
+bar has another. It asks for Face ID, Touch ID or the device passcode
 (`GrownUpGate.swift`, `.deviceOwnerAuthentication`: not biometrics alone, so a grown-up whose
 face is not on the device can type the passcode).
 
@@ -99,7 +100,7 @@ other app and website is covered by Screen Time's shield, which says "Only Lobby
 ### The Apple TV and the grown-ups' code
 
 The TV has no Face ID or passcode. A manager chooses a **four-digit code for the household**, on
-iPhone, iPad or Mac: Devices and Viewers, **Code for Grown-ups** (`KidsCodeSection.swift`). Each
+iPhone, iPad or Mac: Settings → Kids, **Code for Grown-ups** (`KidsCodeSection.swift`). Each
 household has its own; a guest household's manager chooses theirs (D-039, D-052).
 
 On the TV the child's own page has **For Grown-ups**, which opens a keypad (`TVGrownUpGate` in
@@ -243,7 +244,7 @@ On iPhone, iPad and Mac, the viewer's page → **When and What** (`KidsPlanPage.
   week or the default decides; or **The strictest place** (the strictest of the places' modes,
   passing places "As schedule" by); or Everything, Ask first, Only listening or Nothing.
 
-On Devices and Viewers each kids viewer has a glance under its name: "Now: Nothing until 15:00"
+On Settings → Viewers and → Kids (and Devices and Viewers in the sidebar) each kids viewer has a glance under its name: "Now: Nothing until 15:00"
 (`GET /v1/kids/now`, the strictest of the child's own devices).
 
 ### Ask to open, Ask per title, and answers
@@ -323,8 +324,8 @@ household's audiobooks are **Stories** in the apps (D-067).
 
 - **Where a child finds them.** While the mode allows listening, the kids bar has **Stories**
   (headphones) after Home, on iPhone, iPad and Mac, and a **Stories** place in the TV's sidebar. In
-  **Only listening** that page is all the kids screens are: "Time to listen", with the way out for
-  grown-ups at its foot; on the TV the child's own page and Stories. Kids Home shows **Keep
+  **Only listening** that page is all the kids screens are: "Time to listen", with the child's
+  picture (and so the way out) at the top; on the TV the child's own page and Stories. Kids Home shows **Keep
   listening** too. "There is nothing to listen to yet." when there is nothing.
 - **The page:** Keep listening (the stories begun, a tap goes on at once), the stories as big
   covers with their names and how far the child is, then Music, whose albums play at once
@@ -459,7 +460,7 @@ How it changes (`apps/apple/Shared/Services/KidsIcon.swift`):
 
 The setting is **Kids Icon in Kids Mode**, on by default, one per device whatever the server
 (`lobby.kidsIconInKidsMode` in the app's own defaults). On iPhone, iPad and Mac it is under
-**Settings → This Device**; the kids screens do not reach Settings. On the Apple TV it is on the
+**Settings → Kids Mode**; the kids screens do not reach Settings. On the Apple TV it is on the
 viewer page, and hidden in kids mode. Turned off, the primary icon stays, or comes back after the
 same wait.
 
@@ -479,7 +480,7 @@ rounded picture. It is decoration only: VoiceOver passes over it. It stands wher
   only;
 - **kids viewers on Who is watching**, on the corner of their picture (iPhone, iPad, Mac and Apple
   TV);
-- the **Kids Mode** section header in Settings (the Trailers in Kids Mode switch).
+- the **Kids Mode** and **Kids** rows of Settings, as their symbol.
 
 ### The kids look
 
@@ -502,7 +503,7 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
   silent switch on too), Play on TV, episodes as large pictures, and Related.
 - The child may change its own picture: tapping it on Home opens the pictures, with For Grown-ups
   on that page (D-037).
-- **Trailers in Kids Mode** (Settings, per server on this device, on by default) controls trailers
+- **Trailers in Kids Mode** (Settings → Kids Mode, per server on this device, on by default) controls trailers
   for a kids viewer. The kids title pages have no trailer button, so in the kids screens it changes
   nothing yet: **not built** on the kids pages.
 

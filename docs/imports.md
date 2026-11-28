@@ -6,7 +6,7 @@ Lobby itself never fetches media from anywhere. An import folder is any folder w
 
 ## Import folders
 
-A manager adds them in Server Settings → Import folders, with the folder browser. There are none by default. Each folder has a **mode**:
+A server admin adds them in Settings → Imports and Uploads, with the folder browser. There are none by default. Each folder has a **mode**:
 
 | Mode | What happens to a finished file |
 | --- | --- |
@@ -23,7 +23,7 @@ A file is looked at only when all of these hold:
 
 1. **Its name ends in a video extension** (`.mkv`, `.mp4`, `.m4v`, `.avi` and the other video extensions the library knows). A name with anything after the video extension (`Film.mkv.part`, `Film.mp4.abc`) is a file still being written, and waits until it is renamed.
 2. **No control file beside it.** A file of the same name with a temporary or control extension (`.part`, `.partial`, `.tmp`, `.crdownload` and similar) means a program is still at work.
-3. **It kept its size and date** for the wait set in Server Settings (`import.waitMinutes`, 10 by default), measured by Lobby itself across its looks, not taken from the file's date.
+3. **It kept its size and date** for the wait set in Settings → Imports and Uploads (`import.waitMinutes`, 10 by default), measured by Lobby itself across its looks, not taken from the file's date.
 4. **No other program has it open**, where that can be seen: on Linux, the processes of the user Lobby runs as (`/proc/<pid>/fd`). On a Mac this cannot be seen and is not checked.
 
 Until then it is in the **waiting** view, with the reason.

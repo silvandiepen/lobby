@@ -17,6 +17,8 @@ final class ServerSettingsModel {
     private(set) var review: SettingsChange?
     /// An earlier version to go back to, when that is what is being reviewed.
     private(set) var restoring: Int?
+    /// The keys whose changes are being reviewed: those of one page. nil for all of them.
+    private(set) var reviewing: Set<String>?
     private(set) var restart: Restart = .none
     /// "Saved." after a change, for a moment.
     private(set) var saved: String?
@@ -83,6 +85,18 @@ final class ServerSettingsModel {
     /// Some of the changes are taken only after a restart.
     var changesRestart: Bool { drafts.keys.contains { descriptor($0)?.restarts == true } }
 
+    /// The changes among `keys`: a page reviews and saves its own, whatever other pages hold.
+    func drafts(in keys: Set<String>?) -> [String: SettingValue] {
+        guard let keys else { return drafts }
+        return drafts.filter { keys.contains($0.key) }
+    }
+
+    func hasChanges(in keys: Set<String>) -> Bool { !drafts(in: keys).isEmpty }
+
+    func changesRestart(in keys: Set<String>) -> Bool {
+        drafts(in: keys).keys.contains { descriptor($0)?.restarts == true }
+    }
+
     // MARK: Changing
 
     func set(_ key: String, _ value: SettingValue) {
@@ -93,13 +107,19 @@ final class ServerSettingsModel {
         }
         review = nil
         restoring = nil
+        reviewing = nil
         saved = nil
     }
 
-    func discard() {
-        drafts = [:]
+    func discard(_ keys: Set<String>? = nil) {
+        if let keys {
+            drafts = drafts.filter { !keys.contains($0.key) }
+        } else {
+            drafts = [:]
+        }
         review = nil
         restoring = nil
+        reviewing = nil
     }
 
     var folders: [LibraryFolder] { LibraryFolder.list(value("roots")) }
@@ -119,16 +139,18 @@ final class ServerSettingsModel {
         setFolders(folders.filter { $0.path != folder.path })
     }
 
-    /// Asks the server what the changes will do. Nothing is changed yet.
-    func prepareReview() async {
-        guard let settings, hasChanges, !isWorking else { return }
+    /// Asks the server what the changes among `keys` will do (all changes when nil). Nothing is
+    /// changed yet.
+    func prepareReview(of keys: Set<String>? = nil) async {
+        let drafts = self.drafts(in: keys)
+        guard let settings, !drafts.isEmpty, !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
         do {
-            let drafts = self.drafts
             review = try await app.asManager {
                 try await $0.changeSettings(drafts, baseVersion: settings.version, dryRun: true)
             }
+            reviewing = keys
             restoring = nil
         } catch {
             problem = await problemText(error)
@@ -143,6 +165,7 @@ final class ServerSettingsModel {
         do {
             review = try await app.asManager { try await $0.restoreSettings(version: version, dryRun: true) }
             restoring = version
+            reviewing = nil
         } catch {
             problem = await problemText(error)
         }
@@ -151,6 +174,7 @@ final class ServerSettingsModel {
     func cancelReview() {
         review = nil
         restoring = nil
+        reviewing = nil
     }
 
     /// Makes the reviewed change. When the server restarts for it, waits until it is back.
@@ -160,7 +184,8 @@ final class ServerSettingsModel {
         isWorking = true
         defer { isWorking = false }
         do {
-            let drafts = self.drafts
+            let reviewing = self.reviewing
+            let drafts = self.drafts(in: reviewing)
             let restoring = self.restoring
             let result = try await app.asManager { client in
                 if let restoring {
@@ -168,9 +193,14 @@ final class ServerSettingsModel {
                 }
                 return try await client.changeSettings(drafts, baseVersion: settings.version, dryRun: false)
             }
-            self.drafts = [:]
+            if restoring != nil {
+                self.drafts = [:]
+            } else {
+                self.drafts = self.drafts.filter { !drafts.keys.contains($0.key) }
+            }
             review = nil
             self.restoring = nil
+            self.reviewing = nil
             if result.restarting {
                 await waitForRestart(after: result.bootId)
             } else {

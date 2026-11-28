@@ -29,10 +29,16 @@ struct KidsControlPage: View {
             .accessibilityElement(children: .combine)
             if case .asking(let asking) = screen { askingFooter(asking) }
             Spacer(minLength: 0)
-            KidsGrownUpsButton()
         }
         .padding(AppTheme.Space.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The way out is only in the child's own menu, behind its picture: this page has no
+        // other, so the picture is here too, where it is on every kids page.
+        .overlay(alignment: .topTrailing) {
+            KidsAvatar()
+                .padding(.horizontal, KidsTheme.margin)
+                .padding(.top, AppTheme.Space.s)
+        }
         .background(KidsTheme.page(contrast).ignoresSafeArea())
         .foregroundStyle(.white)
     }
@@ -83,18 +89,5 @@ struct KidsCountdown: View {
                     .accessibilityAddTraits(.updatesFrequently)
             }
         }
-    }
-}
-
-/// The way out for a grown-up, as on the child's own page: it asks for Face ID or the passcode.
-struct KidsGrownUpsButton: View {
-    @Environment(AppModel.self) private var app
-
-    var body: some View {
-        Button("For Grown-ups") { Task { await app.askToLeaveKidsMode() } }
-            .buttonStyle(.lobbyText)
-            .foregroundStyle(.white.opacity(0.8))
-            .padding(.bottom, AppTheme.Space.m)
-            .accessibilityIdentifier("kids.forGrownUps")
     }
 }

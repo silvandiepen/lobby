@@ -248,7 +248,9 @@ final class KidsUITests: LobbyUITestCase {
         let group = app.switches["viewer.group.Kids"]
         waitFor(element("viewer.summary"), "What there is to watch")
         for _ in 0..<4 where !(group.exists && group.isHittable) { app.swipeUp() }
-        group.switches.firstMatch.tap()
+        // A new kids viewer begins with the household's kids part (KidsSetup.defaultLimits), which
+        // is on already by the time the page shows it; only a viewer that began without it needs the tap.
+        if (group.switches.firstMatch.value as? String) != "1" { group.switches.firstMatch.tap() }
         attachScreenshot("manage-viewer")
         let summary = app.staticTexts.matching(NSPredicate(format: "label == '2 films and 0 series to watch.'")).firstMatch
         for _ in 0..<4 where !summary.exists { app.swipeDown() }
@@ -266,7 +268,7 @@ final class KidsUITests: LobbyUITestCase {
         } else {
             app.buttons["profile.menu"].firstMatch.tap()
             waitFor(app.buttons["Settings…"], "Settings in the viewer menu").tap()
-            scrolledTo(app.buttons["settings.manage"], "Devices and Viewers").tap()
+            scrolledTo(app.buttons["settings.viewers"], "Viewers").tap()
         }
     }
 }
