@@ -36,6 +36,26 @@ Managers arrange on **Categories**: dragging a row between a category's sections
 
 D-059. During an episode's intro the player shows **Skip Intro**: over the system player at the bottom right on iPhone, iPad and Mac, and as the system player's own contextual button on the Apple TV, where the remote's focus goes by itself. From where the credits start it offers Play Next (`PlayerModel.creditsStartMs` is where an up-next countdown begins). What each viewer wants is under Settings → Intros and Credits on their own device, and on a viewer's page for a manager, also for a kids viewer (a child's device cannot change it): Show Skip Intro, Skip Automatically or Off; Show Next Episode or Off. The remote on a phone that controls another device shows Skip Intro during that player's intro. A server admin has a season's intros found again from the season's More menu. The logic is LobbyKit's `Playback/SkipMoment.swift`; the button is `SkipIntroButton` in `Views/Player/PlayerOverlay.swift`.
 
+## Lock to Lobby
+
+D-070; what a person sees is in [kids.md](kids.md#lock-to-lobby-only-lobby-on-the-device-iphone-and-ipad). iPhone and iPad only: `iOS/ScreenTimeLock.swift` uses FamilyControls (`.individual` authorisation) and ManagedSettings (a named store shielding `.all()` application and web domain categories, with `denyAppRemoval`); `LobbyShieldConfiguration` (`apps/apple/ShieldConfiguration`) draws the shield. The rules are `KidsLock` in `Shared/Services/KidsLock.swift`, behind the `KidsLockSurface` protocol so that the tests drive them with a fake; the Mac and Apple TV build without the Screen Time file and report `unsupported`.
+
+**Signing.** `project.yml` gives the app and the shield extension `com.apple.developer.family-controls`. A development build signs with it under automatic provisioning: `LOBBY_TEAM=<team> npm run apple:generate`, then `xcodebuild … -allowProvisioningUpdates`, and Xcode adds Family Controls (Development) to the App IDs `mt.sil.lobby` and `mt.sil.lobby.shield`.
+
+**Before an App Store or TestFlight build can ship it.** Distribution needs the **Family Controls (Distribution)** entitlement, which Apple grants per app on request by the account holder (developer.apple.com → Family Controls entitlement request), for the app and for the shield extension's bundle id. Until Apple approves, a distribution build with this entitlement does not sign; the choices then are to wait, or to build for the App Store from a branch without it. App Review will also want the kids lock described in the review notes, and the privacy answers still hold: nothing about other apps leaves the device (Lobby sees no app names or usage, only its own shield on or off).
+
+**Checked on a real iPad (not in the simulator, which has no Screen Time):**
+
+1. A development build signed with the team installs with the Family Controls entitlement and the shield extension embedded.
+2. Settings → Kids Mode → Set Up Lock to Lobby… shows the system's Screen Time sheet, which asks for Face ID or the passcode; afterwards the row says Set up. Cancelling leaves Not set up and a line why.
+3. With the lock on for the child and the device in kids mode: Home and the app switcher lead to other apps only as far as the shield, which shows the sparkle door, "Only Lobby right now" and OK. Safari's websites are shielded too. Lobby stays usable. Which system apps stay open (Phone, Settings, others Screen Time always allows) is as iOS decides; note what they are.
+4. Lobby's icon cannot be deleted while locked (Remove App is refused); other apps neither.
+5. For Grown-ups with Face ID or the passcode lifts the shield at once; closing Who is watching without a choice puts it back; choosing a grown-up lifts it for good.
+6. Quitting Lobby from the app switcher, and restarting the iPad, keep the shield while kids mode is on.
+7. From a parent's phone, When and What → Lock to Lobby: the per-device switch locks and unlocks the iPad within a second or two, also from away; with the iPad in flight mode, the switch applies once it is back online and Lobby is opened. The parent's page then says Locked to Lobby or Set up.
+8. On an iPad where Screen Time was never allowed, the parent's page says "Lock not set up on this device". Taking Lobby's Screen Time access away in Settings → Screen Time, then opening Lobby, says the same and lifts the shield.
+9. A device bound to the child: For Grown-ups shows "This device is for …" with Set Up Lock to Lobby… there, and the lock is lifted only from a parent's device.
+
 ## Design direction
 
 Use compact near-black controls, subtly translucent surfaces, colorful recognizable navigation icons, generous poster art, and restrained motion. Use tinted fills for selection. Reserve focus treatments for actual keyboard or remote focus. Home screen labels must remain readable over bright cover art. Prefer native playback, menus, and platform navigation. Never start a trailer simply because a card has focus.
