@@ -623,7 +623,7 @@ Context: grown-ups should set, from an admin's device, when a child may watch an
 
 **Music for kids.** Until now a kids device had none (D-027, D-044). Now music is on for every child unless a grown-up turns it off, wherever the mode allows listening, and limited to the music libraries chosen for the child (`musicSourceIds`, all by default; checked when a song is played, the listing itself is the household's); off, music is `404` as before. Per-album music limits stay a card of their own. A guest household with a part of the library still has no music (D-052).
 
-**Places never send where the child is.** The device tells the server only "inside place X", "inside none" or "cannot tell"; `PUT /v1/me/kids/place` refuses any other field. The server keeps only the last state per device, in memory, for six hours. Cannot tell, permission off or nothing said yet: the "location unknown" mode, by default the strictest place's.
+**Places never send where the child is.** The device tells the server only "inside place X", "inside none" or "cannot tell"; `PUT /v1/me/kids/place` refuses any other field. The server keeps only the last state per device, in memory, for six hours. Cannot tell, permission off or nothing said yet: the "location unknown" mode, by default the strictest place's (changed by D-069: by default the places then do not apply).
 
 **Who decides.** The child's household's admins and the server's admins, also for a guest household's child; never another guest household, never a viewer's device, never the child's own (the routes are `404` there). Optionally only chosen grown-ups (viewers with their devices) are asked, and the child's screen names them. Answering, overriding and ending are open from outside for them (`kids` in `OUTSIDE_ROUTES`); changing the plan is not.
 
@@ -728,3 +728,19 @@ Context: "Can the Lobby app on iPad and iPhone also say Play on HomePod?" Play O
 **Apple TVs and Macs are not speakers here.** They advertise AirPlay audio too, but are in Play On as themselves; as speakers they would be there twice.
 
 **Not built.** Several speakers at once (a group); shuffle and repeat on a speaker (the queue goes in order, as sent); a story's chapters and the sleep timer on the speaker's remote; PIN pairing for speakers with a screen; speakers of a guest household's network; Play On to a speaker from the Apple TV.
+
+## D-069 Where a device cannot tell, the schedule decides unless a grown-up chose otherwise
+
+Context: a child's plan had 07:00–14:00 Only listening and a place "School" with Nothing. Her device had no Location permission yet, so it could not tell where it was, and "where it cannot tell" was unset, which meant the strictest place's mode: Nothing beat the schedule, and the device rested all day. The owner's answer for such a case in the kids design review: it takes the last setting, or whatever is set for that time.
+
+**Unset is "as schedule".** `whenPlaceUnknown: null` now means the places do not apply while the device cannot tell (no permission yet, denied, Location off, no fix, nothing said for six hours, a place no longer in the plan): the schedule's block or the default decides, and that is the reason shown (`schedule` or `default`). The strictest place stays as an explicit choice, `"strictest"`; a mode can still be chosen too. Either of those is reason `placeUnknown` when it is what holds. Plans already stored with `null` get the new behaviour on purpose, so there is no migration. The signed copy for offline use carries the same value, and the apps work it out the same way.
+
+**A place can be "as schedule".** A place's `mode` may be `"schedule"`: inside it the place changes nothing, so a Home place can sit beside School without its own mode. The strictest place and the strictest mode a plan names pass such places by; with only such places there is no strictest place, and nothing holds from it.
+
+**New places start where the grown-up is.** The place editor asks the grown-up's own iPhone, iPad or Mac for one fix (permission when it was never asked, then at most eight seconds), and has Use My Location for later. While it waits there is no pin. Without a fix it shows the plan's first place or the country of the device's region settings, never a fixed city. Nothing of it is kept or sent beyond the place the grown-up saves.
+
+**The child is not asked about Location.** A grown-up who taps the avatar on a bound device reads in the "For Grown-ups" sheet that the plan has places and Lobby may not use Location, and where to allow it.
+
+**Older apps.** An app from before this reads `"strictest"` and `"schedule"` as modes it does not know, which count as Nothing: it fails closed until it is updated. It still reads `null` as the strictest place offline.
+
+**Rejected:** keeping the strictest place as the default (it rests a child all day for a missing permission, which a parent does not see); taking the last place the device said (the server keeps it six hours only, in memory, and an old place is a guess); a migration that set `"strictest"` on stored plans (it would keep exactly the case that went wrong).
