@@ -61,7 +61,12 @@ const asked = (): Record<string, unknown>[] =>
 
 let helper: WakeHelper | null = null;
 const fakeHelper = (): WakeHelper => {
-  helper = new WakeHelper({ python: process.execPath, flags: [], script: FAKE, args: ["--state", state] });
+  helper = new WakeHelper({
+    python: process.execPath,
+    flags: [],
+    script: FAKE,
+    args: ["--state", state],
+  });
   return helper;
 };
 
