@@ -45,6 +45,31 @@ const WATCH_GAP_MS = 120_000;
 const KEEP_MS = 14 * 86_400_000;
 
 export type RequestKind = "open" | "title";
+
+/** What a device said of its lock: Screen Time allowed there, not (yet), or not an iPhone or iPad. */
+export const LOCK_STATUSES = ["ready", "notSetUp", "unsupported"] as const;
+export type LockStatus = (typeof LOCK_STATUSES)[number];
+
+/** Whether a device of a child is to be locked to Lobby in kids mode, and why. */
+export interface LockWish {
+  wanted: boolean;
+  /** `viewer`: the child's plan says; `device`: a grown-up chose for this device. */
+  source: "viewer" | "device";
+}
+
+/** A device of a child as its grown-ups see it for Lock to Lobby. */
+export interface LockDevice extends LockWish {
+  deviceId: string;
+  name: string;
+  platform: string;
+  /** What a grown-up chose for this device; null: as the plan says. */
+  choice: boolean | null;
+  /** What the device said last; null: nothing yet. */
+  status: LockStatus | null;
+  /** Whether it said it shields the other apps now. */
+  locked: boolean;
+  reportedAt: number | null;
+}
 export type RequestState = "waiting" | "allowed" | "declined" | "expired" | "cancelled";
 export type Answer = "watch" | "listen" | "no";
 
@@ -295,6 +320,7 @@ export class KidsControl {
   /** Forgets everything of a viewer that is gone. */
   forget(profileId: string): void {
     for (const table of [
+      "kids_lock",
       "kids_plan",
       "kids_override",
       "kids_grant",
@@ -305,6 +331,107 @@ export class KidsControl {
     }
     for (const [id, one] of this.places) if (one.profileId === profileId) this.places.delete(id);
     this.watching.delete(profileId);
+  }
+
+  // ---- Lock to Lobby ----
+
+  private lockRow(
+    profileId: string,
+    deviceId: string,
+  ):
+    | {
+        wanted: number | null;
+        status: LockStatus | null;
+        locked: number;
+        reported_at: number | null;
+      }
+    | undefined {
+    return this.db.get(
+      "select wanted, status, locked, reported_at from kids_lock where profile_id = ? and device_id = ?",
+      [profileId, deviceId],
+    );
+  }
+
+  /** Whether this device is to be locked to Lobby while this child is in front in kids mode. */
+  lockWish(profileId: string, deviceId: string): LockWish {
+    if (!this.isKids(profileId)) return { wanted: false, source: "viewer" };
+    const chosen = this.lockRow(profileId, deviceId)?.wanted ?? null;
+    if (chosen !== null) return { wanted: chosen === 1, source: "device" };
+    return { wanted: this.plan(profileId).lockToLobby, source: "viewer" };
+  }
+
+  /**
+   * The devices a child uses, for the grown-ups' switches: those bound to it, and those that
+   * said something of their lock while it was in front.
+   */
+  lockDevices(profileId: string): LockDevice[] {
+    const profile = this.profile(profileId);
+    if (!profile) return [];
+    const rows = new Map(
+      this.db
+        .all<{
+          device_id: string;
+          wanted: number | null;
+          status: LockStatus | null;
+          locked: number;
+          reported_at: number | null;
+        }>(
+          "select device_id, wanted, status, locked, reported_at from kids_lock where profile_id = ?",
+          [profileId],
+        )
+        .map((row) => [row.device_id, row]),
+    );
+    return this.devices
+      .list()
+      .filter(
+        (one) =>
+          one.revokedAt === null &&
+          one.householdId === profile.household_id &&
+          (one.kidsProfileId === profileId || (one.kidsProfileId === null && rows.has(one.id))),
+      )
+      .map((one) => {
+        const row = rows.get(one.id);
+        return {
+          deviceId: one.id,
+          name: one.name,
+          platform: one.platform,
+          ...this.lockWish(profileId, one.id),
+          choice: row?.wanted === null || row?.wanted === undefined ? null : row.wanted === 1,
+          status: row?.status ?? null,
+          locked: row?.locked === 1,
+          reportedAt: row?.reported_at ?? null,
+        };
+      });
+  }
+
+  /** Whether a grown-up may switch this device's lock for this child. */
+  isLockDevice(profileId: string, deviceId: string): boolean {
+    return this.lockDevices(profileId).some((one) => one.deviceId === deviceId);
+  }
+
+  /** A grown-up's choice for one device: locked, not locked, or (null) as the plan says. */
+  setLock(profileId: string, deviceId: string, wanted: boolean | null): void {
+    const value = wanted === null ? null : wanted ? 1 : 0;
+    this.db.run(
+      `insert into kids_lock (profile_id, device_id, wanted, updated_at) values (?, ?, ?, ?)
+       on conflict (profile_id, device_id) do update set wanted = excluded.wanted,
+         updated_at = excluded.updated_at`,
+      [profileId, deviceId, value, this.now()],
+    );
+    this.changed(profileId);
+  }
+
+  /** What a device says of its lock. Kept, so that the grown-ups see it after a restart too. */
+  reportLock(profileId: string, deviceId: string, status: LockStatus, locked: boolean): void {
+    const now = this.now();
+    this.db.run(
+      `insert into kids_lock (profile_id, device_id, status, locked, reported_at, updated_at)
+       values (?, ?, ?, ?, ?, ?)
+       on conflict (profile_id, device_id) do update set status = excluded.status,
+         locked = excluded.locked, reported_at = excluded.reported_at,
+         updated_at = excluded.updated_at`,
+      [profileId, deviceId, status, locked ? 1 : 0, now, now],
+    );
   }
 
   // ---- Where ----
@@ -737,6 +864,8 @@ export class KidsControl {
         override: this.override(profileId),
         grants: this.grants(profileId),
         screenTime: { day, seconds: this.videoSeconds(profileId, day) },
+        // Offline too: a lock switched on stays on until the device hears otherwise.
+        lock: this.lockWish(profileId, deviceId).wanted,
       }),
     );
     return {

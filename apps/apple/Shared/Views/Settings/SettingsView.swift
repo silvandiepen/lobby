@@ -307,10 +307,15 @@ struct SettingsView: View {
                         "Trailers in Kids Mode",
                         isOn: Binding(get: { app.kidsTrailers }, set: { app.kidsTrailers = $0 }))
                         .accessibilityIdentifier("settings.kidsTrailers")
+                    if let lock = app.environment.kidsLock {
+                        KidsLockSetUp(lock: lock)
+                    }
                 } header: {
                     Label { Text("Kids Mode") } icon: { KidsDoorMark(size: 18) }
                 } footer: {
-                    Text("A kids viewer sees the trailer of a title they may watch, played inside Lobby. Off: no trailers in kids mode on this device.")
+                    Text(app.environment.kidsLock == nil
+                        ? "A kids viewer sees the trailer of a title they may watch, played inside Lobby. Off: no trailers in kids mode on this device."
+                        : "A kids viewer sees the trailer of a title they may watch, played inside Lobby. Off: no trailers in kids mode on this device. Lock to Lobby: when a manager turns it on for a child, every other app is closed to them while they are in kids mode here. A grown-up allows it once on this device.")
                 }
                 Section {
                     Button("Sign Out", systemImage: AppSymbol.signOut, role: .destructive) { confirmsSignOut = true }

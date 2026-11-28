@@ -137,6 +137,10 @@ final class KidsControlModel {
     private(set) var plan: KidsPlan?
     /// Who is asked, by name.
     private(set) var askNames: [String] = []
+    /// Whether this device is to lock itself to Lobby while the child is in front: what the
+    /// server said last, on the live channel or with the plan; offline and before that, what the
+    /// signed copy says. A lock switched on holds offline until the device hears otherwise.
+    private(set) var lockWanted: Bool
 
     /// The places to watch on this device.
     var places: [KidsPlace] { plan?.places ?? cache.copy?.plan.places ?? [] }
@@ -152,6 +156,7 @@ final class KidsControlModel {
         self.cache = cache
         self.clock = clock
         self.save = save
+        lockWanted = cache.copy?.lock ?? false
     }
 
     /// What the screens show now.
@@ -209,6 +214,16 @@ final class KidsControlModel {
         } catch {
             // Not the server's, or not for this device: the copy kept so far stays.
         }
+        // A server from before the lock says nothing: there is none.
+        lockWanted = me.lock?.wanted ?? false
+    }
+
+    /// The live channel said whether this device is to be locked. True when that changed.
+    @discardableResult
+    func heard(lock: Bool?) -> Bool {
+        guard let lock, lock != lockWanted else { return false }
+        lockWanted = lock
+        return true
     }
 
     /// The live channel said what the child may do now.
@@ -248,6 +263,8 @@ final class KidsControlModel {
         cache.note(clock)
         save(cache)
         now = cache.now(place: place, clock: clock)
+        // The copy is fetched again whenever the lock is switched, so it says the latest.
+        if let copied = cache.copy?.lock { lockWanted = copied }
     }
 
     /// Counts video that played on this device, for offline screen time.
@@ -262,6 +279,7 @@ final class KidsControlModel {
         request = nil
         retryAt = nil
         isOffline = false
+        lockWanted = false
     }
 
     // MARK: Asking

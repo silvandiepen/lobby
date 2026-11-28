@@ -64,6 +64,38 @@ face is not on the device can type the passcode).
 
 On the Mac, the Settings window shows "Settings are for grown-ups" while the kids screens are up.
 
+### Lock to Lobby: only Lobby on the device (iPhone and iPad)
+
+D-070. While a child is in front in kids mode, an iPhone or iPad can be locked to Lobby: every
+other app and website is covered by Screen Time's shield, which says "Only Lobby right now" and
+"Ask a grown-up if you want to use something else." with the sparkle door (the
+`LobbyShieldConfiguration` extension). Lobby cannot be deleted meanwhile.
+
+- **Only in kids mode.** Grown-up mode never locks. **For Grown-ups**, past the usual check,
+  lifts it while Who is watching is up; closing Who is watching without a choice is kids mode
+  again and locks again; choosing a grown-up ends it. A device bound to a child stays locked
+  until a grown-up switches it off from another device.
+- **Set up once per device.** Screen Time has to allow Lobby on that device: Settings → Kids Mode
+  → **Set Up Lock to Lobby…**, or on a device bound to a child, which never reaches Settings, on
+  the page after For Grown-ups. The system asks the device's owner for Face ID or the passcode
+  (FamilyControls, `.individual`: no Family Sharing needed). Until then nothing is locked.
+- **Switched by the grown-ups.** On the child's **When and What** page, **Lock to Lobby**: "Lock
+  this device to Lobby in kids mode" for the child (saved with the plan, off by default), and
+  below it each of the child's devices with a switch that acts at once, also from away, and what
+  the device said: "Locked to Lobby", "Set up. Locks when kids mode is on.", "Lock not set up on
+  this device" or "Only an iPhone or iPad can be locked". The devices are those bound to the
+  child and grown-ups' devices on which the child was in kids mode. Household admins of the
+  child's household and server admins switch it; a viewer's device only reads.
+- **Reaching the device.** A switch goes over the live channel at once. A device that is offline
+  or closed hears it as soon as it is back; offline the last word holds (it is in the signed copy
+  of the plan), so a lock that was on stays on.
+- **The Mac and the Apple TV** cannot be locked; they say so to the grown-ups.
+- A grown-up with the device's passcode can take Screen Time away from Lobby in the Settings app;
+  the grown-ups then read "Lock not set up on this device".
+- Tested with a fake Screen Time (`apps/apple/Tests/KidsLockTests.swift`): the simulator has
+  none. The shield itself can only be seen on a device ([apple-apps.md, Lock to
+  Lobby](apple-apps.md#lock-to-lobby)).
+
 ### The Apple TV and the grown-ups' code
 
 The TV has no Face ID or passcode. A manager chooses a **four-digit code for the household**, on
@@ -521,6 +553,7 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
 | No Play on TV | The mode must allow video, the device needs `allowRemote`, and an Apple TV must have Lobby open. A sleeping TV is offered only at home and only with Kids can turn on the TV. |
 | No music or stories for the child | Music is off in the plan, its libraries are not chosen, the household sees only a part of the library, or the mode allows no listening now (Nothing, Ask to open). |
 | No Watch the film on a story | The film's title is not the story's, the child may not see that film, or the mode shows no films now (Only listening). |
+| A child's iPad is not locked to Lobby | The device must be in kids mode with the child in front, the lock on (When and What → Lock to Lobby, for the child or that device), and set up on that device once (Settings → Kids Mode, or after For Grown-ups on a bound device). "Lock not set up on this device" means the last. A development build only: the App Store app needs Apple's approval first. |
 | The kids icon did not change | The setting is off; or it waits for 20 seconds with the app in front and no film playing. The system's alert when it changes is expected. On a Mac only the Dock changes, while the app runs. |
 
 ## Where it lives
@@ -534,5 +567,6 @@ The kids screens are the regular app, simpler, larger and richer in colour (`Kid
 - Apps: `Shared/State/AppModel.swift` (MARK: Kids mode), `AppModel+Stories.swift`, `Shared/State/Kids*.swift`,
   `Shared/Views/Kids/`, `Shared/Views/Manage/KidsPlanPage.swift`,
   `Shared/Views/KidsQuestions/KidsAskSheet.swift`, `Shared/Services/GrownUpGate.swift`,
-  `KidsPlaceWatcher.swift`, `KidsIcon.swift`, `PushCenter.swift`,
+  `KidsPlaceWatcher.swift`, `KidsIcon.swift`, `KidsLock.swift`, `PushCenter.swift`,
+  `iOS/ScreenTimeLock.swift`, `ShieldConfiguration/`,
   `tvOS/Views/TVKidsViews.swift`, tests `Tests/Kids*Tests.swift`.

@@ -246,6 +246,11 @@ private struct KidsGrownUpNotice: View {
                             .foregroundStyle(.lobbySecondary)
                             .accessibilityIdentifier("kids.notice.noLocation")
                     }
+                    // A device for a child never reaches Settings: its lock is set up here, past
+                    // the grown-up's check.
+                    if notice == .bound, let lock = app.environment.kidsLock {
+                        KidsLockSetUp(lock: lock)
+                    }
                 }
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: AppTheme.readableWidth)

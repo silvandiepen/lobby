@@ -290,12 +290,47 @@ import Testing
         #expect(now.at.waiting)
         #expect(now.next?.detail == "Bedtime")
         let event = LiveEventParser.decode(.init(id: nil, event: "kidsMode", data: #"{"profileId":"yeva","now":\#(json)}"#))
-        guard case .kidsMode(let profile, let decoded)? = event else {
+        guard case .kidsMode(let profile, let decoded, let lock)? = event else {
             Issue.record("not a kids mode event")
             return
         }
         #expect(profile == "yeva")
         #expect(decoded == now)
+        // A server from before the lock says nothing of it.
+        #expect(lock == nil)
+        let locking = LiveEventParser.decode(.init(id: nil, event: "kidsMode", data: #"{"profileId":"yeva","now":\#(json),"lock":true}"#))
+        guard case .kidsMode(_, _, let lock)? = locking else {
+            Issue.record("not a kids mode event")
+            return
+        }
+        #expect(lock == true)
+    }
+
+    @Test func reportsTheLockAndSwitchesItForOneDevice() async throws {
+        let view = #"{"profileId":"yeva","plan":{"lockToLobby":true},"planned":true,"timeZone":"Europe/Amsterdam","now":{"mode":"everything","reason":"default","detail":null,"browse":true,"video":"all","titles":[],"listening":true,"waiting":false,"grantId":null,"until":null,"next":null,"screenTime":null},"lockDevices":[{"deviceId":"tablet","name":"Tablet","platform":"ipados","wanted":false,"source":"device","choice":false,"status":"notSetUp","locked":false,"reportedAt":5}]}"#
+        let server = StubServer { request in
+            request.path == "/v1/me/kids/lock"
+                ? .json(200, #"{"lock":{"wanted":true,"source":"viewer"}}"#) : .json(200, view)
+        }
+        let client = try server.client()
+        let wish = try await client.reportKidsLock(.notSetUp, locked: false, profileID: "yeva")
+        #expect(wish == KidsLockWish(wanted: true, source: .viewer))
+        let answer = try await client.setKidsLock(nil, deviceID: "tablet", profileID: "yeva")
+        #expect(answer.plan.lockToLobby)
+        #expect(answer.lockDevices == [
+            KidsLockDevice(deviceId: "tablet", name: "Tablet", wanted: false, source: .device, choice: false, status: .notSetUp, reportedAt: 5)
+        ])
+        _ = try await client.setKidsLock(true, deviceID: "tablet", profileID: "yeva")
+        let bodies = try server.recorded.map { try $0.json() }
+        #expect(bodies[0]["status"] as? String == "notSetUp")
+        #expect(bodies[0]["locked"] as? Bool == false)
+        #expect(bodies[0]["profileId"] as? String == "yeva")
+        // "As the plan says" is sent as null, not left out.
+        #expect(bodies[1].keys.sorted() == ["lock"])
+        #expect(bodies[1]["lock"] is NSNull)
+        #expect(bodies[2]["lock"] as? Bool == true)
+        #expect(server.recorded.map(\.path) == ["/v1/me/kids/lock", "/v1/profiles/yeva/kids/lock/tablet", "/v1/profiles/yeva/kids/lock/tablet"])
+        #expect(server.recorded.allSatisfy { $0.method == "PUT" })
     }
 
     @Test func tellsThePlaceAndNeverWhereTheDeviceIs() async throws {

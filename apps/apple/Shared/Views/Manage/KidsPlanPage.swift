@@ -29,6 +29,7 @@ struct KidsPlanPage: View {
                 awaySection
                 musicSection(view)
                 placesSection
+                lockSection(view)
             } else {
                 ProgressView()
             }
@@ -225,6 +226,41 @@ struct KidsPlanPage: View {
             }
         } header: {
             Text("Music")
+        }
+    }
+
+    // MARK: Lock to Lobby
+
+    private func lockSection(_ view: KidsPlanView) -> some View {
+        @Bindable var editor = editor
+        return Section {
+            Toggle("Lock this device to Lobby in kids mode", isOn: $editor.plan.lockToLobby)
+                .accessibilityIdentifier("kidsPlan.lockToLobby")
+            ForEach(view.lockDevices) { device in
+                Toggle(
+                    isOn: Binding(get: { device.wanted }, set: { on in Task { await editor.setLock(on, device: device.deviceId) } })
+                ) {
+                    VStack(alignment: .leading) {
+                        Text(device.name)
+                        if device.status == .ready || device.status == .unsupported {
+                            Text(KidsLockText.status(device))
+                                .font(.footnote)
+                                .foregroundStyle(.lobbySecondary)
+                        } else {
+                            // Turned on, and it would not lock: the grown-ups need to see that.
+                            Text(KidsLockText.status(device))
+                                .font(.footnote)
+                                .foregroundStyle(device.wanted ? Color.lobbyFailure : Color.secondary)
+                        }
+                    }
+                }
+                .disabled(device.status == .unsupported)
+                .accessibilityIdentifier("kidsPlan.lock.\(device.deviceId)")
+            }
+        } header: {
+            Text("Lock to Lobby")
+        } footer: {
+            Text("While \(name) is in kids mode, every other app on an iPhone or iPad is closed. For Grown-ups leaves kids mode and lifts it; back in kids mode it is on again. Each device is set up once, on that device: in Lobby's Settings, or after For Grown-ups on a device that is \(name)'s. A switch here acts at once, also from away.")
         }
     }
 

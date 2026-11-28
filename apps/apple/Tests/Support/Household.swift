@@ -11,6 +11,13 @@ import UniformTypeIdentifiers
 
 /// A Lobby Server as the app sees it over HTTP, answering from state a test sets up: viewers,
 /// items, progress, and whether this device is still welcome. Written to `docs/api.md`.
+/// What a device said of its lock to Lobby (`PUT /v1/me/kids/lock`).
+struct KidsLockReport: Hashable, Sendable {
+    var status: String
+    var locked: Bool
+    var profileID: String?
+}
+
 final class Household: Sendable {
     struct State: Sendable {
         /// `GET /v1/outside` as the server says it. nil: a server without it.
@@ -41,6 +48,8 @@ final class Household: Sendable {
         var knowsKids = false
         /// What `GET /v1/me/kids` says. nil: the route is not there, as on a server from before plans.
         var kidsMe: KidsMe?
+        /// What the device said of its lock to Lobby, each time: status, locked, and the child it names.
+        var kidsLockReports: [KidsLockReport] = []
         /// False: a server from before avatars.
         var knowsAvatars = false
         var items: [Item] = []
@@ -244,6 +253,13 @@ final class Household: Sendable {
                 return try .encoded(state.kidsMe)
             case ("PUT", ["me", "kids", "place"]) where state.kidsMe != nil:
                 return try .encoded(["now": state.kidsMe?.now])
+            case ("PUT", ["me", "kids", "lock"]) where state.kidsMe?.lock != nil:
+                let body = request.json()
+                state.kidsLockReports.append(
+                    KidsLockReport(
+                        status: body["status"] as? String ?? "", locked: body["locked"] as? Bool ?? false,
+                        profileID: body["profileId"] as? String))
+                return try .encoded(["lock": state.kidsMe?.lock])
             case ("PUT", ["me", "push"]), ("DELETE", ["me", "push"]):
                 return StubResponse(status: 204)
             case ("GET", ["profiles"]):

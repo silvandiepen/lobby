@@ -188,6 +188,9 @@ public struct KidsPlan: Codable, Hashable, Sendable {
     public var askers: [KidsAsker]
     /// The music libraries the child hears; nil: all of them.
     public var musicSourceIds: [String]?
+    /// Lock the child's iPhone or iPad to Lobby in kids mode: every other app shielded. A
+    /// grown-up can say otherwise for one device (`KidsLockDevice.choice`).
+    public var lockToLobby: Bool
 
     /// As before there were plans.
     /// As before there were plans, with music on: everything is on unless a grown-up turns it off.
@@ -196,7 +199,8 @@ public struct KidsPlan: Codable, Hashable, Sendable {
     public init(
         defaultMode: KidsMode = .everything, blocks: [KidsPlanBlock] = [], askStyle: KidsAskStyle = .open,
         music: Bool = true, screenTime: KidsScreenTime? = nil, away: KidsMode? = nil, places: [KidsPlace] = [],
-        whenPlaceUnknown: KidsPlaceUnknown? = nil, askDevices: [String] = [], askers: [KidsAsker] = [], musicSourceIds: [String]? = nil
+        whenPlaceUnknown: KidsPlaceUnknown? = nil, askDevices: [String] = [], askers: [KidsAsker] = [], musicSourceIds: [String]? = nil,
+        lockToLobby: Bool = false
     ) {
         self.defaultMode = defaultMode
         self.blocks = blocks
@@ -209,6 +213,7 @@ public struct KidsPlan: Codable, Hashable, Sendable {
         self.askDevices = askDevices
         self.askers = askers
         self.musicSourceIds = musicSourceIds
+        self.lockToLobby = lockToLobby
     }
 
     public init(from decoder: any Decoder) throws {
@@ -224,6 +229,7 @@ public struct KidsPlan: Codable, Hashable, Sendable {
         askDevices = try c.decodeIfPresent([String].self, forKey: .askDevices) ?? []
         askers = try c.decodeIfPresent([KidsAsker].self, forKey: .askers) ?? []
         musicSourceIds = try c.decodeIfPresent([String].self, forKey: .musicSourceIds)
+        lockToLobby = try c.decodeIfPresent(Bool.self, forKey: .lockToLobby) ?? false
     }
 
     /// The strictest mode the plan names anywhere: what holds when nothing more is known.
@@ -581,6 +587,88 @@ public struct KidsPlanCopy: Codable, Hashable, Sendable {
     public var override: KidsOverride?
     public var grants: [KidsGrant]
     public var screenTime: ScreenTime
+    /// Whether this device locks itself to Lobby in kids mode. Nil from a server from before the lock.
+    public var lock: Bool?
+}
+
+/// Whether a device is to be locked to Lobby while the child is in front, and why.
+public struct KidsLockWish: Codable, Hashable, Sendable {
+    public enum Source: String, Codable, Hashable, Sendable {
+        /// The child's plan (`KidsPlan.lockToLobby`).
+        case viewer
+        /// A grown-up chose for this device.
+        case device
+    }
+
+    public var wanted: Bool
+    public var source: Source
+
+    public init(wanted: Bool, source: Source = .viewer) {
+        self.wanted = wanted
+        self.source = source
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        wanted = try c.decode(Bool.self, forKey: .wanted)
+        source = (try? c.decodeIfPresent(Source.self, forKey: .source)) ?? .viewer
+    }
+}
+
+/// What a device says of its lock to Lobby.
+public enum KidsLockStatus: OpenStringEnum {
+    /// Screen Time lets Lobby lock this device.
+    case ready
+    /// Nobody allowed it on this device yet, or it was taken back.
+    case notSetUp
+    /// Not an iPhone or iPad: nothing to lock.
+    case unsupported
+    case unknown(String)
+
+    public static let knownCases: [KidsLockStatus] = [.ready, .notSetUp, .unsupported]
+
+    public var rawValue: String {
+        switch self {
+        case .ready: "ready"
+        case .notSetUp: "notSetUp"
+        case .unsupported: "unsupported"
+        case .unknown(let raw): raw
+        }
+    }
+}
+
+/// One of a child's devices, for the grown-ups' lock switches.
+public struct KidsLockDevice: Codable, Hashable, Sendable, Identifiable {
+    public var deviceId: String
+    public var name: String
+    public var platform: String
+    /// What holds for it now.
+    public var wanted: Bool
+    public var source: KidsLockWish.Source
+    /// What a grown-up chose for this device; nil: as the plan says.
+    public var choice: Bool?
+    /// What the device said last; nil: nothing yet.
+    public var status: KidsLockStatus?
+    /// It said it shields the other apps now.
+    public var locked: Bool
+    public var reportedAt: Int64?
+
+    public var id: String { deviceId }
+
+    public init(
+        deviceId: String, name: String, platform: String = "ipados", wanted: Bool, source: KidsLockWish.Source = .viewer,
+        choice: Bool? = nil, status: KidsLockStatus? = nil, locked: Bool = false, reportedAt: Int64? = nil
+    ) {
+        self.deviceId = deviceId
+        self.name = name
+        self.platform = platform
+        self.wanted = wanted
+        self.source = source
+        self.choice = choice
+        self.status = status
+        self.locked = locked
+        self.reportedAt = reportedAt
+    }
 }
 
 /// `GET /v1/me/kids`.
@@ -596,10 +684,14 @@ public struct KidsMe: Codable, Hashable, Sendable {
     /// Who is asked, by name: "Asking Dad…". Empty from a server from before names.
     public var askNames: [String]
     public var musicLibraries: [KidsMusicLibrary]
+    /// Whether this device locks itself to Lobby while the child is in front. Nil from a server
+    /// from before the lock.
+    public var lock: KidsLockWish?
 
     public init(
         profileId: String, now: KidsNow, plan: KidsPlan, timeZone: String, request: KidsRequest?, signed: SignedKidsPlan,
-        publicKey: String, serverTime: Int64, askNames: [String] = [], musicLibraries: [KidsMusicLibrary] = []
+        publicKey: String, serverTime: Int64, askNames: [String] = [], musicLibraries: [KidsMusicLibrary] = [],
+        lock: KidsLockWish? = nil
     ) {
         self.profileId = profileId
         self.now = now
@@ -611,10 +703,11 @@ public struct KidsMe: Codable, Hashable, Sendable {
         self.serverTime = serverTime
         self.askNames = askNames
         self.musicLibraries = musicLibraries
+        self.lock = lock
     }
 
     private enum CodingKeys: String, CodingKey {
-        case profileId, now, plan, timeZone, request, signed, publicKey, serverTime, askNames, musicLibraries
+        case profileId, now, plan, timeZone, request, signed, publicKey, serverTime, askNames, musicLibraries, lock
     }
 
     public init(from decoder: any Decoder) throws {
@@ -629,6 +722,7 @@ public struct KidsMe: Codable, Hashable, Sendable {
         serverTime = try c.decode(Int64.self, forKey: .serverTime)
         askNames = try c.decodeIfPresent([String].self, forKey: .askNames) ?? []
         musicLibraries = try c.decodeIfPresent([KidsMusicLibrary].self, forKey: .musicLibraries) ?? []
+        lock = try c.decodeIfPresent(KidsLockWish.self, forKey: .lock)
     }
 }
 
@@ -644,10 +738,13 @@ public struct KidsPlanView: Codable, Hashable, Sendable {
     public var musicLibraries: [KidsMusicLibrary]
     public var grownUps: [KidsGrownUp]
     public var adminDevices: [KidsAdminDevice]
+    /// The child's devices, for Lock to Lobby. Empty from a server from before the lock.
+    public var lockDevices: [KidsLockDevice]
 
     public init(
         profileId: String, plan: KidsPlan, planned: Bool, timeZone: String, now: KidsNow, grants: [KidsGrant] = [],
-        musicLibraries: [KidsMusicLibrary] = [], grownUps: [KidsGrownUp] = [], adminDevices: [KidsAdminDevice] = []
+        musicLibraries: [KidsMusicLibrary] = [], grownUps: [KidsGrownUp] = [], adminDevices: [KidsAdminDevice] = [],
+        lockDevices: [KidsLockDevice] = []
     ) {
         self.profileId = profileId
         self.plan = plan
@@ -658,10 +755,11 @@ public struct KidsPlanView: Codable, Hashable, Sendable {
         self.musicLibraries = musicLibraries
         self.grownUps = grownUps
         self.adminDevices = adminDevices
+        self.lockDevices = lockDevices
     }
 
     private enum CodingKeys: String, CodingKey {
-        case profileId, plan, planned, timeZone, now, grants, musicLibraries, grownUps, adminDevices
+        case profileId, plan, planned, timeZone, now, grants, musicLibraries, grownUps, adminDevices, lockDevices
     }
 
     public init(from decoder: any Decoder) throws {
@@ -675,6 +773,7 @@ public struct KidsPlanView: Codable, Hashable, Sendable {
         musicLibraries = try c.decodeIfPresent([KidsMusicLibrary].self, forKey: .musicLibraries) ?? []
         grownUps = try c.decodeIfPresent([KidsGrownUp].self, forKey: .grownUps) ?? []
         adminDevices = try c.decodeIfPresent([KidsAdminDevice].self, forKey: .adminDevices) ?? []
+        lockDevices = try c.decodeIfPresent([KidsLockDevice].self, forKey: .lockDevices) ?? []
     }
 }
 

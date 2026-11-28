@@ -757,6 +757,15 @@ interface KidsPlan {
   askers: { profileId: string; deviceIds: string[] }[];
   /** Made by the server from `askers` (an older app may send it instead). */
   askDevices: string[];
+  /** Lock the child's iPhone or iPad to Lobby in kids mode (D-070); false when left out. A
+   * grown-up can switch one device otherwise (`PUT /v1/profiles/{id}/kids/lock/{deviceId}`). */
+  lockToLobby: boolean;
+}
+
+/** Whether this device locks itself to Lobby while the child is in front, and why. */
+interface LockWish {
+  wanted: boolean;
+  source: "viewer" | "device"; // the child's plan, or a grown-up's switch for this device
 }
 
 /** What the child may do now. */
@@ -780,14 +789,15 @@ interface KidsNow {
 
 **Enforcement.** For a device bound to a kids viewer, every route it may use has a need (`KIDS_MODE_ROUTES` in `src/kids/guard.ts`, tested to be there for every route): its own `GET /v1/me`, `/v1/me/kids…`, `/v1/me/direct`, `/v1/household`, `/v1/profiles`, the live channel and `POST /v1/remote/commands` always (the hub checks each play), `PUT …/progress/{item}` always (where a film stopped at a switch), the avatar unless Nothing, library, items, categories, logos, artwork, popular, progress and `/v1/me/wanted` when `browse`, `/v1/assets/…` and `POST /v1/remote/wake` when `video` allows that file, music when `listening`. Otherwise `403 kids_mode`, with `now: KidsNow`; an app keeps what it has (downloads, the catalogue) and shows the mode. What is being sent stops within a second of a switch. Play On as a kids viewer needs video allowed on the target and, when the child sends it, on its own device: otherwise `403` with `reason: "kids_mode"`. A grown-up's device in kids mode is limited by the app, as for kids limits; the server checks its Play On, wake and questions by the `profileId` it names.
 
-**Live channel.** A session used by a child (its own device, the kids screens by their `profileId`, a TV playing as the child) gets `event: kidsMode` `{ profileId, now: KidsNow }` when it starts and whenever that changes: at a switch, an override, an answer, a change of the plan. The app then ends a film with a gentle word and fetches `GET /v1/me/kids` again. The grown-ups who may decide get `event: kidsRequest` `{ request: Request & { viewer, title } }` for a new question and `event: kidsRequestClosed` when it is answered, taken back or expired; the child's device gets `kidsRequest` with what came of it.
+**Live channel.** A session used by a child (its own device, the kids screens by their `profileId`, a TV playing as the child) gets `event: kidsMode` `{ profileId, now: KidsNow, lock: boolean }` when it starts and whenever that changes: at a switch, an override, an answer, a change of the plan, a switch of the lock. `lock` is `LockWish.wanted` for that session's device; a device that was offline hears it when its channel opens again. The app then ends a film with a gentle word and fetches `GET /v1/me/kids` again. The grown-ups who may decide get `event: kidsRequest` `{ request: Request & { viewer, title } }` for a new question and `event: kidsRequestClosed` when it is answered, taken back or expired; the child's device gets `kidsRequest` with what came of it.
 
 ### For the child's device — Built.
 
 A device bound to a kids viewer speaks for it; a grown-up's device in kids mode names the viewer (`profileId` in the query or body), which must be a kids viewer of its household.
 
-- `GET /v1/me/kids` → `{ profileId, now: KidsNow, plan: KidsPlan, timeZone, request: Request | null, askNames: string[], musicLibraries: [{ id, name, hint }], signed: { payload, signature }, publicKey, serverTime }`. `askNames`: who the asking screen names ("Asking Mum and Dad…"). `request` is this device's latest question. `signed.payload` is base64url JSON `{ v: 1, profileId, deviceId, issuedAt, validUntil, timeZone, plan, override, grants, screenTime: { day, seconds } }`, valid for seven days; `signature` is Ed25519 over the payload's bytes, base64url; `publicKey` the raw 32-byte key, base64url, the same every time: the app pins it.
+- `GET /v1/me/kids` → `{ profileId, now: KidsNow, plan: KidsPlan, timeZone, request: Request | null, askNames: string[], musicLibraries: [{ id, name, hint }], signed: { payload, signature }, publicKey, serverTime }`. `askNames`: who the asking screen names ("Asking Mum and Dad…"). `request` is this device's latest question. `lock: LockWish` is whether this device locks itself to Lobby while the child is in front. `signed.payload` is base64url JSON `{ v: 1, profileId, deviceId, issuedAt, validUntil, timeZone, plan, override, grants, screenTime: { day, seconds }, lock: boolean }`, valid for seven days; `signature` is Ed25519 over the payload's bytes, base64url; `publicKey` the raw 32-byte key, base64url, the same every time: the app pins it.
 - `PUT /v1/me/kids/place` `{ "state": "inside", "placeId": "school" }` or `{ "state": "outside" }` or `{ "state": "unknown" }` → `{ now }`. Nothing else is taken: any other field (coordinates above all) is `400`. Kept in memory, only the last one per device.
+- `PUT /v1/me/kids/lock` `{ "status": "ready" | "notSetUp" | "unsupported", "locked": boolean }` → `{ lock: LockWish }`. What the device says of Lock to Lobby (D-070): whether Screen Time allows Lobby there (`unsupported`: a Mac or Apple TV), and whether it shields the other apps now. Kept per child and device in the catalogue, for the grown-ups. Allowed in every mode.
 - `POST /v1/me/kids/screen-time` `{ "day": "2026-11-24", "seconds": 1800 }` → `204`. What the device counted offline; the larger of the two counts holds.
 - `POST /v1/me/kids/requests` `{ "kind": "open" }` or `{ "kind": "title", "itemId" }` → `201 { request }`. Only while the mode is Ask first (`409 not_asking` otherwise); a title only that the child's limits allow (`404`). One at a time: the same question again is the one that waits, another replaces it. At most six an hour: `429` with `Retry-After`.
 - `GET /v1/me/kids/requests/{id}` → `{ request }`; `DELETE` takes it back → `{ request }`.
@@ -808,7 +818,8 @@ interface Request {
 Admins of the child's household, and the server's admins (also for a guest household's child). `404` for another guest household's child and for a kids device; `403` for a viewer's device, which may only read.
 
 - `GET /v1/kids/now` → `{ viewers: [{ profileId, now: KidsNow }] }`, the glance for the viewer list: for each child the strictest of its own devices.
-- `GET /v1/profiles/{id}/kids/plan` → `{ profileId, plan, planned, timeZone, now, grants, musicLibraries, grownUps: [{ profileId, name }], adminDevices: [{ id, name }] }`. Any device of the household. `grownUps` and `adminDevices` are whom `askers` can name.
+- `GET /v1/profiles/{id}/kids/plan` → `{ profileId, plan, planned, timeZone, now, grants, musicLibraries, grownUps: [{ profileId, name }], adminDevices: [{ id, name }], lockDevices: LockDevice[] }`. Any device of the household. `grownUps` and `adminDevices` are whom `askers` can name. `lockDevices` are the child's devices for Lock to Lobby: those bound to it, and grown-ups' devices that said something of their lock while the child was in front: `{ deviceId, name, platform, wanted, source, choice: boolean | null, status: "ready" | "notSetUp" | "unsupported" | null, locked, reportedAt: number | null }`. `choice` is a grown-up's switch for that device (null: as the plan says); `status` null: the device said nothing yet, which the apps show as not set up.
+- `PUT /v1/profiles/{id}/kids/lock/{deviceId}` `{ "lock": true | false | null }` → the same as `GET …/kids/plan`. Locks one of the child's devices to Lobby in kids mode, or not, or (null) as the plan says, at once: the device hears it on the live channel. `404` for a device that is not in `lockDevices`. Household admins of the child's household and server admins, also from outside.
 - `PUT /v1/profiles/{id}/kids/plan` `{ "plan": KidsPlan }` → the same. The whole plan; what is left out is as in no plan.
 - `PUT /v1/profiles/{id}/kids/override` `{ "mode", "minutes"? | "until"? | "untilNext": true }` → the same. With no length: until the plan's next switch when that is today, else 60 minutes; at most a day. `untilNext`: until the plan's next switch (`409 no_switch` when there is none within a week). `DELETE` ends it.
 - `GET /v1/kids/requests` → `{ requests: [Request & { viewer: { name, avatar, color }, title: { id, title } | null, answeredByName: string | null, grant: { mode, until, itemId } | null }] }`, those waiting for this device. The same shape is in the answer's reply and in `kidsRequest` / `kidsRequestClosed` on the live channel, which every grown-up who was asked gets at once: "Answered by Mum — Watch until 19:30".
@@ -816,7 +827,7 @@ Admins of the child's household, and the server's admins (also for a guest house
 - `PATCH /v1/profiles/{id}/kids/answer` `{ "answer": "watch" | "listen" }` switches the answer that runs; `DELETE` ends every answer (the child asks again).
 - `PUT /v1/household/time-zone` `{ "timeZone": "Europe/Amsterdam" | null }` → `{ timeZone }`: the household's clock for its plans; null the server's.
 
-From outside, the child's routes and the glance are open to a device that is let in; questions, answers, overrides and ending them are open to whoever may decide (`kids` in `OUTSIDE_ROUTES`). Changing the plan and the time zone is a household admin's as the rest of the household's kids: for a guest household from outside, for the owner's household from home or the tailnet (D-052).
+From outside, the child's routes and the glance are open to a device that is let in; questions, answers, overrides and ending them, and switching a device's lock, are open to whoever may decide (`kids` in `OUTSIDE_ROUTES`). Changing the plan and the time zone is a household admin's as the rest of the household's kids: for a guest household from outside, for the owner's household from home or the tailnet (D-052).
 
 ### Push notifications — Built.
 
