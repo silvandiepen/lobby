@@ -38,12 +38,19 @@ final class PlayOnUITests: LobbyUITestCase {
         let film = try await manager.itemID(titled: "The Long Test")
         XCTAssertEqual(command.profileId, alex)
         XCTAssertEqual(command.itemId, film)
-        waitFor(element("nowPlaying.open"), "The now-playing bar", timeout: 15)
-        XCTAssertTrue(element("nowPlaying.open").label.contains("The Long Test"), element("nowPlaying.open").label)
-        attachScreenshot("now-playing")
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            // iPad: a panel beside the page, with the remote in it.
+            waitFor(element("nowPlaying.panel"), "The now-playing panel", timeout: 15)
+            XCTAssertTrue(waitFor(element("remote.title"), "The remote").label.contains("The Long Test"))
+            attachScreenshot("now-playing")
+        } else {
+            waitFor(element("nowPlaying.open"), "The now-playing bar", timeout: 15)
+            XCTAssertTrue(element("nowPlaying.open").label.contains("The Long Test"), element("nowPlaying.open").label)
+            attachScreenshot("now-playing")
 
-        element("nowPlaying.open").tap()
-        waitFor(element("remote.title"), "The remote")
+            element("nowPlaying.open").tap()
+            waitFor(element("remote.title"), "The remote")
+        }
         app.buttons["Back 10 Seconds"].tap()
         let skip = try await livingRoom.next(timeout: 10)
         XCTAssertEqual(skip.type, "skip")
@@ -146,6 +153,15 @@ actor Television {
     }
 
     private var isOpen: Bool { reading != nil }
+
+    /// Says that a film plays here, part-way, and what comes after it.
+    func show(itemId: String, positionMs: Int, durationMs: Int, nextItemId: String?, status: String = "playing") async throws {
+        try await announce(player: [
+            "itemId": itemId, "assetId": NSNull(), "profileId": NSNull(), "status": status, "positionMs": positionMs, "ageMs": 0,
+            "durationMs": durationMs, "rate": 1, "audioTracks": [], "audioTrackId": NSNull(), "subtitleTracks": [],
+            "subtitleTrackId": NSNull(), "volume": NSNull(), "nextItemId": nextItemId ?? NSNull(), "queue": [],
+        ] as [String: Any])
+    }
 
     func close() {
         reading?.cancel()
