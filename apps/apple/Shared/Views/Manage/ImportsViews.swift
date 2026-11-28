@@ -464,7 +464,7 @@ struct ImportActivityView: View {
 /// The import folders: each with what happens to its files, how it is doing, and adding one.
 struct ImportFoldersSection: View {
     let model: ServerSettingsModel
-    @State private var picks = false
+    let add: () -> Void
     @State private var status: ImportsStatus?
 
     var body: some View {
@@ -502,7 +502,7 @@ struct ImportFoldersSection: View {
                 }
                 .padding(.vertical, AppTheme.Space.xs)
             }
-            Button("Add an Import Folder…", systemImage: AppSymbol.importFolder) { picks = true }
+            Button("Add an Import Folder…", systemImage: AppSymbol.importFolder) { add() }
                 .accessibilityIdentifier("serverSettings.addImportFolder")
             NavigationLink(value: Route.inbox) {
                 Label("Inbox", systemImage: AppSymbol.inbox)
@@ -512,11 +512,6 @@ struct ImportFoldersSection: View {
             Text("Import Folders")
         } footer: {
             Text("Folders where new films and episodes land. Lobby waits until a file is finished and has not changed for a while, leaves out samples, extras and everything that is not a video, and never replaces anything. What it is not sure about waits in the Inbox.")
-        }
-        .sheet(isPresented: $picks) {
-            FolderPickerSheet(app: model.appForPicker, purpose: .importFolder) { path, mode, _ in
-                model.addImportFolder(path: path, mode: mode)
-            }
         }
         .task {
             status = try? await model.appForPicker.asManager { try await $0.imports() }
