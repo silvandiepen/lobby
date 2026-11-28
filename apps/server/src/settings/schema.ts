@@ -434,6 +434,16 @@ export const SETTINGS: readonly SettingDefinition[] = [
     check: toggle,
   },
   {
+    key: "remote.wake.speakers",
+    section: "general",
+    title: "Play on HomePods and speakers",
+    help: "HomePods and other AirPlay speakers on the server's network are in Play On for music and stories. Lobby Server plays to them itself, so the phone can go. Name or hide them under Speakers.",
+    type: "toggle",
+    apply: "live",
+    default: true,
+    check: toggle,
+  },
+  {
     key: "backup.everyHours",
     section: "backups",
     title: "Back up every (hours)",

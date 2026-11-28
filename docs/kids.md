@@ -326,6 +326,7 @@ A child may play on an Apple TV, as itself (D-054; [api.md, Who may](api.md#who-
 - Play On and waking need **Everything** (or an answer that gives it), checked by the server on the
   target and on the child's own device. At a switch the TV is told as the child's device is.
 - Waking another household's Apple TV: **not built** (D-052).
+- **A HomePod or speaker** (D-068): a story's page has one big **Play on Kitchen** for each speaker that will play for the child, while the mode allows listening. The server plays it as the child, from the child's libraries, and stops it when the mode stops allowing listening. The kids remote has play and pause, back 15 and forward 30 (previous and next for music), quieter, louder and stop. Another's music on a speaker shows as "Playing" and is not the child's to touch or play over (`KidsSpeakers.swift`).
 
 ## 6. Up next, still watching, subtitles and skipping
 

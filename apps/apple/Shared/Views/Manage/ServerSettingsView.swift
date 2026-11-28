@@ -41,14 +41,18 @@ struct ServerSettingsView: View {
                         }
                     case "general":
                         // Waking is switched on its own page, beside the TVs it is for.
-                        SettingsSection(model: model, section: section, skipping: ["remote.wake.enabled"]) { picking = $0 }
+                        SettingsSection(model: model, section: section, skipping: ["remote.wake.enabled", "remote.wake.speakers"]) { picking = $0 }
                         Section {
                             NavigationLink(value: Route.appleTVs) {
                                 Label("Apple TVs", systemImage: AppSymbol.television)
                             }
                             .accessibilityIdentifier("serverSettings.appleTVs")
+                            NavigationLink(value: Route.speakers) {
+                                Label("Speakers", systemImage: "homepod.and.homepodmini")
+                            }
+                            .accessibilityIdentifier("serverSettings.speakers")
                         } footer: {
-                            Text("The Apple TVs Lobby Server turns on for Play On.")
+                            Text("The Apple TVs Lobby Server turns on for Play On, and the HomePods and speakers it plays music and stories to.")
                         }
                     default:
                         SettingsSection(model: model, section: section) { picking = $0 }

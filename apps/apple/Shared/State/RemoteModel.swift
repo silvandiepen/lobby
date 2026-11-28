@@ -35,6 +35,11 @@ final class RemoteModel {
     private(set) var toast: String?
     /// The viewers kids televisions belong to, as a manager can know it. By device id.
     private(set) var boundViewers: [String: String] = [:]
+    /// The HomePods and speakers Lobby Server plays to, as the channel last said
+    /// (docs/decisions.md, "Play on a speaker").
+    private(set) var speakers: [ShownSpeaker] = []
+    /// The speaker whose remote is open, by id.
+    var openSpeaker: String?
 
     /// The app is in front. Set by the scene.
     var isForeground = true {
@@ -117,6 +122,81 @@ final class RemoteModel {
     }
 
     func device(_ id: String) -> ShownDevice? { devices.first { $0.id == id } }
+
+    // MARK: Speakers
+
+    /// Where music and stories can go for grown-ups: the speakers that can play now first.
+    var speakerTargets: [ShownSpeaker] {
+        guard showsRemote else { return [] }
+        return SpeakerTargets.ordered(speakers)
+    }
+
+    /// For the kids screens: those that will play for the child, while it may listen. The server
+    /// shows a child speakers only then.
+    var kidsSpeakers: [ShownSpeaker] {
+        guard showsKidsRemote else { return [] }
+        return SpeakerTargets.forKids(speakers)
+    }
+
+    /// What plays on a speaker for this device, for the bar at the foot of the page.
+    var speakerPlaying: ShownSpeaker? {
+        guard showsRemote || showsKidsRemote else { return nil }
+        return SpeakerTargets.playing(speakers)
+    }
+
+    func speaker(_ id: String) -> ShownSpeaker? { speakers.first { $0.id == id } }
+
+    /// Where a speaker is in its track now, by the server's clock.
+    func positionMs(of state: SpeakerPlayState) -> Int {
+        state.positionMs(at: clock.serverNow(steadyMs: SteadyClock.nowMs()) ?? state.at)
+    }
+
+    /// Starts music or a story on a speaker. The server plays it; this app can go.
+    func play(_ request: SpeakerPlayRequest, on speakerID: String) async -> SpeakerOutcome {
+        guard let client = app?.liveClient, isConnected else { return .unreachable }
+        return await asking(speakerID) {
+            try await client.playOnSpeaker(id: speakerID, session: self.session, request: request)
+        }
+    }
+
+    /// Pause, go on, back and forward, next, volume or stop, on a speaker.
+    func control(_ action: SpeakerAction, on speakerID: String) async -> SpeakerOutcome {
+        guard let client = app?.liveClient, isConnected else { return .unreachable }
+        return await asking(speakerID) {
+            try await client.controlSpeaker(id: speakerID, session: self.session, action: action)
+        }
+    }
+
+    /// Asks, and takes the server's answer as what is known of that speaker until the channel says more.
+    private func asking(_ speakerID: String, _ call: @escaping @MainActor () async throws -> ShownSpeaker) async -> SpeakerOutcome {
+        do {
+            let shown = try await call()
+            if let index = speakers.firstIndex(where: { $0.id == speakerID }) { speakers[index] = shown }
+            return .done
+        } catch let refusal as RemoteRefusal {
+            if refusal.needsChannel { reopen = true }
+            return .refused(reason: refusal.reason ?? refusal.code, message: refusal.message)
+        } catch {
+            return .unreachable
+        }
+    }
+
+    /// The music that plays here goes on at the speaker, at the same place, and stops here.
+    func sendMusic(to speakerID: String) async -> SpeakerOutcome {
+        guard let app, let profileID = app.activeProfile?.id else { return .unreachable }
+        let player = app.music.player
+        guard let request = SpeakerTargets.handover(
+            trackIDs: player.queue.entries.map(\.trackID), index: player.queue.index ?? 0,
+            elapsedMs: Int(player.elapsed * 1000), book: player.book, bookPositionMs: player.bookPositionMs,
+            profileID: profileID)
+        else { return .refused(reason: "nothing_playing", message: nil) }
+        player.pause()
+        let outcome = await play(request, on: speakerID)
+        if outcome.succeeded {
+            player.stop()
+        }
+        return outcome
+    }
 
     /// This device as the channel shows it.
     var me: ShownDevice? { devices.first { $0.isSelf } }
@@ -240,6 +320,10 @@ final class RemoteModel {
                 }
             case .heartbeat(let time):
                 clock.heard(serverTime: time, atMs: now)
+            case .speakers(let all, let time):
+                clock.heard(serverTime: time, atMs: now)
+                speakers = all
+                if let open = openSpeaker, !all.contains(where: { $0.id == open }) { openSpeaker = nil }
             case .kidsMode, .kidsRequest, .kidsRequestClosed:
                 Task { [weak app] in await app?.kidsHeard(event) }
             case .unknown:
@@ -256,13 +340,15 @@ final class RemoteModel {
             forgetting?.cancel()
             forgetting = nil
             devices = []
+            speakers = []
             return
         }
-        guard forgetting == nil, !devices.isEmpty else { return }
+        guard forgetting == nil, !devices.isEmpty || !speakers.isEmpty else { return }
         forgetting = Task { [weak self] in
             do { try await Task.sleep(for: Self.keepAfterLoss) } catch { return }
             guard let self, !self.isConnected else { return }
             self.devices = []
+            self.speakers = []
             self.forgetting = nil
         }
     }

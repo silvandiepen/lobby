@@ -298,6 +298,7 @@ targets:
           - Services/GrownUpGate.swift
           - State/OutsideModel.swift
           - State/AppleTVsModel.swift
+          - State/SpeakersModel.swift
           - State/HouseholdsModel.swift
           - Views/Components/ColorSwatches.swift
           - Views/Components/ContinueCardView.swift

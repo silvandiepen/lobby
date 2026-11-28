@@ -84,8 +84,10 @@ import { registerCategoryRoutes } from "./categories.ts";
 import { registerEditRoutes, type EditServices } from "./edit.ts";
 import {
   registerRemoteRoutes,
+  registerSpeakerRoutes,
   registerWakeRoutes,
   type RemoteHub,
+  type SpeakerService,
   type WakeService,
 } from "../remote/index.ts";
 import type { FolderBrowser } from "../settings/browse.ts";
@@ -138,6 +140,8 @@ export interface AppDeps {
   remote?: RemoteHub;
   /** Waking Apple TVs. At home only; without it those routes do not exist. */
   wake?: WakeService;
+  /** HomePods and AirPlay speakers the server plays to. */
+  speakers?: SpeakerService;
   /** A manager's settings of the server and its first setup. Without it those routes do not exist. */
   settings?: { service: SettingsService; browser: FolderBrowser };
   /** Import folders, the Inbox and uploads. At home only; without it those routes do not exist. */
@@ -655,7 +659,16 @@ export function createApp(deps: AppDeps, entrance: "home" | "outside" = "home"):
              select 1 as x from up where id in (select value from json_each(?)) limit 1`,
             [itemId, JSON.stringify(state.titles)],
           ) !== undefined),
+      // As the kids guard decides for a song this device asks for (kids/guard.ts).
+      listening: (profileId, deviceId) => {
+        const plan = control.plan(profileId);
+        if (!plan.music) return null;
+        const state = control.state(profileId, deviceId, control.isAway(deviceId, false));
+        return { allowed: state.listening, sources: plan.musicSourceIds };
+      },
     };
+    const listening = hub.kids.listening;
+    if (deps.speakers && listening) deps.speakers.listen = listening;
     control.on((event) => {
       if (event.type === "changed") {
         hub.kidsChanged();
@@ -1528,6 +1541,15 @@ export function createApp(deps: AppDeps, entrance: "home" | "outside" = "home"):
   if (deps.wake && entrance === "home") {
     registerWakeRoutes(app, {
       wake: deps.wake,
+      devices,
+      settings: deps.settings?.service ?? null,
+      remote: deps.remote ?? null,
+      requireManager,
+    });
+  }
+  if (deps.speakers && entrance === "home") {
+    registerSpeakerRoutes(app, {
+      speakers: deps.speakers,
       devices,
       settings: deps.settings?.service ?? null,
       remote: deps.remote ?? null,

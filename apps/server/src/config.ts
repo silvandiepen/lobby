@@ -129,6 +129,11 @@ export interface WakeConfig {
   pickProfile: boolean;
   /** How long a play that waits for a woken TV is kept, in seconds (`holdPlaySeconds`). */
   holdPlaySeconds: number;
+  /**
+   * HomePods and other AirPlay speakers on the server's network are in Play On for music and
+   * stories, which the server streams to them itself (docs/decisions.md, "Play on a speaker").
+   */
+  speakers: boolean;
 }
 
 export interface AddressesConfig {
@@ -566,8 +571,18 @@ function readWakeConfig(remote: unknown, base: string): WakeConfig | null {
   if (typeof wake !== "object" || Array.isArray(wake)) {
     fail(`remote.wake must be an object such as { "pyatv": "/home/me/lobby/pyatv/bin" }.`);
   }
-  const { pyatv, storage, hosts, app, enabled, kids, pickProfile, holdPlaySeconds, ...rest } =
-    wake as Record<string, unknown>;
+  const {
+    pyatv,
+    storage,
+    hosts,
+    app,
+    enabled,
+    kids,
+    pickProfile,
+    holdPlaySeconds,
+    speakers,
+    ...rest
+  } = wake as Record<string, unknown>;
   if (Object.keys(rest).length > 0) {
     fail(`remote.wake has something unknown: ${Object.keys(rest).join(", ")}.`);
   }
@@ -601,6 +616,9 @@ function readWakeConfig(remote: unknown, base: string): WakeConfig | null {
   if (pickProfile !== undefined && typeof pickProfile !== "boolean") {
     fail(`remote.wake.pickProfile must be true or false.`);
   }
+  if (speakers !== undefined && typeof speakers !== "boolean") {
+    fail(`remote.wake.speakers must be true or false.`);
+  }
   if (
     holdPlaySeconds !== undefined &&
     (typeof holdPlaySeconds !== "number" ||
@@ -619,6 +637,7 @@ function readWakeConfig(remote: unknown, base: string): WakeConfig | null {
     kids: kids === true,
     pickProfile: pickProfile !== false,
     holdPlaySeconds: holdPlaySeconds ?? 180,
+    speakers: speakers !== false,
   };
 }
 

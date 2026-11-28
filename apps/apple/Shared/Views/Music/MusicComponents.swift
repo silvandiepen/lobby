@@ -491,9 +491,17 @@ private struct MiniPlayerInset: ViewModifier {
     func body(content: Content) -> some View {
         content
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                MiniPlayer()
-                    .frame(maxWidth: AppTheme.listWidth)
-                    .animation(motion.animation(.open), value: app.music.player.isActive)
+                Group {
+                    if !app.music.player.isActive, let speaker = app.remote.speakerPlaying {
+                        // Lobby Server plays it on a speaker: the same bar, as its remote.
+                        SpeakerMiniPlayer(speaker: speaker)
+                    } else {
+                        MiniPlayer()
+                    }
+                }
+                .frame(maxWidth: AppTheme.listWidth)
+                .animation(motion.animation(.open), value: app.music.player.isActive)
+                .animation(motion.animation(.open), value: app.remote.speakerPlaying?.id)
             }
     }
 }

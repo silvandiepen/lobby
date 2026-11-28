@@ -23,6 +23,7 @@ enum Route: Hashable, Sendable {
     case serverSettings
     /// The Apple TVs the server can wake, for a manager.
     case appleTVs
+    case speakers
     /// Uploading files to the server, for a manager.
     case uploads
     /// The files of import folders and uploads that wait for a manager.
@@ -124,6 +125,8 @@ struct RouteView: View {
             ServerSettingsView(app: app)
         case .appleTVs:
             AppleTVsView(app: app)
+        case .speakers:
+            SpeakersView(app: app)
         case .uploads:
             UploadsView(app: app)
         case .inbox:

@@ -6,7 +6,7 @@ import type { Readable, Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { log } from "../log.ts";
 
-/** The helper that speaks to Apple TVs, shipped beside the server. */
+/** The helper that speaks to Apple TVs and AirPlay speakers, shipped beside the server. */
 export const WAKE_SCRIPT = fileURLToPath(new URL("../../tools/wake.py", import.meta.url));
 
 const FIRST_WAIT_MS = 1_000;
@@ -73,6 +73,8 @@ export class WakeHelper {
   private readyWaiters: (() => void)[] = [];
   /** Told when it comes up or goes down. */
   onChange: (() => void) | null = null;
+  /** Told what the helper says by itself, such as that a stream to a speaker ended. */
+  onEvent: ((event: Record<string, unknown>) => void) | null = null;
 
   constructor(options: WakeHelperOptions) {
     this.options = options;
@@ -224,6 +226,10 @@ export class WakeHelper {
       }
       if (message["event"] === "missing") {
         said = "pyatv is not installed for that Python (docs/operations.md)";
+        return;
+      }
+      if (typeof message["event"] === "string") {
+        this.onEvent?.(message);
         return;
       }
       const id = typeof message["id"] === "string" ? message["id"] : null;

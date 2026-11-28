@@ -208,6 +208,49 @@
     }
   },
   {
+    "event": "speakers",
+    "data": {
+      "speakers": [
+        {
+          "id": "speaker-kitchen",
+          "name": "Kitchen",
+          "kind": "homepod",
+          "canPlay": true,
+          "access": "open",
+          "volume": 0.4,
+          "controllable": true,
+          "play": {
+            "redacted": false,
+            "profileId": "viewer-1",
+            "kind": "story",
+            "bookId": "book-a",
+            "albumId": null,
+            "trackIds": ["track-a", "track-b"],
+            "index": 1,
+            "trackId": "track-b",
+            "status": "playing",
+            "positionMs": 500,
+            "at": 1795640000000,
+            "durationMs": 8000,
+            "problem": null,
+            "startedBy": "device-phone"
+          }
+        },
+        {
+          "id": "speaker-bedroom",
+          "name": "Bedroom",
+          "kind": "homepod",
+          "canPlay": true,
+          "access": "home_only",
+          "volume": null,
+          "controllable": false,
+          "play": null
+        }
+      ],
+      "serverTime": 1795640000000
+    }
+  },
+  {
     "event": "heartbeat",
     "data": {
       "serverTime": 1795640000000

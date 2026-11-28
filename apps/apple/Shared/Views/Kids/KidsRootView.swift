@@ -41,7 +41,7 @@ struct KidsRootView: View {
                 .modifier(KidsSectionArrival(section: section))
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     VStack(spacing: AppTheme.Space.s) {
-                        KidsNowPlayingBar()
+                        KidsListeningBar()
                         KidsTabBar(sections: sections, selection: $app.kidsSection)
                     }
                     .animation(motion.animation(.open), value: app.music.player.isActive)
@@ -80,7 +80,7 @@ private struct KidsListeningRoot: View {
         NavigationStack(path: $path) {
             KidsStoriesPage(onlyListening: true)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    KidsNowPlayingBar()
+                    KidsListeningBar()
                         .padding(.bottom, AppTheme.Space.s)
                         .animation(motion.animation(.open), value: app.music.player.isActive)
                 }
