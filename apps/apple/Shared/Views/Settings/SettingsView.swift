@@ -231,7 +231,8 @@ private struct SettingsRoot: View {
 
     @ViewBuilder
     private func row(_ page: SettingsPage, showsSummary: Bool = false) -> some View {
-        let label = SettingsRowLabel(page: page, value: value(of: page), showsSummary: showsSummary)
+        // Beside the page there is room for a name, not for what it is set to: that is on the page.
+        let label = SettingsRowLabel(page: page, value: isWide ? nil : value(of: page), showsSummary: showsSummary)
         Group {
             if isWide {
                 NavigationLink(value: page) { label }
