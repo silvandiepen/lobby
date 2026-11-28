@@ -266,7 +266,7 @@ final class KidsUITests: LobbyUITestCase {
         } else {
             app.buttons["profile.menu"].firstMatch.tap()
             waitFor(app.buttons["Settings…"], "Settings in the viewer menu").tap()
-            scrolledTo(app.buttons["settings.manage"], "Devices and Viewers").tap()
+            scrolledTo(app.buttons["settings.viewers"], "Viewers").tap()
         }
     }
 }

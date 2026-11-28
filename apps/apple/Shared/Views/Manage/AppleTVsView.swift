@@ -6,9 +6,12 @@ import SwiftUI
 struct AppleTVsView: View {
     @State private var model: AppleTVsModel
     @State private var toDisconnect: Television?
+    /// What else the page shows below the TVs: the server's own settings for Play On.
+    private let more: AnyView?
 
-    init(app: AppModel) {
+    init(app: AppModel, more: AnyView? = nil) {
         _model = State(initialValue: AppleTVsModel(app: app))
+        self.more = more
     }
 
     var body: some View {
@@ -21,6 +24,7 @@ struct AppleTVsView: View {
                     }
                     televisionsSection
                 }
+                more
             }
         }
         .overlay {

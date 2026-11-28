@@ -17,7 +17,7 @@ final class UploadUITests: LobbyUITestCase {
 
         app.buttons["profile.menu"].firstMatch.tap()
         waitFor(app.buttons["Settings…"], "Settings in the viewer menu").tap()
-        scrolledTo(app.buttons["settings.manage"], "Devices and Viewers").tap()
+        scrolledTo(app.buttons["settings.imports"], "Imports and Uploads").tap()
         let uploads = element("manage.uploads")
         for _ in 0..<4 where !(uploads.exists && uploads.isHittable) { app.swipeUp() }
         waitFor(uploads, "Upload, for a manager").tap()

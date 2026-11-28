@@ -33,12 +33,14 @@ final class ConnectUITests: LobbyUITestCase {
 
         waitFor(shelf("movies"), "The library")
 
-        // Settings names the server and this device's role, and Sign Out forgets the credential.
+        // Settings names this device's role and the server, and Sign Out forgets the credential.
         app.buttons["profile.menu"].tap()
         waitFor(app.buttons["Settings…"], "The Settings entry").tap()
+        waitFor(app.buttons["settings.device"], "This Device in Settings").tap()
         waitFor(app.staticTexts["Role, Manager"], "The device's role")
-        XCTAssertTrue(app.staticTexts["Name, Lobby UI Test"].exists)
-        // On a manager's device the household's pages come before it: it can be below the fold.
+        app.navigationBars.buttons.firstMatch.tap()
+        waitFor(app.buttons["settings.connection"], "Connection in Settings").tap()
+        waitFor(app.staticTexts["Name, Lobby UI Test"], "The server's name")
         let signOut = app.buttons["settings.signOut"]
         for _ in 0..<4 where !(signOut.exists && signOut.isHittable) { app.swipeUp() }
         signOut.tap()

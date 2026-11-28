@@ -3,11 +3,30 @@ import LobbyKit
 import SwiftUI
 
 /// The manager's tools: approve a new device, remove a device, keep the viewers, and see how
-/// the server is doing. Shown only on a device paired as manager.
+/// the server is doing. Shown only on a device paired as manager. Settings shows one part of it
+/// per page; the sidebar's Devices and Viewers shows the household's parts together.
 struct ManagerView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.colorScheme) private var scheme
     let model: ManagerModel
+    var part: Part = .all
+
+    enum Part: Hashable, Sendable {
+        /// Devices and viewers together, for the sidebar.
+        case all
+        case devices
+        case viewers
+        case kids
+
+        var title: String {
+            switch self {
+            case .all: "Devices and Viewers"
+            case .devices: "Devices"
+            case .viewers: "Viewers"
+            case .kids: "Kids"
+            }
+        }
+    }
     @State private var isAddingViewer = false
     /// What each waiting device is let in as, by request id. Viewer until changed.
     @State private var waitingRoles: [String: DeviceAccess] = [:]
@@ -19,7 +38,7 @@ struct ManagerView: View {
     var body: some View {
         @Bindable var model = model
         LobbyForm { sections }
-        .navigationTitle("Devices and Viewers")
+        .navigationTitle(part.title)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Refresh", systemImage: "arrow.clockwise") {
@@ -86,12 +105,25 @@ struct ManagerView: View {
 
     @ViewBuilder
     private var sections: some View {
-        householdSections
-        serverSections
+        switch part {
+        case .all:
+            devicesPart
+            viewersSection
+        case .devices:
+            devicesPart
+            SettingsPageNote(page: .devices)
+        case .viewers:
+            viewersSection
+            SettingsPageNote(page: .viewers)
+        case .kids:
+            kidsSection
+            KidsCodeSection()
+            SettingsPageNote(page: .kids)
+        }
     }
 
     @ViewBuilder
-    private var householdSections: some View {
+    private var devicesPart: some View {
         if app.isGuest {
             HouseholdLabelSection()
         } else {
@@ -102,59 +134,17 @@ struct ManagerView: View {
             // Pairing at home is pairing into the owner's household.
             approveSection
         }
-        viewersSection
         Section {
             Button("Invite Someone…", systemImage: AppSymbol.add) { isInviting = true }
                 .accessibilityIdentifier("manage.invite")
-        } footer: {
-            Text("A code and a link for a device elsewhere, into this household or, for a server admin, a new one.")
-        }
-
-    }
-
-    @ViewBuilder
-    private var serverSections: some View {
-        KidsCodeSection()
-        if app.uploads().isAvailable {
-            Section {
-                NavigationLink(value: Route.uploads) {
-                    Label("Upload", systemImage: AppSymbol.upload)
-                }
-                .accessibilityIdentifier("manage.uploads")
-                NavigationLink(value: Route.inbox) {
-                    Label("Inbox", systemImage: AppSymbol.inbox)
-                }
-                .accessibilityIdentifier("manage.inbox")
-            } footer: {
-                Text("Films and episodes from this device, and what Lobby could not place by itself.")
-            }
-        }
-        if app.isOwnerManager {
-            Section {
-                NavigationLink(value: Route.households) {
-                    Label("Households", systemImage: AppSymbol.households)
-                }
-                .accessibilityIdentifier("manage.households")
-                NavigationLink(value: Route.serverSettings) {
-                    Label("Server Settings", systemImage: AppSymbol.settings)
-                }
-                .accessibilityIdentifier("manage.serverSettings")
-            } footer: {
-                Text("Who you share the library with, its name, library folders, the TMDB key, converting, access from away and backups.")
-            }
-        }
-        if model.offersOutside {
-            Section {
+            if app.isGuest, model.offersOutside {
                 NavigationLink(value: Route.outside) {
-                    Label(app.isGuest ? "Add a Device" : "Access From Outside", systemImage: AppSymbol.outside)
+                    Label("Add a Device", systemImage: AppSymbol.outside)
                 }
                 .accessibilityIdentifier("manage.outside")
-            } footer: {
-                Text(
-                    app.isGuest
-                        ? "A device of your household joins with a code you give it here."
-                        : "For devices that are neither at home nor on Tailscale.")
             }
+        } footer: {
+            Text("A code and a link for a device elsewhere, into this household or, for a server admin, a new one.")
         }
         if let status = model.status {
             Section {
@@ -166,7 +156,37 @@ struct ManagerView: View {
             }
             .accessibilityIdentifier("manage.server")
         }
-    
+    }
+
+    // MARK: Kids
+
+    private var kidsSection: some View {
+        Section {
+            let kids = app.profiles.filter { $0.kids != nil }
+            if kids.isEmpty {
+                Text("No kids viewers yet. Add a viewer, then make it a kids viewer on its page.")
+                    .foregroundStyle(.lobbySecondary)
+            }
+            ForEach(kids) { profile in
+                NavigationLink(value: Route.viewer(profile.id)) {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(profile.name)
+                            Text(app.kidsGlances[profile.id].map(KidsGlance.line) ?? "Kids viewer")
+                                .font(.footnote)
+                                .foregroundStyle(.lobbySecondary)
+                        }
+                    } icon: {
+                        ProfileAvatar(profile: profile, size: 24)
+                    }
+                }
+                .accessibilityIdentifier("manage.kid.\(profile.name)")
+            }
+        } header: {
+            Label("Kids Viewers", systemImage: AppSymbol.kids)
+        } footer: {
+            Text("Open one to choose what it may watch, and when.")
+        }
     }
 
     // MARK: Waiting
@@ -241,7 +261,7 @@ struct ManagerView: View {
         } header: {
             Label("Waiting to Connect", systemImage: AppSymbol.waiting)
         } footer: {
-            Text("Check that the code matches the one on the device, choose what it is let in as, then let it in. A household admin can set up this household's viewers and devices.")
+            Text("Check that the code matches the one on the device, then let it in.")
         }
     }
 
@@ -274,7 +294,7 @@ struct ManagerView: View {
         } header: {
             Label("Type a Code Instead", systemImage: AppSymbol.enterAddress)
         } footer: {
-            Text("A new device shows a six-digit code on its Connect screen. A viewer can watch; a household admin can also do what is on this page; a server admin can do everything.")
+            Text("A viewer watches; a household admin also manages the household; a server admin, everything.")
         }
     }
 
@@ -340,7 +360,7 @@ struct ManagerView: View {
         } header: {
             Label("Viewers", systemImage: AppSymbol.viewers)
         } footer: {
-            Text("One for each person who watches, so everyone keeps their own place. Open a viewer to make it a kids viewer and choose what it may watch.")
+            Text("Open a viewer to make it a kids viewer and choose what it may watch.")
         }
     }
 }
