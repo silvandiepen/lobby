@@ -728,3 +728,21 @@ Context: "Can the Lobby app on iPad and iPhone also say Play on HomePod?" Play O
 **Apple TVs and Macs are not speakers here.** They advertise AirPlay audio too, but are in Play On as themselves; as speakers they would be there twice.
 
 **Not built.** Several speakers at once (a group); shuffle and repeat on a speaker (the queue goes in order, as sent); a story's chapters and the sleep timer on the speaker's remote; PIN pairing for speakers with a screen; speakers of a guest household's network; Play On to a speaker from the Apple TV.
+
+## D-069 Settings, one page per subject
+
+Context: "The settings panels are really huge long pages with all kinds of things; we really need to categorize that and make it clearer structure. Simpler pages per item." Settings on iPhone and iPad was one long sheet: servers, the connection, this device and the viewer's preferences, downloads, kids mode, signing out, the app's version, and links to Households, Server Settings and Statistics. Server Settings was one long page of every section of the server's schema, and Devices and Viewers mixed the household with links to the server's pages.
+
+**A short list in groups, as the system's Settings app.** You (the viewer's picture and statistics, Playback, Subtitles, Intros and Credits), This Device (Connection, Servers, This Device, Downloads, Kids Mode), Household (Devices, Viewers, Kids, Categories, Household Statistics), Server (General, Library Folders, Imports and Uploads, Matching, Converting, Apple TVs, Speakers, Away From Home, Households, Statistics, Backups, Advanced) and About. Each row opens one page about one subject with a few controls and a one-line note at its foot. The map of what is where is in apple-apps.md, "Settings map".
+
+**Only what the person may change.** `SettingsMap` chooses the pages from the device's level, the viewer in front and kids mode, and is tested without a screen. A viewer sees You, This Device and About; a household admin also the Household; a server admin also the Server. Kids mode sees About only, and the kids screens have no way into Settings. A page whose setting an older server does not keep is left out.
+
+**The server's settings are placed by key, not by the server's sections.** The schema's sections were the server's way to group its settings; the apps now put each key on the page of its subject (the wake settings with the Apple TVs, how long history is kept with Statistics). A key no page names, from a newer server, shows under Advanced, so nothing a server offers is out of reach. All Settings as Stored and Earlier Versions are one level deeper, under Advanced.
+
+**Each page reviews its own changes.** The one model of the server's settings keeps the drafts of every page, but a page's bar, review and save take only its own keys; a change left on another page waits there. Going back to an earlier version replaces everything, as before.
+
+**Pushed on a narrow window, beside the list on a wide one.** iPhone pushes pages on a stack; an iPad's Settings sheet (page sized) and the Mac's Settings window (780 × 560) show the list as a sidebar beside the page, as the system's own. Search on the list finds a page by its name, its words and the titles of the server's settings on it. Folder pickers stay on the page, never inside a section of the list (sheets there closed by themselves). On the Apple TV the viewer page keeps its few settings as they were: it is already one short page.
+
+**No Notifications page.** The apps have no notification settings yet; an empty page would only be one more row. The sidebar's Devices and Viewers keeps the household's devices and viewers together, without the links to the server's pages.
+
+Rejected: keeping the server's sections as pages (General still mixed the name, Play On and history); one Server page with sections folded open (still long, and the review bar would cover all of it); a tab bar of Settings on the Mac (twenty-odd pages do not fit tabs).
