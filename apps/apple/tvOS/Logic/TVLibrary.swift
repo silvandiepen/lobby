@@ -10,8 +10,10 @@ enum TVTab: Hashable, Sendable {
     case series
     case group(String)
     case viewer
-    /// The household's music: browse and play. Not for a child (no limits for music yet).
+    /// The household's music: browse and play.
     case music
+    /// A child's stories and music, while it may listen.
+    case stories
 
     static func all(for shelves: LibraryShelves, hasMusic: Bool = false) -> [TVTab] {
         [.viewer, .search, .home] + shelves.filters.compactMap { filter in
@@ -24,9 +26,17 @@ enum TVTab: Hashable, Sendable {
         } + (hasMusic ? [.music] : [])
     }
 
-    /// A child's places. No search, and nothing about the household.
-    static func kids(for library: KidsLibrary) -> [TVTab] {
-        [.viewer, .home] + (library.movies.isEmpty ? [] : [.movies]) + (library.series.isEmpty ? [] : [.series])
+    /// A child's places. No search, and nothing about the household. Stories while it may
+    /// listen; in Only listening nothing else but its own page.
+    static func kids(for library: KidsLibrary, listens: Bool = false, onlyListening: Bool = false) -> [TVTab] {
+        if onlyListening, listens { return [.viewer, .stories] }
+        return [.viewer, .home] + (listens ? [.stories] : []) + (library.movies.isEmpty ? [] : [.movies])
+            + (library.series.isEmpty ? [] : [.series])
+    }
+
+    /// Where a child lands: the stories when there is nothing to watch now.
+    static func kidsStart(in tabs: [TVTab]) -> TVTab {
+        tabs.contains(.home) ? .home : tabs.contains(.stories) ? .stories : .viewer
     }
 
     /// `self`, or Home when it names a part of the library that is no longer there.

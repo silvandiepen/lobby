@@ -686,3 +686,23 @@ Context: D-060 let any device of a household read any of its viewers' statistics
 **What it does and does not keep out.** It keeps one grown-up's page from another's device and screens: seeing someone else's means switching the device to them, as their Continue Watching and places already need, and that is visible to whoever uses the device next. It does not stop someone who switches to another grown-up, or who writes their own client and says another viewer is in front. That needs a lock per viewer, which Lobby does not have. Rejected: the viewer named in the request or a header (the same as the path, so no check at all); the viewer whose place the device moved last (nothing for a device that has not played yet, and wrong after a switch); binding each grown-up's device to one viewer, as kids devices are (it does not fit a shared TV or iPad, and needs a new setting on every device). Relying on the apps alone to hide the other pages was rejected too: the server refuses them.
 
 **Older apps.** `simple` stays in a viewer's page, always `false`, since older apps read it. An older app on a kids device gets `404` and shows that the server has no statistics. An older app on a regular user's device still shows a household's viewers' pages, which the server now refuses with `403`.
+
+## D-067 Stories: audiobooks for a child who listens, and beside their films
+
+Context: read-along stories (one file each, the cover inside, the reader in every name tag) in an `audiobooks` folder, for children who may only listen as much as for anyone else; and the films they were made from, in the same library.
+
+**One word: Stories.** The apps call the audiobooks Stories everywhere: the kids' place, the grown-ups' Music section, Home's row, the Apple TV. The server, the API and the folder hint keep "audiobooks". Rejected: Audiobooks for grown-ups and Stories for children, two words for one shelf.
+
+**A child's place.** While the plan lets the child listen, the kids bar has Stories after Home; in Only listening that page is the whole kids screens ("Time to listen"), with the way out for grown-ups at its foot, so a child who may not watch never lands on an empty page. Big covers with names to choose by, Keep listening (also on kids Home) that goes on at once, then Music, whose albums play at once. A story's page has the cover, the title, who reads it, its length and what is left, one Play, Resume or Play again, and Say it. The Apple TV has the same place and pages; in Only listening only the child's own page and Stories.
+
+**A player a small child can use alone.** Over the whole screen: the cover, the title, a bar of how far without a scrubber, back 15 seconds, a big play and pause, forward 30 seconds (previous and next for music), and a sleep timer of four choices in words: when the story ends, in 15 minutes, in 30 minutes, keep playing. No speed, queue or AirPlay: those are the grown-ups' player. A bar over the kids tabs shows what plays. It is the same `MusicPlayer`; only the screens differ.
+
+**The child's own place in each story.** Music's progress, favourites and listens are kept for the kids viewer as for anyone (the server allowed a kids device its own viewer's music already, `music_viewer`). The app used to keep none for a child, from when children had no music (D-044). Choosing a viewer now fetches their music at once, so a story resumes where it was left on another device.
+
+**A story and its film meet by title, in the apps** (`StoryFilms` in LobbyKit). Case, accents, punctuation, "&" against "and" and a leading article do not count; only films, never a series; of a film and its remake, the latest that came out by the story's year, else the first. Only from what the viewer has: a child's own films, so Watch the film never leads to one it may not see, and only while the kids screens show films. A film's page has Story (Listen to the story for a child) while the viewer may listen. Rejected: matching on the server (it would apply each child's limits a second time, and the apps hold both lists already); TMDB ids (audiobooks have none).
+
+**A reader is not the writer.** When the only names on a story are its reader's (artist, album artist and composer alike), the apps show "Read by …" and no author. The server still says what the files say.
+
+**Grown-ups.** Continue Listening under Continue Watching on Home and at the top of Music; a Stories row on Home; Stories in the Music section.
+
+**Not built.** Limits per story or album for a child (as for music, a card of its own); searching stories on the kids screens; Watch the Film on the Apple TV's grown-up story page.

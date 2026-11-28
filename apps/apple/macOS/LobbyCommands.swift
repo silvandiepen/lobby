@@ -75,7 +75,7 @@ private struct SectionCommands: View {
     var body: some View {
         Divider()
         if state.isKids {
-            ForEach(Array(KidsSection.allCases.enumerated()), id: \.element) { index, place in
+            ForEach(Array(app.kidsSections.enumerated()), id: \.element) { index, place in
                 Button(place.name) {
                     app.kidsPath = []
                     app.kidsSection = place
