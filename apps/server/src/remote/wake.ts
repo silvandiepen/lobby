@@ -30,6 +30,8 @@ export interface WakeTimings {
   lookMs: number;
   /** How long a play waits for the TV; null: `remote.wake.holdPlaySeconds`. */
   holdPlayMs: number | null;
+  /** How long a wake waits for the helper, which may be starting or starting again. */
+  helperMs?: number;
 }
 
 export const WAKE_TIMINGS: WakeTimings = {
@@ -200,10 +202,14 @@ export class WakeService {
 
   // ---- What devices are shown ----
 
-  /** Whether `deviceId` is a TV that can be woken now. */
+  /**
+   * Whether `deviceId` is a TV that Lobby Server can wake: waking is on and the TV is linked. Not
+   * whether the helper is running this second: it starts and starts again by itself, and a TV
+   * that vanished from Play On for those seconds would look like one that cannot be woken. A wake
+   * waits for the helper (`readyHelper`), and says why when it does not come.
+   */
   wakeable(deviceId: string): boolean {
-    const config = this.config;
-    if (!config?.enabled || !this.helper?.isUp) return false;
+    if (!this.config?.enabled) return false;
     return this.rowFor(deviceId) !== null;
   }
 
@@ -274,6 +280,13 @@ export class WakeService {
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  }
+
+  /** The helper once it is up: a wake waits a little for one that is starting. */
+  private async readyHelper(): Promise<WakeHelper> {
+    const helper = this.helper;
+    if (helper && !helper.isUp) await helper.whenReady(this.timings.helperMs ?? 10_000);
+    return this.running();
   }
 
   private running(): WakeHelper {
@@ -465,7 +478,7 @@ export class WakeService {
     if (!row || !device || device.revokedAt !== null) {
       throw new ApiError("not_found", "That device cannot be woken.", { reason: "not_wakeable" });
     }
-    const helper = this.running();
+    const helper = await this.readyHelper();
     this.limit("perSender", sender.id);
     this.limit("perTelevision", row.id);
     const already = this.waking.get(row.id);

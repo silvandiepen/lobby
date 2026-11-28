@@ -59,8 +59,16 @@ const asked = (): Record<string, unknown>[] =>
         .map((line) => JSON.parse(line) as Record<string, unknown>)
     : [];
 
-const fakeHelper = (): WakeHelper =>
-  new WakeHelper({ python: process.execPath, flags: [], script: FAKE, args: ["--state", state] });
+let helper: WakeHelper | null = null;
+const fakeHelper = (): WakeHelper => {
+  helper = new WakeHelper({
+    python: process.execPath,
+    flags: [],
+    script: FAKE,
+    args: ["--state", state],
+  });
+  return helper;
+};
 
 async function start(
   wake: Record<string, unknown> | null = { pyatv: "/nowhere/bin" },
@@ -384,6 +392,36 @@ describe("waking a TV to play on it", () => {
     const refused = await phone.post("/v1/remote/wake", { deviceId: tv.id });
     expect(refused.status).toBe(403);
     expect(refused.json<Record<string, unknown>>()["reason"]).toBe("wake_off");
+  });
+
+  it("keeps a sleeping TV in Play On while the helper is down, and says why a wake fails", async () => {
+    await start();
+    const tv = device("Living Room", "tvos");
+    const phone = await live(device("Phone", "ios"));
+    await connected(tv.id);
+    await until(() => phone.sees(tv.id)?.["wakeable"] === true);
+
+    // The helper stops (it starts again by itself in a real server): the TV is still listed, asleep,
+    // and still offered as one that wakes. Only the wake itself says the helper is not there.
+    await helper?.stop();
+    await until(async () => (await ask("GET", "/v1/wake")).body["running"] === false);
+    const fresh = await live(device("Tablet", "ios"));
+    await until(() => fresh.sees(tv.id) !== null);
+    expect(fresh.sees(tv.id)).toMatchObject({ online: false, canPlay: false, wakeable: true });
+    expect(phone.sees(tv.id)).toMatchObject({ online: false, wakeable: true });
+    const refused = await phone.post("/v1/remote/wake", { deviceId: tv.id });
+    expect(refused.status).toBe(503);
+    expect(refused.json<Record<string, unknown>>()["reason"]).toBe("wake_unavailable");
+    expect(asked().filter((one) => one["op"] === "wake")).toEqual([]);
+  });
+
+  it("lists a TV that is linked but not woken by this server only as asleep", async () => {
+    await start();
+    const tv = device("Living Room", "tvos");
+    const phone = await live(device("Phone", "ios"));
+    // Never linked: still listed, asleep, but not as one that wakes.
+    await until(() => phone.sees(tv.id) !== null);
+    expect(phone.sees(tv.id)).toMatchObject({ online: false, canPlay: false, wakeable: false });
   });
 
   it("is never for devices without control, from away, or for a TV it does not know", async () => {
