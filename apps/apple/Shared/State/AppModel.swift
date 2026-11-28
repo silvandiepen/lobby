@@ -833,16 +833,22 @@ final class AppModel {
             if case .notFound = error { kidsControl.reset() } else if error.isUnreachable { kidsControl.wentOffline() }
         } catch {}
         await kidsModeChanged()
+        await applyKidsLock()
     }
 
     /// The live channel said something of kids control: a mode, a question or its answer.
     func kidsHeard(_ event: LiveEvent) async {
         switch event {
-        case .kidsMode(let profileID, let now):
+        case .kidsMode(let profileID, let now, let lock):
             guard isKidsMode, profileID == (device?.kidsProfileId ?? activeProfile?.id) else { return }
             let before = kidsControl.screen
             kidsControl.heard(now)
             await kidsModeChanged()
+            if kidsControl.heard(lock: lock) {
+                await applyKidsLock()
+                // The signed copy says it too, for when the device is offline after a restart.
+                if let client = liveClient { await refreshKidsControl(using: client) }
+            }
             // Films come back: fetch what there is.
             if !before.showsFilms, kidsControl.screen.showsFilms { await refresh() }
         case .kidsRequest(let request):
@@ -886,6 +892,50 @@ final class AppModel {
 
     /// Said once to the child when a switch ended its film.
     var kidsNotice: KidsNotice?
+
+    // MARK: Lock to Lobby
+
+    /// What the lock follows: a child in front in kids mode, and whether the lock is wanted for
+    /// it. A grown-up who passed For Grown-ups is in front while Who is watching is up; closing it
+    /// without a choice is kids mode again (docs/decisions.md, "Lock to Lobby").
+    var kidsLockState: KidsLock.State {
+        KidsLock.State(
+            inKidsMode: phase == .launching ? nil : isKidsMode && !grownUpIsPresent,
+            wanted: isKidsMode && kidsControl.lockWanted)
+    }
+
+    /// What was told to the server of the lock last: the child, the status, locked.
+    @ObservationIgnored private var toldKidsLock: String?
+
+    /// Puts the shield up or takes it away as `kidsLockState` says, and tells the server what
+    /// came of it for the grown-ups.
+    func applyKidsLock() async {
+        guard let lock = environment.kidsLock else { return await reportKidsLock(.unsupported, locked: false) }
+        lock.update(kidsLockState)
+        await reportKidsLock(lock.status, locked: lock.isLocked)
+    }
+
+    /// The one-time setup on the child's device: a grown-up allows Screen Time with Face ID or
+    /// the passcode. False when it was not allowed.
+    @discardableResult
+    func setUpKidsLock() async -> Bool {
+        guard let lock = environment.kidsLock else { return false }
+        let allowed = await lock.setUp()
+        await applyKidsLock()
+        return allowed
+    }
+
+    private func reportKidsLock(_ status: KidsLockStatus, locked: Bool) async {
+        guard isKidsMode, let client = liveClient, let profileID = device?.kidsProfileId ?? activeProfile?.id else { return }
+        let told = "\(profileID) \(status.rawValue) \(locked)"
+        guard told != toldKidsLock else { return }
+        do {
+            try await client.reportKidsLock(status, locked: locked, profileID: isBoundToKids ? nil : profileID)
+            toldKidsLock = told
+        } catch {
+            // Out of reach, or a server from before the lock: told again at the next change or refresh.
+        }
+    }
 
     /// Watches the child's places on this device, when its plan has any.
     @ObservationIgnored private(set) lazy var places = KidsPlaceWatcher(follow: environment.followPlaces)
