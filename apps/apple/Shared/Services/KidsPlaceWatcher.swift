@@ -19,8 +19,6 @@ final class KidsPlaceWatcher {
     #if os(iOS) || os(macOS)
     private let manager = CLLocationManager()
     private var monitor: CLMonitor?
-    /// Taking the places out of the monitor after a stop; a new watch waits for it.
-    private var clearing: Task<Void, Never>?
     #endif
 
     init(follow: Follow? = nil) {
@@ -87,7 +85,7 @@ final class KidsPlaceWatcher {
         end()
         #if os(iOS) || os(macOS)
         if let monitor {
-            clearing = Task { for id in await monitor.identifiers { await monitor.remove(id) } }
+            PlaceMonitor.clearing = Task { for id in await monitor.identifiers { await monitor.remove(id) } }
         }
         #endif
     }
@@ -105,15 +103,10 @@ final class KidsPlaceWatcher {
             await report(.unknown)
             return
         }
-        await clearing?.value
+        await PlaceMonitor.clearing?.value
         if Task.isCancelled { return }
-        let monitor: CLMonitor
-        if let known = self.monitor {
-            monitor = known
-        } else {
-            monitor = await CLMonitor("lobby-kids-places")
-            self.monitor = monitor
-        }
+        let monitor = await PlaceMonitor.shared()
+        self.monitor = monitor
         for id in await monitor.identifiers { await monitor.remove(id) }
         for place in places {
             let condition = CLMonitor.CircularGeographicCondition(
@@ -150,3 +143,22 @@ final class KidsPlaceWatcher {
     }
     #endif
 }
+
+#if os(iOS) || os(macOS)
+/// The one Location monitor of the app. CoreLocation allows a single monitor per name in a
+/// process and stops the app on a second, so every watcher (one per server's model) shares it,
+/// and a watch that starts while another is still making it waits for that one.
+@MainActor
+enum PlaceMonitor {
+    private static var making: Task<CLMonitor, Never>?
+    /// Taking the places out of the monitor after a stop; the next watch, of any server, waits for it.
+    static var clearing: Task<Void, Never>?
+
+    static func shared() async -> CLMonitor {
+        if let making { return await making.value }
+        let task = Task { await CLMonitor("lobby-kids-places") }
+        making = task
+        return await task.value
+    }
+}
+#endif
