@@ -100,7 +100,9 @@ struct SettingsView: View {
                 NavigationSplitView {
                     SettingsRoot(audience: audience, query: $query, selection: $selection, isWide: true) { showsSetup = true }
                         .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 340)
+                        #if !os(macOS)
                         .toolbar { doneButton }
+                        #endif
                 } detail: {
                     NavigationStack {
                         if let page = selection ?? SettingsMap.pages(for: audience).first {
@@ -117,7 +119,9 @@ struct SettingsView: View {
                 NavigationStack {
                     SettingsRoot(audience: audience, query: $query, selection: $selection, isWide: false) { showsSetup = true }
                         .lobbyDestinations()
+                        #if !os(macOS)
                         .toolbar { doneButton }
+                        #endif
                 }
             }
         }
@@ -129,15 +133,15 @@ struct SettingsView: View {
         }
     }
 
-    @ToolbarContentBuilder
+    #if !os(macOS)
+    // The Mac's Settings is a window of its own, closed as any window.
     private var doneButton: some ToolbarContent {
-        #if !os(macOS)
         ToolbarItem(placement: .confirmationAction) {
             Button("Done") { dismiss() }
                 .accessibilityIdentifier("settings.done")
         }
-        #endif
     }
+    #endif
 }
 
 /// The list of Settings: its groups, or what a search found.
